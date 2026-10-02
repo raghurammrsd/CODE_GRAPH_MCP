@@ -10,7 +10,7 @@
 
 CodeGraph MCP is an open-source, deterministic codebase intelligence server built on the Model Context Protocol (MCP). It is not a conversational AI, a natural-language interpreter, a vector database, or an autonomous agent. 
 
-Antigravity and your AI agents handle natural-language reasoning, intent interpretation, and answer synthesis. CodeGraph interrogates the local repository to deliver deterministic, evidence-backed AST facts, call and import graphs, verified line citations, architecture structure, and Git impact.
+Your AI coding tools and agents (such as Claude Code, Cursor, Codex, and Claude Desktop) handle natural-language reasoning, intent interpretation, and answer synthesis. CodeGraph interrogates the local repository to deliver deterministic, evidence-backed AST facts, call and import graphs, verified line citations, architecture structure, and Git impact.
 
 ---
 
@@ -33,7 +33,7 @@ USER
   │
   │ natural-language request ("how does authentication work in my app?")
   ▼
-ANTIGRAVITY / AI
+AI AGENT / IDE (Claude Code, Cursor, Codex)
   │
   ├── understands intent and context
   ├── corrects spelling and informal language
@@ -65,7 +65,7 @@ STRUCTURED EVIDENCE
   └── repository commit hash
   │
   ▼
-ANTIGRAVITY / AI
+AI AGENT / IDE (Claude Code, Cursor, Codex)
   │
   └── synthesizes the final human-readable answer with verified source citations
   ▼
@@ -174,7 +174,7 @@ When a query matches multiple symbols across different modules, CodeGraph will n
 ### 1. Developer asks:
 > *"how does authentication work in my app?"*
 
-### 2. Antigravity / AI decomposes the request:
+### 2. AI Agent (Claude Code / Cursor / Codex) decomposes the request:
 - Recognizes query about authentication flows and routing.
 - Calls `list_routes(path="auth")` to locate entrypoints.
 - Calls `resolve_symbol("authenticate")` to identify the service handler.
@@ -186,7 +186,7 @@ When a query matches multiple symbols across different modules, CodeGraph will n
 - Proves BFS execution path from `login_view` $\to$ `AuthService.authenticate` with line evidence.
 - Lists callees (`verify_password`, `create_jwt_token`, `log_audit_event`) with file citations.
 
-### 4. Antigravity / AI synthesizes the answer:
+### 4. AI Agent synthesizes the answer:
 > "Authentication in your application begins at the `POST /api/v1/auth/login` endpoint handled by [`login_view`](file:///src/auth/views.py#L25). It invokes [`AuthService.authenticate`](file:///src/auth/service.py#L42), which validates credentials via [`verify_password`](file:///src/auth/crypto.py#L12) and generates a JWT token via [`create_jwt_token`](file:///src/auth/token.py#L55)."
 
 ---
@@ -208,7 +208,7 @@ CodeGraph currently provides framework-aware route discovery for:
 
 It indexes repositories containing Python, JavaScript, and TypeScript code with cross-platform support across Linux, macOS, and Windows.
 
-### Configure in MCP Client (Claude Desktop, Cursor, Gemini)
+### Configure in MCP Client (Claude Code, Cursor, Codex, Claude Desktop)
 
 ```json
 {
