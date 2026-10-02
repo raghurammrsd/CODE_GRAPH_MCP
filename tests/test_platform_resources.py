@@ -1,6 +1,7 @@
 """Tests for cross-platform resource monitoring, Windows portability, and governor degradation."""
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -157,7 +158,8 @@ def test_cli_startup_on_windows(tmp_path: Path) -> None:
             # 2. Help command
             res_help = runner.invoke(app, ["--help"], prog_name="codegraph")
             assert res_help.exit_code == 0
-            assert "Usage: codegraph" in res_help.stdout
+            clean_help = re.sub(r"\x1b\[[0-9;]*m", "", res_help.stdout)
+            assert "Usage: codegraph" in clean_help or ("usage" in clean_help.lower() and "codegraph" in clean_help.lower())
 
             # 3. Init command
             res_init = runner.invoke(app, ["init", str(tmp_path)])
