@@ -1,0 +1,32 @@
+[
+  {
+    "id": "trace_login_001",
+    "intent": "TRACE",
+    "task": "Trace POST /api/v1/auth/login from entrypoint to database layer",
+    "expected_entrypoints": ["POST /api/v1/auth/login", "auth_login"],
+    "expected_symbols": ["AuthService", "login", "auth_login"],
+    "expected_relationships": ["HANDLED_BY:auth_login"],
+    "expected_tests": ["test_auth.py", "test_login"],
+    "excluded_symbols": ["legacy_crypto_deprecated"]
+  },
+  {
+    "id": "debug_session_002",
+    "intent": "DEBUG",
+    "task": "Investigate why session token expires prematurely in auth middleware",
+    "expected_entrypoints": [],
+    "expected_symbols": ["SessionManager", "validate_token"],
+    "expected_relationships": [],
+    "expected_tests": ["test_session.py"],
+    "excluded_symbols": ["billing_cron_job"]
+  },
+  {
+    "id": "impact_order_service_003",
+    "intent": "IMPACT",
+    "task": "Analyze blast radius of modifying OrderService.calculate_total",
+    "expected_entrypoints": [],
+    "expected_symbols": ["OrderService", "calculate_total"],
+    "expected_relationships": [],
+    "expected_tests": ["test_orders.py"],
+    "excluded_symbols": ["admin_audit_cleanup"]
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "commit": "v2.0-verified",
+  "environment": {
+    "os": "macOS",
+    "python": "3.13"
+  },
+  "results": {
+    "cold_latency_ms": 20.0,
+    "warm_latency_ms": 0.67,
+    "speedup_factor": 30.0,
+    "modes_latency": {
+      "FAST": {"p50_ms": 15.8, "p95_ms": 16.0},
+      "BALANCED": {"p50_ms": 16.6, "p95_ms": 17.0},
+      "DEEP": {"p50_ms": 17.4, "p95_ms": 18.1}
+    },
+    "budget_compression": {
+      "budget_200": {"reduction_pct": 85.6},
+      "budget_600": {"reduction_pct": 56.3},
+      "budget_2000": {"reduction_pct": 5.1}
+    }
+  }
+}

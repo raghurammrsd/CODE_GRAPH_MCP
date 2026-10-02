@@ -1,0 +1,91 @@
+name: CI/CD Production Quality Gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & Typecheck (Ruff + Mypy)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e '.[dev,mcp]'
+      - name: Ruff Lint & Format Check
+        run: ruff check .
+      - name: Mypy Typecheck src/
+        run: mypy src/ --ignore-missing-imports
+      - name: Mypy Typecheck benchmarks/
+        run: mypy benchmarks/ --ignore-missing-imports --explicit-package-bases
+
+  unit-and-integration-tests:
+    name: Full Test Suite & Regression
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e '.[dev,mcp]'
+      - name: Run Pytest Test Suite
+        run: python -m pytest -v
+      - name: Run Adversarial & Security Tests
+        run: python -m pytest tests/test_adversarial_edge_cases.py -v
+      - name: Run Determinism & Soak Tests
+        run: python -m pytest tests/test_determinism_and_soak.py -v
+
+  production-benchmark-regression:
+    name: 50-Task Production Benchmark & Baseline Regression Gate
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e '.[dev,mcp]'
+      - name: Run v2.1 Benchmark & Diagnostic Suite
+        run: python benchmarks/run_v21_eval.py --output-dir benchmarks/reports/v2_1
+
+  packaging-and-clean-install:
+    name: Package Build & Clean Wheel Install
+    runs-on: ubuntu-latest
+    needs: [unit-and-integration-tests, production-benchmark-regression]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install build tools
+        run: pip install build
+      - name: Build wheel and sdist
+        run: python -m build
+      - name: Install Wheel in Isolated Environment
+        run: |
+          python -m venv test_env
+          test_env/bin/pip install dist/*.whl
+          test_env/bin/codegraph --version
+          test_env/bin/codegraph --help
+          test_env/bin/codegraph doctor --database

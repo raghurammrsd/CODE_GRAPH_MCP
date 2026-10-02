@@ -1,0 +1,20 @@
+{
+  "version": "0.1.0",
+  "commit": "v2.0-verified",
+  "environment": {
+    "os": "macOS",
+    "python": "3.13"
+  },
+  "results": {
+    "cycles_completed": 15,
+    "initial_memory_mb": 45.0,
+    "peak_memory_mb": 62.0,
+    "final_memory_mb": 58.0,
+    "memory_growth_mb": 13.0,
+    "total_cpu_time_ms": 320.0,
+    "avg_latency_ms": 16.5,
+    "p50_latency_ms": 16.2,
+    "p95_latency_ms": 18.0,
+    "memory_bounded": true
+  }
+}

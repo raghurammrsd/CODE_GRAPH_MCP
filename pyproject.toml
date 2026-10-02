@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "codegraph-engine"
+version = "2.1.3"
+description = "Evidence-backed local codebase intelligence for MCP clients"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{name = "CodeGraph contributors"}]
+dependencies = ["pydantic>=2.7", "typer>=0.12"]
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.0,<2"]
+system = ["psutil>=5.9"]
+dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "mypy>=1.10"]
+
+[project.scripts]
+codegraph = "codegraph.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501", "B008"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src"]
+
+[[tool.mypy.overrides]]
+module = ["codegraph.mcp.server"]
+disable_error_code = ["untyped-decorator"]
+ignore_missing_imports = true

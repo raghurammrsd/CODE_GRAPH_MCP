@@ -1,0 +1,29 @@
+{
+  "version": "0.1.0",
+  "commit": "v2.0-verified",
+  "environment": {
+    "os": "macOS",
+    "python": "3.13",
+    "processor": "arm64"
+  },
+  "configuration": {
+    "suite": "standard_50_tasks",
+    "categories": 10,
+    "max_tokens": 20000
+  },
+  "results": {
+    "total_tasks": 50,
+    "avg_latency_ms": 26.5,
+    "symbol_precision": 0.087,
+    "symbol_recall": 0.53,
+    "relationship_precision": 0.46,
+    "relationship_recall": 0.46,
+    "route_accuracy": 0.49,
+    "test_discovery_accuracy": 0.90,
+    "unsupported_claim_rate": 0.0,
+    "task_coverage": 0.795,
+    "redundancy_ratio": 0.0,
+    "avg_selected_tokens": 542.0,
+    "avg_reduction_ratio": 0.65
+  }
+}
