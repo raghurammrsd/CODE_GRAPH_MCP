@@ -1,5 +1,10 @@
 # CodeGraph MCP
 
+[![PyPI version](https://img.shields.io/pypi/v/codegraph-engine.svg)](https://pypi.org/project/codegraph-engine/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://pypi.org/project/codegraph-engine/)
+[![CI/CD](https://github.com/raghurammrsd/CODE_GRAPH_MCP/actions/workflows/ci.yml/badge.svg)](https://github.com/raghurammrsd/CODE_GRAPH_MCP/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 > **The AI understands the developer. CodeGraph interrogates the repository.**  
 > **The claim comes from the AI; the proof comes from CodeGraph.**
 
@@ -9,12 +14,24 @@ Antigravity and your AI agents handle natural-language reasoning, intent interpr
 
 ---
 
+## Quick Start
+
+```bash
+pip install "codegraph-engine[mcp]"
+cd your-repository
+codegraph init
+codegraph index
+codegraph status
+```
+
+---
+
 ## Architectural Separation of Responsibilities
 
 ```text
 USER
   │
-  │ natural-language request ("how does authetication wrks in my app?")
+  │ natural-language request ("how does authentication work in my app?")
   ▼
 ANTIGRAVITY / AI
   │
@@ -155,7 +172,7 @@ When a query matches multiple symbols across different modules, CodeGraph will n
 ## End-to-End Walkthrough
 
 ### 1. Developer asks:
-> *"how does authetication wrks in my app?"*
+> *"how does authentication work in my app?"*
 
 ### 2. Antigravity / AI decomposes the request:
 - Recognizes query about authentication flows and routing.
@@ -180,6 +197,17 @@ When a query matches multiple symbols across different modules, CodeGraph will n
 pip install 'codegraph-engine[mcp]'
 ```
 
+### Supported Frameworks & Languages
+
+CodeGraph currently provides framework-aware route discovery for:
+
+- **FastAPI**
+- **Flask**
+- **Django**
+- **Express.js**
+
+It indexes repositories containing Python, JavaScript, and TypeScript code with cross-platform support across Linux, macOS, and Windows.
+
 ### Configure in MCP Client (Claude Desktop, Cursor, Gemini)
 
 ```json
@@ -187,7 +215,7 @@ pip install 'codegraph-engine[mcp]'
   "mcpServers": {
     "codegraph": {
       "command": "codegraph",
-      "args": ["serve", "-r", "/path/to/your/repo", "--profile", "core"]
+      "args": ["mcp", "serve"]
     }
   }
 }
@@ -299,7 +327,7 @@ All releases are verified against rigorous gates:
 
 - **Ruff**: 0 lint errors
 - **Mypy**: 0 issues under strict typing
-- **Pytest**: 344 unit, integration, and contract tests passing
+- **Pytest**: 371 unit, integration, and contract tests passing
 - **Benchmarks**: 50 tasks across 10 categories:
   - Unsupported Claims: 0.0%
   - FACT Correctness: 100.0%
