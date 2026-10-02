@@ -28,7 +28,7 @@ def _get_unix_memory_mb() -> float | None:
 def _get_psutil_memory_mb() -> float | None:
     """Read process RSS using psutil if installed."""
     try:
-        import psutil  # type: ignore[import-untyped]
+        import psutil
 
         rss_bytes = float(psutil.Process().memory_info().rss)
         return round(rss_bytes / (1024 * 1024), 2)
