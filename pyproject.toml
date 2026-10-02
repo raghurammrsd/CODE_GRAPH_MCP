@@ -44,3 +44,8 @@ files = ["src"]
 module = ["codegraph.mcp.server"]
 disable_error_code = ["untyped-decorator"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["psutil.*", "psutil"]
+ignore_missing_imports = true
+

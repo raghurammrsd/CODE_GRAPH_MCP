@@ -42,7 +42,7 @@ def benchmark_active_coding_bursts(iterations: int = 10) -> dict[str, Any]:
         cycle_times_ms: list[float] = []
         cpu_times_ms: list[float] = []
 
-        mem_start = get_process_memory_mb()
+        mem_start = get_process_memory_mb() or 0.0
 
         for step in range(iterations):
             t0_wall = time.perf_counter()
@@ -73,7 +73,7 @@ def benchmark_active_coding_bursts(iterations: int = 10) -> dict[str, Any]:
             cycle_times_ms.append(elapsed_wall)
             cpu_times_ms.append(elapsed_cpu)
 
-        mem_end = get_process_memory_mb()
+        mem_end = get_process_memory_mb() or 0.0
 
         return {
             "iterations": iterations,

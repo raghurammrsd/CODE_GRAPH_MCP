@@ -33,7 +33,7 @@ def run_sustained_workload_simulation(
     indexer = Indexer(repository, governor=governor)
     indexer.index()
 
-    mem_start = get_process_memory_mb()
+    mem_start = get_process_memory_mb() or 0.0
     peak_mem = mem_start
 
     cycle_latencies: list[float] = []
@@ -76,7 +76,7 @@ def run_sustained_workload_simulation(
                 max_tokens=6000,
             )
 
-        current_mem = get_process_memory_mb()
+        current_mem = get_process_memory_mb() or 0.0
         if current_mem > peak_mem:
             peak_mem = current_mem
 
@@ -84,7 +84,7 @@ def run_sustained_workload_simulation(
         target_file.write_text(original_content, encoding="utf-8")
 
     total_cpu_time_ms = (time.process_time() - total_cpu_start) * 1000.0
-    mem_end = get_process_memory_mb()
+    mem_end = get_process_memory_mb() or 0.0
 
     sorted_lat = sorted(cycle_latencies)
     p50_latency = sorted_lat[len(sorted_lat) // 2]
