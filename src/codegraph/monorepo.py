@@ -29,7 +29,7 @@ from codegraph.indexing.classifier import FileCategory, classify_file
 from codegraph.security import is_sensitive, safe_path
 
 try:
-    import yaml  # type: ignore[import-untyped]
+    import yaml
     _HAS_YAML = True
 except ImportError:
     _HAS_YAML = False

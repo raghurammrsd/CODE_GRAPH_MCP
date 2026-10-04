@@ -151,9 +151,11 @@ def test_cli_startup_on_windows(tmp_path: Path) -> None:
     with patch.dict(sys.modules, {"resource": None}):
         with patch("sys.platform", "win32"):
             # 1. Version command
+            from codegraph import __version__
+
             res_ver = runner.invoke(app, ["--version"])
             assert res_ver.exit_code == 0
-            assert "2.1.7" in res_ver.stdout
+            assert __version__ in res_ver.stdout
 
             # 2. Help command
             res_help = runner.invoke(app, ["--help"], prog_name="codegraph")

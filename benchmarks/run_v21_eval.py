@@ -16,10 +16,15 @@ import tempfile
 import time
 from pathlib import Path
 
-# Ensure project root is in sys.path
+# Ensure project root and src/ are at the front of sys.path
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(_PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(_PROJECT_ROOT))
+_SRC_ROOT = _PROJECT_ROOT / "src"
+if str(_PROJECT_ROOT) in sys.path:
+    sys.path.remove(str(_PROJECT_ROOT))
+sys.path.insert(0, str(_PROJECT_ROOT))
+if str(_SRC_ROOT) in sys.path:
+    sys.path.remove(str(_SRC_ROOT))
+sys.path.insert(0, str(_SRC_ROOT))
 
 from benchmarks.baselines import check_for_regressions  # noqa: E402
 from benchmarks.diagnostics import TaskDiagnosticReport  # noqa: E402

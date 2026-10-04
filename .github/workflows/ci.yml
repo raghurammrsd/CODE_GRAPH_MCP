@@ -50,6 +50,8 @@ jobs:
         run: python -m pytest tests/test_adversarial_edge_cases.py -v
       - name: Run Determinism & Soak Tests
         run: python -m pytest tests/test_determinism_and_soak.py -v
+      - name: Run Windows Encoding & Process Lifecycle Tests
+        run: python -m pytest tests/test_windows_and_process_lifecycle.py -v
 
   production-benchmark-regression:
     name: 50-Task Production Benchmark & Baseline Regression Gate
@@ -89,3 +91,6 @@ jobs:
           test_env/bin/codegraph --version
           test_env/bin/codegraph --help
           test_env/bin/codegraph doctor --database
+          test_env/bin/codegraph doctor --processes --json
+          test_env/bin/codegraph stop --json
+

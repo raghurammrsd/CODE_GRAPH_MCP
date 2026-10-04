@@ -708,6 +708,9 @@ def _get_context_impl(
 
         stage1_candidate_count = len(candidate_dicts)
 
+        # Instantiate ConstraintGuard for hard safety invariants
+        _guard = ConstraintGuard.from_task_spec(task_spec)
+
         # Process framework routes
         route_relationships: list[Relationship] = []
         entry_points_out: list[dict[str, object]] = []
@@ -717,16 +720,26 @@ def _get_context_impl(
             r_path = r["route_path"]
             r_method = r["http_method"]
             ep_id = r["endpoint_id"] or f"{r_method} {r_path}"
+            r_segments = [
+                seg.lower()
+                for seg in str(r_path).split("/")
+                if len(seg) >= 4
+                and not seg.startswith("{")
+                and not seg.startswith("<")
+                and seg.lower() not in {"api", "v1", "v2"}
+            ]
             matches_task = (
                 r_path in task_display_str
                 or ep_id.lower() in task_display_str.lower()
                 or (r_method in task_display_str.upper() and r_path in task_display_str)
+                or task_spec.intent == "ARCHITECTURE"
+                or any(seg in task_display_str.lower() for seg in r_segments)
                 or any(
                     (len(tgt) >= 3 and (tgt.lower() == r["handler_name"].lower() or tgt.lower() in r_path.lower()))
                     for tgt in task_spec.targets
                 )
             )
-            if matches_task:
+            if matches_task and _guard.allows_symbol(str(r["handler_name"])) and _guard.allows_file(str(r["file_path"])):
                 target_symbols.add(r["handler_name"])
                 r_line = r["line"] or 1
                 candidate_dicts.append(
@@ -799,8 +812,108 @@ def _get_context_impl(
                 except Exception:
                     pass
 
-        # Instantiate ConstraintGuard for hard safety invariants
-        _guard = ConstraintGuard.from_task_spec(task_spec)
+        # Seed architectural boundary classes and gateway methods for ARCHITECTURE intent
+        if task_spec.intent == "ARCHITECTURE":
+            try:
+                arch_rows = con.execute(
+                    "SELECT canonical_id, qualified_name, name, kind, path, start_line, end_line "
+                    "FROM symbols WHERE kind = 'class' OR name = 'app'"
+                ).fetchall()
+                for a_row in arch_rows:
+                    a_name = str(a_row["name"])
+                    a_sym = str(a_row["qualified_name"] or a_name)
+                    a_cid = str(a_row["canonical_id"] or "")
+                    a_file = str(a_row["path"] or "")
+                    if (
+                        _guard.allows_symbol(a_sym)
+                        and _guard.allows_symbol(a_name)
+                        and (not a_cid or _guard.allows_canonical_id(a_cid))
+                        and _guard.allows_file(a_file)
+                    ):
+                        target_symbols.add(a_name)
+                        target_symbols.add(a_sym)
+                        candidate_dicts.append(
+                            {
+                                "file": a_file,
+                                "symbol": a_name,
+                                "canonical_id": a_cid,
+                                "start_line": int(a_row["start_line"] or 1),
+                                "end_line": int(a_row["end_line"] or 1),
+                                "score": 0.90,
+                                "relationship": "DEFINES",
+                                "snippet": f"Architectural symbol {a_sym} ({a_row['kind']}) in {a_file}",
+                            }
+                        )
+                if "gateway" in task_display_str.lower():
+                    gw_rows = con.execute(
+                        "SELECT canonical_id, qualified_name, name, kind, path, start_line, end_line "
+                        "FROM symbols WHERE qualified_name LIKE '%Gateway.%'"
+                    ).fetchall()
+                    for g_row in gw_rows:
+                        g_name = str(g_row["name"])
+                        g_sym = str(g_row["qualified_name"] or g_name)
+                        g_cid = str(g_row["canonical_id"] or "")
+                        g_file = str(g_row["path"] or "")
+                        if (
+                            _guard.allows_symbol(g_sym)
+                            and _guard.allows_symbol(g_name)
+                            and (not g_cid or _guard.allows_canonical_id(g_cid))
+                            and _guard.allows_file(g_file)
+                        ):
+                            target_symbols.add(g_name)
+                            target_symbols.add(g_sym)
+                            candidate_dicts.append(
+                                {
+                                    "file": g_file,
+                                    "symbol": g_name,
+                                    "canonical_id": g_cid,
+                                    "start_line": int(g_row["start_line"] or 1),
+                                    "end_line": int(g_row["end_line"] or 1),
+                                    "score": 0.88,
+                                    "relationship": "DEFINES",
+                                    "snippet": f"Gateway method {g_sym} in {g_file}",
+                                }
+                            )
+            except Exception:
+                pass
+
+        # Seed direct methods of resolved class targets
+        for res in _target_resolutions.values():
+            cls_qname = res.qualified_name
+            if cls_qname and res.target_type.value == "CLASS":
+                try:
+                    m_rows = con.execute(
+                        "SELECT canonical_id, qualified_name, name, kind, path, start_line, end_line "
+                        "FROM symbols WHERE qualified_name LIKE ?",
+                        (f"{cls_qname}.%",),
+                    ).fetchall()
+                    for m_row in m_rows:
+                        m_name = str(m_row["name"])
+                        m_sym = str(m_row["qualified_name"] or m_name)
+                        m_cid = str(m_row["canonical_id"] or "")
+                        m_file = str(m_row["path"] or "")
+                        if (
+                            _guard.allows_symbol(m_sym)
+                            and _guard.allows_symbol(m_name)
+                            and (not m_cid or _guard.allows_canonical_id(m_cid))
+                            and _guard.allows_file(m_file)
+                        ):
+                            target_symbols.add(m_name)
+                            target_symbols.add(m_sym)
+                            candidate_dicts.append(
+                                {
+                                    "file": m_file,
+                                    "symbol": m_name,
+                                    "canonical_id": m_cid,
+                                    "start_line": int(m_row["start_line"] or 1),
+                                    "end_line": int(m_row["end_line"] or 1),
+                                    "score": 0.88,
+                                    "relationship": "DEFINES",
+                                    "snippet": f"Method {m_sym} of target class {cls_qname}",
+                                }
+                            )
+                except Exception:
+                    pass
 
         # 5. Graph exploration (callers/callees) & Tests with deterministic seeds
         t_graph_start = time.perf_counter()

@@ -1,12 +1,14 @@
 # Changelog
 
-## 2.1.7 (Large Repository Indexing, Windows Output Safety & MCP Process Lifecycle Hardening)
+## 2.1.8 (Windows Output Safety, MCP Process Lifecycle Hardening & Dynamic Hot-Reload)
 
 ### Windows Output Safety, MCP Process Lifecycle & Dynamic Hot-Reload
 - **Windows Terminal Encoding Safety (`src/codegraph/cli_output.py`)**: Centralized stream encoding detection (`detect_stream_encoding`, `supports_unicode`, `cli_echo`) that safely degrades Unicode symbols (`✓` → `[OK]`, `✗` → `[ERROR]`, `⚠` → `[WARN]`, `↻` → `[REPAIRED]`, `(•)` → `(*)`) on Windows `cp1252` / `cp437` / ASCII terminals and redirected pipes while preserving rich Unicode on UTF-8 terminals and keeping `--json` strictly machine-readable.
 - **Deterministic MCP Process Lifecycle & Orphan Prevention (`src/codegraph/process_lifecycle.py`)**: `codegraph mcp serve` records verified process ownership metadata (`pid`, `parent_pid`, creation timestamps, executable signature, repository path) in `~/.codegraph/processes/pid_<pid>.json` and monitors `stdin` EOF and parent-process liveness across Windows (`kernel32`), macOS (`libSystem` `proc_pidinfo`), and Linux (`/proc`) so MCP servers shut down cleanly when the parent IDE/agent closes or crashes.
 - **Safe `codegraph stop` & `codegraph doctor --processes`**: Added `codegraph stop` (`--all`, `--repo`, `--timeout`, `--json`), `codegraph mcp stop`, `codegraph mcp kill`, and `codegraph doctor --processes` to release Windows `codegraph.exe` locks (`WinError 32` prevention) while verifying PID creation timestamps so reused/unrelated PIDs are never terminated.
 - **Dynamic Index Hot-Reloading (`src/codegraph/mcp/server.py`)**: If `codegraph mcp serve` starts before `codegraph init` is run, the running MCP server automatically detects `.codegraph.sqlite3` creation or modification on the next tool call and invalidates stale in-memory graph/parse caches without requiring an IDE or MCP server restart.
+
+## 2.1.7 (Large Repository Indexing & Performance Optimization)
 
 ### Performance & Scalability
 - **16-Phase Indexing Telemetry (`src/codegraph/indexing/telemetry.py`)**: Deterministic phase timing, item/file counters, throughput (`files/sec`, `edges/sec`), RSS memory tracking (`rss_before_mb`, `post_parse_rss_mb`, `peak_rss_mb`, `steady_state_rss_mb`), `peak_tracemalloc_mb`, and SQLite WAL size tracking across all 16 indexing phases.

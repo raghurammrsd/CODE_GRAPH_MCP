@@ -1,63 +1,64 @@
 {
   "category_summary": {
     "UNDERSTAND": {
-      "fn_count": 3,
-      "fp_count": 34,
+      "fn_count": 1,
+      "fp_count": 48,
       "violations": 0
     },
     "DEBUG": {
-      "fn_count": 2,
-      "fp_count": 51,
+      "fn_count": 1,
+      "fp_count": 67,
       "violations": 0
     },
     "TRACE": {
-      "fn_count": 2,
-      "fp_count": 46,
+      "fn_count": 1,
+      "fp_count": 66,
       "violations": 0
     },
     "CHANGE": {
       "fn_count": 1,
-      "fp_count": 40,
+      "fp_count": 65,
       "violations": 0
     },
     "IMPACT": {
       "fn_count": 2,
-      "fp_count": 44,
+      "fp_count": 47,
       "violations": 0
     },
     "REVIEW": {
-      "fn_count": 5,
-      "fp_count": 27,
+      "fn_count": 6,
+      "fp_count": 23,
       "violations": 0
     },
     "REFACTOR": {
-      "fn_count": 4,
-      "fp_count": 31,
+      "fn_count": 2,
+      "fp_count": 64,
       "violations": 0
     },
     "TEST": {
-      "fn_count": 0,
-      "fp_count": 45,
+      "fn_count": 5,
+      "fp_count": 34,
       "violations": 0
     },
     "ARCHITECTURE": {
-      "fn_count": 17,
-      "fp_count": 6,
+      "fn_count": 3,
+      "fp_count": 48,
       "violations": 0
     },
     "EXPLAIN": {
-      "fn_count": 2,
-      "fp_count": 40,
+      "fn_count": 0,
+      "fp_count": 55,
       "violations": 0
     }
   },
   "fn_totals": {
-    "TARGET_RESOLUTION": 72
+    "TARGET_RESOLUTION": 47
   },
   "fp_totals": {
-    "DUPLICATE_SYMBOL": 45,
-    "TEST_NOISE": 102,
-    "FRAMEWORK_NOISE": 50,
-    "LEXICAL_NOISE": 212
+    "FRAMEWORK_NOISE": 83,
+    "GRAPH_POLLUTION": 75,
+    "DUPLICATE_SYMBOL": 34,
+    "LEXICAL_NOISE": 270,
+    "TEST_NOISE": 89
   }
 }

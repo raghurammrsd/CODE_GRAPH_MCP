@@ -18,7 +18,7 @@
   },
   "results": {
     "total_tasks": 50,
-    "avg_latency_ms": 26.5,
+    "avg_latency_ms": 60.0,
     "symbol_precision": 0.087,
     "symbol_recall": 0.53,
     "relationship_precision": 0.46,

@@ -2,14 +2,14 @@
   <img src="docs/assets/codegraph_logo.jpg" alt="CodeGraph MCP — Deep Deterministic Repository Intelligence for AI Coding Agents" width="500" />
 </p>
 
-<h1 align="center">CodeGraph-MCP Engine (v2.1.7)</h1>
+<h1 align="center">CodeGraph-MCP Engine (v2.1.8)</h1>
 
 <p align="center">
   <strong>Deep deterministic repository intelligence for AI coding agents.</strong>
 </p>
 
 <p align="center">
-  <a href="https://pypi.org/project/codegraph-engine/2.1.7/"><img src="https://img.shields.io/badge/pypi-codegraph--engine%20v2.1.7-blue.svg" alt="PyPI: codegraph-engine v2.1.7" /></a>
+  <a href="https://pypi.org/project/codegraph-engine/2.1.8/"><img src="https://img.shields.io/badge/pypi-codegraph--engine%20v2.1.8-blue.svg" alt="PyPI: codegraph-engine v2.1.8" /></a>
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/python-3.12%20%7C%203.13-3776AB.svg" alt="Python 3.12 | 3.13" /></a>
   <a href="src/codegraph/mcp/server.py"><img src="https://img.shields.io/badge/MCP-14%20default%20%7C%2056%20full%20tools-2ea043.svg" alt="MCP Tools: 14 default | 56 full" /></a>
   <a href="tests/"><img src="https://img.shields.io/badge/pytest-853%20passed-brightgreen.svg" alt="Tests: 853 passed" /></a>
@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="https://pypi.org/project/codegraph-engine/2.1.7/"><strong>PyPI (v2.1.7)</strong></a> •
+  <a href="https://pypi.org/project/codegraph-engine/2.1.8/"><strong>PyPI (v2.1.8)</strong></a> •
   <a href="#2-quickstart-30-second-setup"><strong>Quickstart</strong></a> •
   <a href="#1-built-for-aiml-and-backend-heavy-repositories"><strong>Built For</strong></a> •
   <a href="#5-database-intelligence"><strong>Database Intelligence</strong></a> •
