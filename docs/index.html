@@ -78,8 +78,8 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; font-family: var(--font-sans); color: var(--text-body); background: var(--bg); overflow-x: hidden; max-width: 100vw; }
-    body { min-height: 100vh; line-height: 1.6; overflow-x: hidden; width: 100%; max-width: 100vw; }
+    html { scroll-behavior: smooth; font-family: var(--font-sans); color: var(--text-body); background: var(--bg); }
+    body { min-height: 100vh; line-height: 1.6; width: 100%; overflow-x: clip; }
     [id] { scroll-margin-top: 80px; }
 
     /* Sticky Universal Header */
@@ -373,7 +373,10 @@
 
     /* 3-Column Book Layout (Exact layout from user screenshot) */
     .book-layout-wrap {
-      display: flex; min-height: 100vh; width: 100%;
+      display: flex;
+      align-items: flex-start;
+      min-height: 100vh;
+      width: 100%;
       border-top: 1px solid var(--border);
       background: #ffffff;
     }
@@ -382,8 +385,10 @@
     aside.book-sidebar-left {
       width: var(--sidebar-w); flex-shrink: 0;
       position: sticky; top: 60px; height: calc(100vh - 60px);
-      overflow-y: auto; background: #ffffff; border-right: 1px solid var(--border);
-      padding: 1.5rem 1rem 6rem 1.25rem; margin: 0;
+      align-self: flex-start;
+      overflow-y: auto; overscroll-behavior: contain;
+      background: #ffffff; border-right: 1px solid var(--border);
+      padding: 1.25rem 0.85rem 3rem 1.15rem; margin: 0;
       scrollbar-width: thin;
       scrollbar-color: transparent transparent;
       transition: scrollbar-color 0.2s ease;
@@ -399,25 +404,25 @@
     .group-header-row {
       display: flex; align-items: center; justify-content: space-between;
       font-size: 0.72rem; font-weight: 800; color: #404040;
-      text-transform: uppercase; letter-spacing: 0.06em; margin: 1.35rem 0 0.4rem 0.4rem;
+      text-transform: uppercase; letter-spacing: 0.06em; margin: 1.1rem 0 0.35rem 0.35rem;
       cursor: pointer; user-select: none;
     }
     .group-header-row:first-child { margin-top: 0; }
     .chevron-icon { font-size: 0.75rem; color: #737373; transition: transform 0.15s ease; }
     .chevron-icon.closed { transform: rotate(-90deg); }
 
-    .nav-items-block { list-style: none; margin-bottom: 0.75rem; }
+    .nav-items-block { list-style: none; margin-bottom: 0.65rem; }
     .nav-items-block.closed { display: none; }
     .nav-link-entry {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 0.38rem 0.65rem; font-size: 0.86rem; color: #475569;
+      padding: 0.32rem 0.6rem; font-size: 0.84rem; color: #475569;
       text-decoration: none; font-weight: 500; border-left: 2px solid transparent;
       transition: all 0.12s ease; border-radius: 0 5px 5px 0;
     }
     .nav-link-entry:hover { color: #0f172a; background: #f8fafc; }
     .nav-link-entry.active {
       color: #2563eb; font-weight: 700; border-left-color: #2563eb; background: #eff6ff;
-      padding-left: 0.65rem;
+      padding-left: 0.6rem;
     }
     .count-badge-mini {
       font-family: var(--font-mono); font-size: 0.68rem; background: #f0f0f0;
@@ -457,8 +462,10 @@
     aside.book-toc-right {
       width: var(--toc-w); flex-shrink: 0;
       position: sticky; top: 60px; height: calc(100vh - 60px);
-      overflow-y: auto; background: #ffffff; border-left: 1px solid var(--border);
-      padding: 1.5rem 1.25rem 4rem 1.25rem; margin: 0;
+      align-self: flex-start;
+      overflow-y: auto; overscroll-behavior: contain;
+      background: #ffffff; border-left: 1px solid var(--border);
+      padding: 1.25rem 1.15rem 3rem 1.15rem; margin: 0;
       scrollbar-width: none;
     }
     aside.book-toc-right::-webkit-scrollbar { display: none; }
