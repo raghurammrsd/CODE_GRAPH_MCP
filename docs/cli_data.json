@@ -1,0 +1,165 @@
+[
+  {
+    "command": "codegraph init [PATH]",
+    "category": "Core Lifecycle",
+    "summary": "Initialize repository indexing and configuration.",
+    "problem_solved": "Creates the persistent SQLite index (.codegraph.sqlite3) and sets up the project graph cache without requiring external DB infrastructure.",
+    "flags": [
+      "--repository, -r <path>: Repository path",
+      "--json: Machine-readable JSON output"
+    ],
+    "example": "codegraph init .",
+    "output": "Initialized CodeGraph repository at /path/to/repo (indexed 190 files)"
+  },
+  {
+    "command": "codegraph index [PATH]",
+    "category": "Core Lifecycle",
+    "summary": "Perform incremental AST & relationship indexing with 16-phase telemetry.",
+    "problem_solved": "Detects modified or deleted files using content hashes and Git commits; only re-indexes what changed in milliseconds.",
+    "flags": [
+      "--verbose, -v: Show phase-by-phase timings and memory usage",
+      "--quiet, -q: Suppress progress blocks",
+      "--json: Output phase metrics as JSON"
+    ],
+    "example": "codegraph index . --verbose",
+    "output": "Phase: Repository Scan [190/190 files, 100%] elapsed: 0.09s\nPhase: Final Commit & Checkpoint\nscanned=190 indexed=1 unchanged=189 removed=0"
+  },
+  {
+    "command": "codegraph status [PATH]",
+    "category": "Health & Freshness",
+    "summary": "Inspect index freshness, file counts, and resource consumption in < 5ms.",
+    "problem_solved": "Eliminates slow full-repo scans before queries by checking git commit HEAD match and working tree status instantly.",
+    "flags": [
+      "--repository, -r <path>: Repository path"
+    ],
+    "example": "codegraph status .",
+    "output": "{\n  \"status\": \"FRESH\",\n  \"files\": 190,\n  \"symbols\": 1944,\n  \"graph_edges\": 14293,\n  \"resource_profile\": \"BALANCED\"\n}"
+  },
+  {
+    "command": "codegraph doctor [PATH]",
+    "category": "Health & Freshness",
+    "summary": "Verify SQLite schema integrity, foreign keys, FTS search, and orphaned processes.",
+    "problem_solved": "Detects database corruption, schema mismatches, duplicate canonical symbol IDs, and stale background processes.",
+    "flags": [
+      "--database: Run deep schema & foreign key checks",
+      "--processes: Audit active MCP processes and parent PIDs",
+      "--json: Output diagnostic report as JSON"
+    ],
+    "example": "codegraph doctor --database",
+    "output": "{\n  \"status\": \"OK\",\n  \"database_version\": 8,\n  \"foreign_keys\": true,\n  \"issues\": []\n}"
+  },
+  {
+    "command": "codegraph run <COMMAND...>",
+    "category": "Runtime Telemetry",
+    "summary": "Zero-friction runtime telemetry interceptor.",
+    "problem_solved": "Bypasses the complexity of setting up OpenTelemetry or Pino streaming. Injects lightweight NODE_OPTIONS or PYTHONSTARTUP hooks to record live HTTP routes, latencies, and uncaught exceptions directly into SQLite.",
+    "flags": [
+      "--sample-rate <float>: Trace sampling rate (0.0 to 1.0, default 1.0)"
+    ],
+    "example": "codegraph run npm run dev\n# or\ncodegraph run uvicorn main:app --reload",
+    "output": ">> Dev server active on port 8000\n[CodeGraph Runtime Interceptor: Captured 14 HTTP spans -> .codegraph/runtime.sqlite3]"
+  },
+  {
+    "command": "codegraph serve [PATH]",
+    "category": "MCP Server",
+    "summary": "Run the Model Context Protocol (MCP) server over stdio or SSE HTTP.",
+    "problem_solved": "Connects AI coding agents (Claude, Cursor, Antigravity) to the repository intelligence graph via JSON-RPC standard I/O or persistent SSE HTTP.",
+    "flags": [
+      "--profile <name>: Tool profile (core | minimal | agent | developer | full)",
+      "--transport, -t <stdio|sse>: Transport layer (default: stdio)",
+      "--host <str>: Host for SSE server (default: 127.0.0.1)",
+      "--port, -p <int>: Port for SSE server (default: 8765)"
+    ],
+    "example": "codegraph serve . --transport sse --port 8765",
+    "output": "CodeGraph MCP server running on http://127.0.0.1:8765/sse (56 tools registered)"
+  },
+  {
+    "command": "codegraph stop [PATH]",
+    "category": "Process Lifecycle",
+    "summary": "Safely terminate active CodeGraph background processes and release SQLite file locks.",
+    "problem_solved": "Prevents \"database is locked\" crashes by gracefully signalling MCP servers to close connections before unmounting or updating.",
+    "flags": [
+      "--all, -a: Stop all CodeGraph processes across all repositories",
+      "--timeout <sec>: Graceful shutdown timeout before SIGKILL",
+      "--json: Output machine-readable JSON"
+    ],
+    "example": "codegraph stop --json",
+    "output": "{\n  \"status\": \"ok\",\n  \"stopped_count\": 1,\n  \"stale_cleaned_count\": 0\n}"
+  },
+  {
+    "command": "codegraph install [PATH]",
+    "category": "Agent Onboarding",
+    "summary": "Idempotently detect and configure AI coding agents.",
+    "problem_solved": "Eliminates manual JSON config editing. Detects Claude Code, Cursor, Antigravity, Cline, and Codex; injects mcpServers and safe marker-bounded instructions.",
+    "flags": [
+      "--target, -t <auto|all|agent>: Target specific agents",
+      "--location, -l <local|global>: Project (.cursor/mcp.json) vs user global (~/.claude.json)",
+      "--yes, -y: Non-interactive confirmation",
+      "--dry-run: Preview changes without writing"
+    ],
+    "example": "codegraph install --yes --target auto --location local",
+    "output": "Configured Claude Code (CLAUDE.md, .mcp.json)\nConfigured Cursor (.cursor/mcp.json, .cursorrules)\nConfigured Antigravity (.agents/mcp_config.json, AGENTS.md)"
+  },
+  {
+    "command": "codegraph search <QUERY>",
+    "category": "Code Exploration",
+    "summary": "Search symbols and text chunks with AST-verified evidence.",
+    "problem_solved": "Combines SQLite FTS5 lexical matching with exact symbol grounding; returns exact file lines, content hashes, and match confidence.",
+    "flags": [
+      "--repository, -r <path>: Repository path",
+      "--top_k <int>: Number of results to return (default: 10)",
+      "--json: Machine-readable JSON output"
+    ],
+    "example": "codegraph search \"create_order\" -r .",
+    "output": "Found 1 symbol match:\n  src/app/orders.py:42 function create_order(user_id: int, items: list) -> Order"
+  },
+  {
+    "command": "codegraph routes [PATH]",
+    "category": "Framework Intelligence",
+    "summary": "Discover HTTP endpoints with composed router mount prefixes.",
+    "problem_solved": "Finds composite router mounts across FastAPI, Flask, Django, and Express. Handles include_router prefixes and nested mounts statically.",
+    "flags": [
+      "--limit <int>: Bounded pagination limit (default: 50)",
+      "--offset <int>: Pagination offset (default: 0)",
+      "--json: Output routes as JSON"
+    ],
+    "example": "codegraph routes -r . --limit 3",
+    "output": "Found 3 route(s):\n  [GET]  /api/v1/health -> health_check (src/api.py:14)\n  [POST] /api/v1/orders -> create_order (src/orders.py:42)\n  [GET]  /api/v1/users/{id} -> get_user (src/users.py:88)"
+  },
+  {
+    "command": "codegraph trace <SYMBOL>",
+    "category": "Graph Traversal",
+    "summary": "Trace a symbol definition, callers, and callees with explicit confidence labels.",
+    "problem_solved": "Traverses AST call graphs multi-hops deep, highlighting exact call sites and distinguishing AST_VERIFIED from dynamic UNKNOWN calls.",
+    "flags": [
+      "-d, --depth <int>: Traversal depth (default: 1)",
+      "--json: Output call hierarchy as JSON"
+    ],
+    "example": "codegraph trace OrderService.create_order -d 2",
+    "output": "Symbol: OrderService.create_order (src/services/order.py:28)\n  \u25b2 Callers (1):\n    - [AST_VERIFIED] api.create_order_endpoint (src/api.py:52)\n  \u25bc Callees (2):\n    - [AST_VERIFIED] UserRepository.get_by_id (src/db/users.py:15)\n    - [AST_VERIFIED] OrderRepository.insert (src/db/orders.py:40)"
+  },
+  {
+    "command": "codegraph context <QUERY>",
+    "category": "Context Optimization",
+    "summary": "Compile token-budgeted ContextPacket for an AI agent task.",
+    "problem_solved": "Selects the top high-signal symbols and slices needed for a specific task intent (DEBUG, TRACE, REVIEW) fitting strictly within a token budget.",
+    "flags": [
+      "--intent <str>: Task intent (UNDERSTAND | DEBUG | TRACE | REVIEW | IMPACT)",
+      "--max-tokens <int>: Token limit (default: 8000)",
+      "--json: Output serialized ContextPacket"
+    ],
+    "example": "codegraph context \"fix order validation error\" --intent DEBUG",
+    "output": "ContextPacket compiled (540 tokens, reduction: 78.4%):\n  - 4 confirmed symbols, 2 database tables, 1 covering test"
+  },
+  {
+    "command": "codegraph privacy [PATH]",
+    "category": "Security & Compliance",
+    "summary": "Verify repository privacy boundaries and ensure no sensitive data is indexed.",
+    "problem_solved": "Scans SQLite database to guarantee that .env files, RSA private keys, JWTs, and database credentials have been redacted and never saved.",
+    "flags": [
+      "--json: Output privacy audit as JSON"
+    ],
+    "example": "codegraph privacy .",
+    "output": "Privacy Audit PASSED: 0 sensitive files indexed, 0 exposed secrets found."
+  }
+]

@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeGraph MCP Documentation | Deterministic Codebase Intelligence</title>
+  <meta name="description" content="Production documentation for CodeGraph MCP Engine (v2.2.1). Compiler-grade AST code relationships, database lineages, route mapping, and runtime telemetry for AI coding agents.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --bg-card: rgba(16, 24, 40, 0.75);
+      --bg-card-hover: rgba(23, 35, 59, 0.9);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(59, 130, 246, 0.35);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --primary: #3b82f6;
+      --primary-glow: rgba(59, 130, 246, 0.25);
+      --emerald: #10b981;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; background: var(--bg); color: var(--text); font-family: var(--font-sans); }
+    body { min-height: 100vh; line-height: 1.6; overflow-x: hidden; }
+    
+    .bg-canvas {
+      position: fixed; inset: 0; pointer-events: none; z-index: -1;
+      background: 
+        radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 65%, rgba(16, 185, 129, 0.08) 0%, transparent 45%),
+        linear-gradient(to bottom, #090d16 0%, #060911 100%);
+    }
+    .grid-lines {
+      position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0.15;
+      background-size: 40px 40px;
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    }
+
+    .app-container { display: flex; flex-direction: column; min-height: 100vh; }
+    header.navbar {
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      background: rgba(9, 13, 22, 0.85);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: inherit; }
+    .brand img { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); }
+    .brand-title { font-weight: 700; font-size: 1.15rem; letter-spacing: -0.02em; }
+    .brand-badge {
+      font-size: 0.7rem; font-family: var(--font-mono); font-weight: 600;
+      background: rgba(59, 130, 246, 0.15); color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 9999px; padding: 0.15rem 0.5rem;
+    }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-link {
+      color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500;
+      transition: color 0.15s ease;
+    }
+    .nav-link:hover { color: var(--text); }
+    .btn-github {
+      background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border);
+      color: var(--text); padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.85rem;
+      font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 0.5rem;
+      transition: all 0.15s ease;
+    }
+    .btn-github:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.2); }
+
+    .hero {
+      padding: 5rem 2rem 3rem; text-align: center; max-width: 1040px; margin: 0 auto;
+    }
+    .pill-announcement {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25);
+      color: #34d399; font-size: 0.8rem; font-weight: 600; font-family: var(--font-mono);
+      padding: 0.35rem 0.9rem; border-radius: 9999px; margin-bottom: 1.75rem;
+    }
+    .hero h1 {
+      font-size: clamp(2.2rem, 5vw, 3.8rem); font-weight: 800; line-height: 1.15;
+      letter-spacing: -0.03em; margin-bottom: 1.25rem;
+      background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero p.lead {
+      font-size: 1.15rem; color: var(--text-muted); max-width: 780px; margin: 0 auto 2.5rem;
+      font-weight: 400; line-height: 1.65;
+    }
+    .hero-actions { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 3rem; }
+    .btn-primary {
+      background: var(--primary); color: #fff; padding: 0.75rem 1.6rem; border-radius: 10px;
+      font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;
+      box-shadow: 0 4px 20px var(--primary-glow); transition: all 0.2s ease;
+    }
+    .btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05); color: var(--text); border: 1px solid var(--border);
+      padding: 0.75rem 1.6rem; border-radius: 10px; font-weight: 600; text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.1); }
+
+    .quick-install {
+      background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border);
+      border-radius: 12px; padding: 0.75rem 1.25rem; max-width: 580px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between; font-family: var(--font-mono);
+      font-size: 0.9rem; color: #cbd5e1;
+    }
+    .copy-btn {
+      background: transparent; border: none; color: var(--text-muted); cursor: pointer;
+      font-size: 0.85rem; font-family: var(--font-sans); font-weight: 600; padding: 0.25rem 0.5rem;
+      border-radius: 6px; transition: all 0.15s ease;
+    }
+    .copy-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+
+    .content-layout {
+      max-width: 1400px; margin: 0 auto; width: 100%;
+      display: grid; grid-template-columns: 280px 1fr; gap: 2.5rem;
+      padding: 2rem;
+    }
+    @media (max-width: 960px) {
+      .content-layout { grid-template-columns: 1fr; }
+      aside.sidebar { display: none; }
+    }
+
+    aside.sidebar {
+      position: sticky; top: 5.5rem; height: calc(100vh - 7rem);
+      overflow-y: auto; padding-right: 1rem;
+    }
+    .sidebar-section { margin-bottom: 1.5rem; }
+    .sidebar-title {
+      font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-dim); font-weight: 700; margin-bottom: 0.6rem;
+    }
+    .sidebar-nav { list-style: none; display: flex; flex-direction: column; gap: 0.25rem; }
+    .sidebar-link {
+      display: block; color: var(--text-muted); text-decoration: none;
+      font-size: 0.875rem; padding: 0.4rem 0.75rem; border-radius: 6px;
+      transition: all 0.15s ease;
+    }
+    .sidebar-link:hover, .sidebar-link.active {
+      color: #fff; background: rgba(255, 255, 255, 0.06);
+    }
+    .sidebar-link.active { color: #60a5fa; font-weight: 600; }
+
+    main.main-content { min-width: 0; }
+    .doc-section { margin-bottom: 4.5rem; scroll-margin-top: 6rem; }
+    .section-header { margin-bottom: 1.75rem; }
+    .section-badge {
+      display: inline-block; font-size: 0.75rem; font-family: var(--font-mono); font-weight: 600;
+      color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;
+    }
+    .section-title { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+    .section-desc { color: var(--text-muted); font-size: 1rem; max-width: 850px; }
+
+    .grid-cards-3 {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem;
+    }
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.5rem; transition: all 0.2s ease;
+    }
+    .card:hover { border-color: var(--border-accent); transform: translateY(-2px); background: var(--bg-card-hover); }
+    .card-icon {
+      font-size: 1.2rem; margin-bottom: 0.75rem; color: #60a5fa; font-family: var(--font-mono); font-weight: 700;
+    }
+    .card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.4rem; color: #fff; }
+    .card p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.55; }
+
+    .benchmark-table {
+      width: 100%; border-collapse: collapse; margin-top: 1.25rem; font-size: 0.9rem;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.85rem 1.15rem; text-align: left; border-bottom: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      background: rgba(255, 255, 255, 0.03); color: var(--text-dim);
+      font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:last-child td { border-bottom: none; }
+    .badge-pass {
+      display: inline-block; background: rgba(16, 185, 129, 0.15); color: #34d399;
+      font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700;
+      padding: 0.2rem 0.5rem; border-radius: 4px;
+    }
+
+    .diagram-container {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.5rem; margin-top: 1.5rem; overflow-x: auto; text-align: center;
+    }
+    .diagram-container img { max-width: 100%; height: auto; border-radius: 8px; }
+
+    .filter-container {
+      display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center;
+    }
+    .search-input {
+      flex: 1; min-width: 260px; background: rgba(16, 24, 40, 0.8);
+      border: 1px solid var(--border); border-radius: 8px; padding: 0.65rem 1rem;
+      color: #fff; font-family: var(--font-sans); font-size: 0.9rem; outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .search-input:focus { border-color: var(--primary); }
+    .tag-filter {
+      display: flex; gap: 0.5rem; flex-wrap: wrap;
+    }
+    .filter-btn {
+      background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border);
+      color: var(--text-muted); padding: 0.4rem 0.8rem; border-radius: 6px;
+      font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease;
+    }
+    .filter-btn.active, .filter-btn:hover {
+      background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.35);
+    }
+
+    .item-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.5rem; margin-bottom: 1rem; transition: border-color 0.15s ease;
+    }
+    .item-card:hover { border-color: var(--border-accent); }
+    .item-header {
+      display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap;
+      gap: 0.75rem; margin-bottom: 0.6rem;
+    }
+    .item-title {
+      font-family: var(--font-mono); font-size: 1.05rem; font-weight: 700; color: #60a5fa;
+    }
+    .item-badges { display: flex; gap: 0.4rem; }
+    .item-badge {
+      font-size: 0.7rem; font-family: var(--font-mono); font-weight: 600; padding: 0.15rem 0.45rem;
+      border-radius: 4px; background: rgba(255, 255, 255, 0.06); color: var(--text-muted);
+    }
+    .item-badge.profile { background: rgba(139, 92, 246, 0.15); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.3); }
+    .item-desc { color: var(--text); font-size: 0.95rem; margin-bottom: 0.85rem; }
+    .item-subfield { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+    .item-subfield strong { color: #cbd5e1; font-weight: 600; }
+
+    .code-box {
+      background: #060911; border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px; padding: 0.85rem 1rem; font-family: var(--font-mono);
+      font-size: 0.85rem; color: #e2e8f0; overflow-x: auto; margin-top: 0.5rem;
+      position: relative;
+    }
+    .code-box pre { margin: 0; white-space: pre-wrap; word-break: break-all; }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 3rem 2rem; text-align: center;
+      color: var(--text-dim); font-size: 0.85rem; margin-top: 5rem;
+    }
+    footer a { color: var(--text-muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="bg-canvas"></div>
+  <div class="grid-lines"></div>
+
+  <div class="app-container">
+    <header class="navbar">
+      <a href="#" class="brand">
+        <img src="assets/codegraph_logo.jpg" alt="CodeGraph Logo">
+        <span class="brand-title">CodeGraph MCP</span>
+        <span class="brand-badge">v2.2.1</span>
+      </a>
+      <nav class="nav-links">
+        <a href="#overview" class="nav-link">Overview</a>
+        <a href="#cli-reference" class="nav-link">CLI Commands</a>
+        <a href="#tools-catalog" class="nav-link">56 MCP Tools</a>
+        <a href="#benchmarks" class="nav-link">Benchmarks</a>
+        <a href="https://pypi.org/project/codegraph-engine/2.2.1/" class="nav-link" target="_blank">PyPI</a>
+        <a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP" class="btn-github" target="_blank">
+          <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+          GitHub
+        </a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="pill-announcement">v2.2.1 Production Release Live on PyPI</div>
+      <h1>Deterministic Codebase Intelligence for AI Coding Agents</h1>
+      <p class="lead">
+        Stop AI hallucinations. CodeGraph MCP equips LLM coding agents with compiler-grade AST semantics, live route hierarchies, database table lineages, and non-invasive runtime telemetry.
+      </p>
+      <div class="hero-actions">
+        <a href="#quickstart" class="btn-primary">Quickstart in 30 Seconds</a>
+        <a href="#tools-catalog" class="btn-secondary">Explore 56 MCP Tools</a>
+      </div>
+      <div class="quick-install">
+        <span>pip install &quot;codegraph-engine[mcp]&quot;</span>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText('pip install &quot;codegraph-engine[mcp]&quot;'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 1800);">Copy</button>
+      </div>
+    </section>
+
+    <div class="content-layout">
+      <aside class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-title">Getting Started</div>
+          <ul class="sidebar-nav">
+            <li><a href="#overview" class="sidebar-link">Overview</a></li>
+            <li><a href="#quickstart" class="sidebar-link">30s Quickstart</a></li>
+            <li><a href="#architecture" class="sidebar-link">Architecture</a></li>
+          </ul>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">Capabilities</div>
+          <ul class="sidebar-nav">
+            <li><a href="#cli-reference" class="sidebar-link">CLI Reference (13 cmds)</a></li>
+            <li><a href="#tools-catalog" class="sidebar-link">56 MCP Tools Catalog</a></li>
+            <li><a href="#benchmarks" class="sidebar-link">Performance Benchmarks</a></li>
+          </ul>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <section id="overview" class="doc-section">
+          <div class="section-header">
+            <span class="section-badge">Core Philosophy</span>
+            <h2 class="section-title">The Problem with AI Code Exploration</h2>
+            <p class="section-desc">
+              AI coding agents currently rely on brute-force text search (grep / ripgrep) to navigate repositories. In enterprise codebases, this pattern introduces major operational bottlenecks:
+            </p>
+          </div>
+
+          <div class="grid-cards-3">
+            <div class="card">
+              <div class="card-icon">01</div>
+              <h3>Context Window Saturation</h3>
+              <p>Dumping 2,000-line files to find one caller exhausts 80% of an LLM prompt. CodeGraph slices targeted 50-line AST ranges, reducing token usage by 65% to 85%.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">02</div>
+              <h3>Relationship Hallucinations</h3>
+              <p>Text search cannot determine if a function is called, injected, or overridden. CodeGraph proves multi-hop call chains with fail-closed evidence.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">03</div>
+              <h3>Database &amp; Route Blindspots</h3>
+              <p>Agents lose track of FastAPI prefix mounts and ORM table writers. CodeGraph indexes composite route trees and database readers/writers statically.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="quickstart" class="doc-section">
+          <div class="section-header">
+            <span class="section-badge">Setup Guide</span>
+            <h2 class="section-title">30-Second Quickstart</h2>
+            <p class="section-desc">Install from PyPI, automatically onboard your AI editor, and initialize your project index.</p>
+          </div>
+
+          <div class="item-card">
+            <div class="item-title">1. Install Package</div>
+            <p class="item-desc">Install the engine and MCP server dependencies:</p>
+            <div class="code-box"><pre>pip install &quot;codegraph-engine[mcp]&quot;</pre></div>
+          </div>
+
+          <div class="item-card">
+            <div class="item-title">2. Onboard AI Agents Automatically</div>
+            <p class="item-desc">Detects Claude Code, Cursor, Antigravity, and Cline; configures `mcpServers` and safe instructions:</p>
+            <div class="code-box"><pre>codegraph install --yes --target auto --location local</pre></div>
+          </div>
+
+          <div class="item-card">
+            <div class="item-title">3. Initialize Index &amp; Verify Readiness</div>
+            <p class="item-desc">Indexes the local codebase into an embedded SQLite database (`.codegraph.sqlite3`):</p>
+            <div class="code-box"><pre>cd my-project
+codegraph init
+codegraph doctor --database</pre></div>
+          </div>
+
+          <div class="item-card">
+            <div class="item-title">4. Optional: Run With Dev Server Telemetry</div>
+            <p class="item-desc">Transparent 1-line wrapper to capture live HTTP routes and exceptions directly into the graph:</p>
+            <div class="code-box"><pre>codegraph run npm run dev
+# or for Python FastAPI:
+codegraph run uvicorn main:app --reload</pre></div>
+          </div>
+        </section>
+
+        <section id="architecture" class="doc-section">
+          <div class="section-header">
+            <span class="section-badge">Architecture &amp; Concurrency</span>
+            <h2 class="section-title">Low-Latency Concurrency Pipeline</h2>
+            <p class="section-desc">Enforced SQLite WAL mode, sub-5ms Git commit freshness checks, and dual-transport stdio/SSE communication.</p>
+          </div>
+          <div class="diagram-container">
+            <img src="assets/v22_concurrency_runtime_pipeline.svg" alt="CodeGraph Architecture Pipeline">
+          </div>
+        </section>
+
+        <section id="cli-reference" class="doc-section">
+          <div class="section-header">
+            <span class="section-badge">Command Line Interface</span>
+            <h2 class="section-title">CLI Reference &amp; Problem Solving Guide</h2>
+            <p class="section-desc">Detailed breakdown of every `codegraph` command, what operational bottlenecks it resolves, and real execution outputs.</p>
+          </div>
+
+          <div id="cli-list">
+            <div class="item-card">
+              <div class="item-header">
+                <span class="item-title">codegraph init [PATH]</span>
+                <span class="item-badge">Core Lifecycle</span>
+              </div>
+              <p class="item-desc">Initialize repository indexing and configuration.</p>
+              <div class="item-subfield"><strong>Problem Solved:</strong> Creates the persistent SQLite index (.codegraph.sqlite3) and sets up the project graph cache without requiring external DB infrastructure.</div>
+              <div class="item-subfield"><strong>Flags &amp; Options:</strong>
+                <ul style="margin-left: 1.5rem; margin-top: 0.25rem;"><li><code>--repository, -r <path></code>:  Repository path</li><li><code>--json</code>:  Machine-readable JSON output</li></ul>
+              </div>
+              <div class="code-box"><pre>$ codegraph init .
+
+Initialized CodeGraph repository at /path/to/repo (indexed 190 files)</pre></div>
+            </div>
+            <div class="item-card">
+              <div class="item-header">
+                <span class="item-title">codegraph index [PATH]</span>
+                <span class="item-badge">Core Lifecycle</span>
+              </div>
+              <p class="item-desc">Perform incremental AST & relationship indexing with 16-phase telemetry.</p>
+              <div class="item-subfield"><strong>Problem Solved:</strong> Detects modified or deleted files using content hashes and Git commits; only re-indexes what changed in milliseconds.</div>
+              <div class="item-subfield"><strong>Flags &amp; Options:</strong>
+                <ul style="margin-left: 1.5rem; margin-top: 0.25rem;"><li><code>--verbose, -v</code>:  Show phase-by-phase timings and memory usage</li><li><code>--quiet, -q</code>:  Suppress progress blocks</li><li><code>--json</code>:  Output phase metrics as JSON</li></ul>
+              </div>
+              <div class="code-box"><pre>$ codegraph index . --verbose
+
+Phase: Repository Scan [190/190 files, 100%] elapsed: 0.09s
+Phase: Final Commit & Checkpoint
+scanned=190 indexed=1 unchanged=189 removed=0</pre></div>
+            </div>
+            <div class="item-card">
+              <div class="item-header">
+                <span class="item-title">codegraph status [PATH]</span>
+                <span class="item-badge">Health & Freshness</span>
+              </div>
+              <p class="item-desc">Inspect index freshness, file counts, and resource consumption in < 5ms.</p>
+              <div class="item-subfield"><strong>Problem Solved:</strong> Eliminates slow full-repo scans before queries by checking git commit HEAD match and working tree status instantly.</div>
+              <div class="item-subfield"><strong>Flags &amp; Options:</strong>
+                <ul style="margin-left: 1.5rem; margin-top: 0.25rem;"><li><code>--repository, -r <path></code>:  Repository path</li></ul>
+              </div>
+              <div class="code-box"><pre>$ codegraph status .
+
+{
+  "status": "FRESH",
+  "files": 190,
+  "symbols": 1944,
+  "graph_edges": 14293,
+  "resource_profile": "BALANCED"
+}</pre></div>
+            </div>
+            <div class="item-card">
+              <div class="item-header">
+                <span class="item-title">codegraph doctor [PATH]</span>
+                <span class="item-badge">Health & Freshness</span>
+              </div>
+              <p class="item-desc">Verify SQLite schema integrity, foreign keys, FTS search, and orphaned processes.</p>
+              <div class="item-subfield"><strong>Problem Solved:</strong> Detects database corruption, schema mismatches, duplicate canonical symbol IDs, and stale background processes.</div>
+              <div class="item-subfield"><strong>Flags &amp; Options:</strong>
+                <ul style="margin-left: 1.5rem; margin-top: 0.25rem;"><li><code>--database</code>:  Run deep schema & foreign key checks</li><li><code>--processes</code>:  Audit active MCP processes and parent PIDs</li><li><code>--json</code>:  Output diagnostic report as JSON</li></ul>
+              </div>
+              <div class="code-box"><pre>$ codegraph doctor --database
+
+{
+  "status": "OK",
+  "database_version": 8,
+  "foreign_keys": true,
+  "issues": []
+}</pre></div>
+            </div>
+            <div class="item-card">
+              <div class="item-header">
+                <span class="item-title">codegraph run <COMMAND...></span>
+                <span class="item-badge">Runtime Telemetry</span>
+              </div>
+              <p class="item-desc">Zero-friction runtime telemetry interceptor.</p>
+              <div class="item-subfield"><strong>Problem Solved:</strong> Bypasses the complexity of setting up OpenTelemetry or Pino streaming. Injects lightweight NODE_OPTIONS or PYTHONSTARTUP hooks to record live HTTP routes, latencies, and uncaught exceptions directly into SQLite.</div>
+              <div class="item-subfield"><strong>Flags &amp; Options:</strong>
+                <ul style="margin-left: 1.5rem; margin-top: 0.25rem;"><li><code>--sample-rate <float></code>:  Trace sampling rate (0.0 to 1.0, default 1.0)</li></ul>
+              </div>
+              <div class="code-box"><pre>$ codegraph run npm run dev
+# or
+codegraph run uvicorn main:app --reload
+
+>> Dev server active on port 8000
+[CodeGraph Runtime Interceptor: Captured 14 HTTP spans -> .codegraph/runtime.sqlite3]</pre></div>
+            </div>
+            <div class="item-card">
+              <div class="item-header">
+                <span class="item-title">codegraph serve [PATH]</span>
+                <span class="item-badge">MCP Server</span>
+              </div>
+              <p class="item-desc">Run the Model Context Protocol (MCP) server over stdio or SSE HTTP.</p>
+              <div class="item-subfield"><strong>Problem Solved:</strong> Connects AI coding agents (Claude, Cursor, Antigravity) to the repository intelligence graph via JSON-RPC standard I/O or persistent SSE HTTP.</div>
+              <div class="item-subfield"><strong>Flags &amp; Options:</strong>
+                <ul style="margin-left: 1.5rem; margin-top: 0.25rem;"><li><code>--profile <name></code>:  Tool profile (core | minimal | agent | developer | full)</li><li><code>--transport, -t <stdio|sse></code>:  Transport layer (default</li><li><code>--host <str></code>:  Host for SSE server (default</li><li><code>--port, -p <int></code>:  Port for SSE server (default</li></ul>
+              </div>
+              <div class="code-box"><pre>$ codegraph serve . --transport sse --port 8765
+
+CodeGraph MCP server running on http://127.0.0.1:8765/sse (56 tools registered)</pre></div>
+            </div>
+            <div class="item-card">
+              <div class="item-header">
+                <span class="item-title">codegraph stop [PATH]</span>
+                <span class="item-badge">Process Lifecycle</span>
+              </div>
+              <p class="item-desc">Safely terminate active CodeGraph background processes and release SQLite file locks.</p>
+              <div class="item-subfield"><strong>Problem Solved:</strong> Prevents "database is locked" crashes by gracefully signalling MCP servers to close connections before unmounting or updating.</div>
+              <div class="item-subfield"><strong>Flags &amp; Options:</strong>
+                <ul style="margin-left: 1.5rem; margin-top: 0.25rem;"><li><code>--all, -a</code>:  Stop all CodeGraph processes across all repositories</li><li><code>--timeout <sec></code>:  Graceful shutdown timeout before SIGKILL</li><li><code>--json</code>:  Output machine-readable JSON</li></ul>
+              </div>
+              <div class="code-box"><pre>$ codegraph stop --json
+
+{
+  "status": "ok",
+  "stopped_count": 1,
+  "stale_cleaned_count": 0
+}</pre></div>
+            </div>
+            <div class="item-card">
+              <div class="item-header">
+                <span class="item-title">codegraph install [PATH]</span>
+                <span class="item-badge">Agent Onboarding</span>
+              </div>
+              <p class="item-desc">Idempotently detect and configure AI coding agents.</p>
+              <div class="item-subfield"><strong>Problem Solved:</strong> Eliminates manual JSON config editing. Detects Claude Code, Cursor, Antigravity, Cline, and Codex; injects mcpServers and safe marker-bounded instructions.</div>
+              <div class="item-subfield"><strong>Flags &amp; Options:</strong>
+                <ul style="margin-left: 1.5rem; margin-top: 0.25rem;"><li><code>--target, -t <auto|all|agent></code>:  Target specific agents</li><li><code>--location, -l <local|global></code>:  Project (.cursor/mcp.json) vs user global (~/.claude.json)</li><li><code>--yes, -y</code>:  Non-interactive confirmation</li><li><code>--dry-run</code>:  Preview changes without writing</li></ul>
+              </div>
+              <div class="code-box"><pre>$ codegraph install --yes --target auto --location local
+
+Configured Claude Code (CLAUDE.md, .mcp.json)
+Configured Cursor (.cursor/mcp.json, .cursorrules)
+Configured Antigravity (.agents/mcp_config.json, AGENTS.md)</pre></div>
+            </div>
+            <div class="item-card">
+              <div class="item-header">
+                <span class="item-title">codegraph search <QUERY></span>
+                <span class="item-badge">Code Exploration</span>
+              </div>
+              <p class="item-desc">Search symbols and text chunks with AST-verified evidence.</p>
+              <div class="item-subfield"><strong>Problem Solved:</strong> Combines SQLite FTS5 lexical matching with exact symbol grounding; returns exact file lines, content hashes, and match confidence.</div>
+              <div class="item-subfield"><strong>Flags &amp; Options:</strong>
+                <ul style="margin-left: 1.5rem; margin-top: 0.25rem;"><li><code>--repository, -r <path></code>:  Repository path</li><li><code>--top_k <int></code>:  Number of results to return (default</li><li><code>--json</code>:  Machine-readable JSON output</li></ul>
+              </div>
+              <div class="code-box"><pre>$ codegraph search "create_order" -r .
+
+Found 1 symbol match:
+  src/app/orders.py:42 function create_order(user_id: int, items: list) -> Order</pre></div>
+            </div>
+            <div class="item-card">
+              <div class="item-header">
+                <span class="item-title">codegraph routes [PATH]</span>
+                <span class="item-badge">Framework Intelligence</span>
+              </div>
+              <p class="item-desc">Discover HTTP endpoints with composed router mount prefixes.</p>
+              <div class="item-subfield"><strong>Problem Solved:</strong> Finds composite router mounts across FastAPI, Flask, Django, and Express. Handles include_router prefixes and nested mounts statically.</div>
+              <div class="item-subfield"><strong>Flags &amp; Options:</strong>
+                <ul style="margin-left: 1.5rem; margin-top: 0.25rem;"><li><code>--limit <int></code>:  Bounded pagination limit (default</li><li><code>--offset <int></code>:  Pagination offset (default</li><li><code>--json</code>:  Output routes as JSON</li></ul>
+              </div>
+              <div class="code-box"><pre>$ codegraph routes -r . --limit 3
+
+Found 3 route(s):
+  [GET]  /api/v1/health -> health_check (src/api.py:14)
+  [POST] /api/v1/orders -> create_order (src/orders.py:42)
+  [GET]  /api/v1/users/{id} -> get_user (src/users.py:88)</pre></div>
+            </div>
+            <div class="item-card">
+              <div class="item-header">
+                <span class="item-title">codegraph trace <SYMBOL></span>
+                <span class="item-badge">Graph Traversal</span>
+              </div>
+              <p class="item-desc">Trace a symbol definition, callers, and callees with explicit confidence labels.</p>
+              <div class="item-subfield"><strong>Problem Solved:</strong> Traverses AST call graphs multi-hops deep, highlighting exact call sites and distinguishing AST_VERIFIED from dynamic UNKNOWN calls.</div>
+              <div class="item-subfield"><strong>Flags &amp; Options:</strong>
+                <ul style="margin-left: 1.5rem; margin-top: 0.25rem;"><li><code>-d, --depth <int></code>:  Traversal depth (default</li><li><code>--json</code>:  Output call hierarchy as JSON</li></ul>
+              </div>
+              <div class="code-box"><pre>$ codegraph trace OrderService.create_order -d 2
+
+Symbol: OrderService.create_order (src/services/order.py:28)
+  ▲ Callers (1):
+    - [AST_VERIFIED] api.create_order_endpoint (src/api.py:52)
+  ▼ Callees (2):
+    - [AST_VERIFIED] UserRepository.get_by_id (src/db/users.py:15)
+    - [AST_VERIFIED] OrderRepository.insert (src/db/orders.py:40)</pre></div>
+            </div>
+            <div class="item-card">
+              <div class="item-header">
+                <span class="item-title">codegraph context <QUERY></span>
+                <span class="item-badge">Context Optimization</span>
+              </div>
+              <p class="item-desc">Compile token-budgeted ContextPacket for an AI agent task.</p>
+              <div class="item-subfield"><strong>Problem Solved:</strong> Selects the top high-signal symbols and slices needed for a specific task intent (DEBUG, TRACE, REVIEW) fitting strictly within a token budget.</div>
+              <div class="item-subfield"><strong>Flags &amp; Options:</strong>
+                <ul style="margin-left: 1.5rem; margin-top: 0.25rem;"><li><code>--intent <str></code>:  Task intent (UNDERSTAND | DEBUG | TRACE | REVIEW | IMPACT)</li><li><code>--max-tokens <int></code>:  Token limit (default</li><li><code>--json</code>:  Output serialized ContextPacket</li></ul>
+              </div>
+              <div class="code-box"><pre>$ codegraph context "fix order validation error" --intent DEBUG
+
+ContextPacket compiled (540 tokens, reduction: 78.4%):
+  - 4 confirmed symbols, 2 database tables, 1 covering test</pre></div>
+            </div>
+            <div class="item-card">
+              <div class="item-header">
+                <span class="item-title">codegraph privacy [PATH]</span>
+                <span class="item-badge">Security & Compliance</span>
+              </div>
+              <p class="item-desc">Verify repository privacy boundaries and ensure no sensitive data is indexed.</p>
+              <div class="item-subfield"><strong>Problem Solved:</strong> Scans SQLite database to guarantee that .env files, RSA private keys, JWTs, and database credentials have been redacted and never saved.</div>
+              <div class="item-subfield"><strong>Flags &amp; Options:</strong>
+                <ul style="margin-left: 1.5rem; margin-top: 0.25rem;"><li><code>--json</code>:  Output privacy audit as JSON</li></ul>
+              </div>
+              <div class="code-box"><pre>$ codegraph privacy .
+
+Privacy Audit PASSED: 0 sensitive files indexed, 0 exposed secrets found.</pre></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="tools-catalog" class="doc-section">
+          <div class="section-header">
+            <span class="section-badge">MCP Capabilities</span>
+            <h2 class="section-title">56 Model Context Protocol (MCP) Tools</h2>
+            <p class="section-desc">Search and filter all 56 deterministic repository tools across profiles and task types.</p>
+          </div>
+
+          <div class="filter-container">
+            <input type="text" id="tool-search" class="search-input" placeholder="Search tool by name, intent, or keyword (e.g. callers, db, routes)..." oninput="filterTools()">
+            <div class="tag-filter">
+              <button class="filter-btn active" onclick="setCategoryFilter('ALL', this)">All (56)</button>
+              <button class="filter-btn" onclick="setCategoryFilter('agent', this)">Agent Profile (14)</button>
+              <button class="filter-btn" onclick="setCategoryFilter('database', this)">Database (11)</button>
+              <button class="filter-btn" onclick="setCategoryFilter('runtime', this)">Runtime (3)</button>
+              <button class="filter-btn" onclick="setCategoryFilter('graph', this)">Graph &amp; Tracing</button>
+            </div>
+          </div>
+
+          <div id="tools-grid">
+            <div class="item-card tool-item" data-name="resolve_symbol" data-desc="resolve a symbol name, qualified name, canonical id, or route into its canonical repository identity and file/line location. use as the first step before relationship queries when exact symbol identity is unknown or potentially ambiguous. primary input: `symbol` (also accepts `canonical_id` or `name` as compatibility aliases). returns canonical_id, ambiguity_state, and candidate alternatives. does not prove runtime execution or dynamic monkey-patching." data-profiles="core graph minimal developer full">
+              <div class="item-header">
+                <span class="item-title">resolve_symbol</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">core</span><span class="item-badge profile">graph</span><span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Resolve a symbol name, qualified name, canonical ID, or route into its canonical repository identity and file/line location. Use as the first step before relationship queries when exact symbol identity is unknown or potentially ambiguous. Primary input: `symbol` (also accepts `canonical_id` or `name` as compatibility aliases). Returns canonical_id, ambiguity_state, and candidate alternatives. Does not prove runtime execution or dynamic monkey-patching.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>symbol</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>canonical_id</code>, <code>name</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> SymbolResolutionResult</div>
+              <div class="code-box"><pre>resolve_symbol(symbol="AuthService")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="search_symbols" data-desc="search indexed repository symbols by partial name or keyword with ranked relevance. use when exact symbol spelling is unknown and you need candidate symbol definitions. returns ranked symbol definitions with file paths and line spans. does not return module import graphs or call relationships." data-profiles="core graph minimal developer full">
+              <div class="item-header">
+                <span class="item-title">search_symbols</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">core</span><span class="item-badge profile">graph</span><span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Search indexed repository symbols by partial name or keyword with ranked relevance. Use when exact symbol spelling is unknown and you need candidate symbol definitions. Returns ranked symbol definitions with file paths and line spans. Does not return module import graphs or call relationships.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>query</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>top_k</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> SymbolSearchResult</div>
+              <div class="code-box"><pre>search_symbols(query="verify_password", top_k=10)</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_symbol" data-desc="return authoritative signature, kind, parent scope, decorators, and bounded source snippet for a symbol. primary input: `symbol` (also accepts `canonical_id` or `name` as compatibility aliases). use when you have a symbol name or canonical_id and need its declaration metadata. does not traverse multi-hop call graphs." data-profiles="agent core graph minimal developer full">
+              <div class="item-header">
+                <span class="item-title">get_symbol</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">agent</span><span class="item-badge profile">core</span><span class="item-badge profile">graph</span><span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return authoritative signature, kind, parent scope, decorators, and bounded source snippet for a symbol. Primary input: `symbol` (also accepts `canonical_id` or `name` as compatibility aliases). Use when you have a symbol name or canonical_id and need its declaration metadata. Does not traverse multi-hop call graphs.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>symbol</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>canonical_id</code>, <code>name</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> SymbolDetailResult</div>
+              <div class="code-box"><pre>get_symbol(symbol="login_endpoint")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_file" data-desc="open and inspect a repository file's structural ast outline or a bounded line range (`path`, `start_line`, `end_line`, `max_lines`). use after `search_code`, `find_symbol`, or `find_routes` identifies a target file and line span across python, html, jinja, js, ts, css, yaml, json, or markdown. blocks path traversal, binary files, and sensitive files; does not prove cross-file callers." data-profiles="agent core graph minimal developer full">
+              <div class="item-header">
+                <span class="item-title">get_file</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">agent</span><span class="item-badge profile">core</span><span class="item-badge profile">graph</span><span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Open and inspect a repository file's structural AST outline or a bounded line range (`path`, `start_line`, `end_line`, `max_lines`). Use after `search_code`, `find_symbol`, or `find_routes` identifies a target file and line span across Python, HTML, Jinja, JS, TS, CSS, YAML, JSON, or Markdown. Blocks path traversal, binary files, and sensitive files; does not prove cross-file callers.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>path</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>start_line</code>, <code>end_line</code>, <code>max_lines</code>, <code>include_content</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> FileStructureResult</div>
+              <div class="code-box"><pre>get_file(path="templates/dashboard.html", start_line=40, end_line=110)</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_references" data-desc="return verified and candidate references to a symbol across the repository with evidence_class labels. primary input: `symbol` (also accepts `canonical_id` or `name` as compatibility aliases). use for cross-file reference, registration, dispatch, or di binding lookup. does not guarantee dynamic reflection targets when evidence_class is unknown or possible." data-profiles="core graph minimal developer full">
+              <div class="item-header">
+                <span class="item-title">get_references</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">core</span><span class="item-badge profile">graph</span><span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return verified and candidate references to a symbol across the repository with evidence_class labels. Primary input: `symbol` (also accepts `canonical_id` or `name` as compatibility aliases). Use for cross-file reference, registration, dispatch, or DI binding lookup. Does not guarantee dynamic reflection targets when evidence_class is UNKNOWN or POSSIBLE.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>symbol</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>canonical_id</code>, <code>name</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> ReferenceListResult</div>
+              <div class="code-box"><pre>get_references(symbol="command_registry")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_callers" data-desc="return statically verified callers of a symbol with confidence and evidence_class. primary input: `symbol` (also accepts `canonical_id` as a compatibility alias using the exact same resolution path). use for multi-file call-relationship and upstream impact questions. does not prove runtime dispatch unless evidence_class indicates framework/dataflow verification." data-profiles="core graph minimal developer full">
+              <div class="item-header">
+                <span class="item-title">get_callers</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">core</span><span class="item-badge profile">graph</span><span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return statically verified callers of a symbol with confidence and evidence_class. Primary input: `symbol` (also accepts `canonical_id` as a compatibility alias using the exact same resolution path). Use for multi-file call-relationship and upstream impact questions. Does not prove runtime dispatch unless evidence_class indicates framework/dataflow verification.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>symbol</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>canonical_id</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> CallerListResult</div>
+              <div class="code-box"><pre>get_callers(symbol="verify_password")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_callees" data-desc="return symbols called or invoked by the specified symbol with evidence_class classification. primary input: `symbol` (also accepts `canonical_id` as a compatibility alias using the exact same resolution path). use to inspect downstream dependencies invoked by a function or handler. does not resolve dynamic callbacks passed as opaque runtime arguments." data-profiles="core graph minimal developer full">
+              <div class="item-header">
+                <span class="item-title">get_callees</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">core</span><span class="item-badge profile">graph</span><span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return symbols called or invoked by the specified symbol with evidence_class classification. Primary input: `symbol` (also accepts `canonical_id` as a compatibility alias using the exact same resolution path). Use to inspect downstream dependencies invoked by a function or handler. Does not resolve dynamic callbacks passed as opaque runtime arguments.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>symbol</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>canonical_id</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> CalleeListResult</div>
+              <div class="code-box"><pre>get_callees(symbol="process_checkout")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="trace_path" data-desc="compute deterministic multi-hop relationship paths between two symbols (`from_symbol` -> `to_symbol`). use when tracing how an entrypoint, route, or caller reaches a downstream service or database function. returns ordered hop edges with relationship types and evidence classes. does not prove runtime branch conditions along the path." data-profiles="agent core graph minimal developer full">
+              <div class="item-header">
+                <span class="item-title">trace_path</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">agent</span><span class="item-badge profile">core</span><span class="item-badge profile">graph</span><span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Compute deterministic multi-hop relationship paths between two symbols (`from_symbol` -> `to_symbol`). Use when tracing how an entrypoint, route, or caller reaches a downstream service or database function. Returns ordered hop edges with relationship types and evidence classes. Does not prove runtime branch conditions along the path.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>from_symbol</code>, <code>to_symbol</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>start_symbol</code>, <code>target_symbol</code>, <code>source_symbol</code>, <code>max_depth</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> PathTraceResult</div>
+              <div class="code-box"><pre>trace_path(from_symbol="login_endpoint", to_symbol="find_by_email", max_depth=4)</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_imports" data-desc="return parser-extracted module and symbol imports for a file or symbol (`file` or `symbol`; `canonical_id` and `path` supported as aliases). use for forward dependency and package boundary questions. does not return reverse importers (use get_dependents for reverse dependencies)." data-profiles="core graph minimal developer full">
+              <div class="item-header">
+                <span class="item-title">get_imports</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">core</span><span class="item-badge profile">graph</span><span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return parser-extracted module and symbol imports for a file or symbol (`file` or `symbol`; `canonical_id` and `path` supported as aliases). Use for forward dependency and package boundary questions. Does not return reverse importers (use get_dependents for reverse dependencies).</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>file</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>symbol</code>, <code>canonical_id</code>, <code>path</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> ImportsResult</div>
+              <div class="code-box"><pre>get_imports(file="src/auth/routes.py")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_dependents" data-desc="return files, symbols, and packages that import or depend on the target symbol or file (`symbol` or `file`; `canonical_id` and `path` supported as aliases). use for blast-radius, change-impact, and package boundary analysis. does not prove runtime failure without checking test and caller evidence." data-profiles="core graph minimal developer full">
+              <div class="item-header">
+                <span class="item-title">get_dependents</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">core</span><span class="item-badge profile">graph</span><span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return files, symbols, and packages that import or depend on the target symbol or file (`symbol` or `file`; `canonical_id` and `path` supported as aliases). Use for blast-radius, change-impact, and package boundary analysis. Does not prove runtime failure without checking test and caller evidence.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>symbol</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>canonical_id</code>, <code>file</code>, <code>path</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> DependentsResult</div>
+              <div class="code-box"><pre>get_dependents(file="src/auth/repository.py")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="list_routes" data-desc="return http/rpc framework routes, mounted router prefixes (`mounts`), methods, and handler symbols. use when locating api endpoints, route handlers, or mounted sub-applications (fastapi, flask, django, express, nestjs). does not prove runtime middleware authentication unless traced via get_context or trace_path." data-profiles="core graph minimal developer full">
+              <div class="item-header">
+                <span class="item-title">list_routes</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">core</span><span class="item-badge profile">graph</span><span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return HTTP/RPC framework routes, mounted router prefixes (`MOUNTS`), methods, and handler symbols. Use when locating API endpoints, route handlers, or mounted sub-applications (FastAPI, Flask, Django, Express, NestJS). Does not prove runtime middleware authentication unless traced via get_context or trace_path.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>framework</code>, <code>method</code>, <code>path</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> RouteListResult</div>
+              <div class="code-box"><pre>list_routes(method="POST", path="/api/v1/auth/login")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_architecture" data-desc="return structural repository overview including modules, workspace packages (`depends_on_package`), entrypoints, and layer relationships. use for high-level architecture, monorepo package boundary, and onboarding questions. does not replace symbol-level evidence for specific bug fixes." data-profiles="agent core graph minimal developer full">
+              <div class="item-header">
+                <span class="item-title">get_architecture</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">agent</span><span class="item-badge profile">core</span><span class="item-badge profile">graph</span><span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return structural repository overview including modules, workspace packages (`DEPENDS_ON_PACKAGE`), entrypoints, and layer relationships. Use for high-level architecture, monorepo package boundary, and onboarding questions. Does not replace symbol-level evidence for specific bug fixes.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> ArchitectureOverviewResult</div>
+              <div class="code-box"><pre>get_architecture()</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_git_impact" data-desc="compute deterministic change impact between git refs (`base`..`head`), including modified symbols, downstream callers, affected packages, and covering tests. use for pr review, regression analysis, and pre-commit blast-radius checks. does not execute tests; reports static test-to-symbol coverage edges." data-profiles="agent core graph minimal developer full">
+              <div class="item-header">
+                <span class="item-title">get_git_impact</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">agent</span><span class="item-badge profile">core</span><span class="item-badge profile">graph</span><span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Compute deterministic change impact between Git refs (`base`..`head`), including modified symbols, downstream callers, affected packages, and covering tests. Use for PR review, regression analysis, and pre-commit blast-radius checks. Does not execute tests; reports static test-to-symbol coverage edges.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>base</code>, <code>head</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> GitImpactResult</div>
+              <div class="code-box"><pre>get_git_impact(base="HEAD~1", head="HEAD")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_context" data-desc="compile a token-bounded, coverage-optimized contextpacket containing verified symbols, compressed relationships, routes, di providers, packages, and related tests. primary input: `query` (natural-language question, symbol, or task description; `task` is also supported as a compatibility alias for string or structured taskspec dict). budget controls: `max_tokens` (default 4000, hard cap 20000), `max_files` (default 15, hard cap 30), `max_lines` (default 500, hard cap 1500). preserves unknown, possible, and ambiguous states explicitly. does not return full raw files; use targeted get_file or read_file only if exact omitted lines are needed afterward." data-profiles="agent graph minimal developer full">
+              <div class="item-header">
+                <span class="item-title">get_context</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">agent</span><span class="item-badge profile">graph</span><span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Compile a token-bounded, coverage-optimized ContextPacket containing verified symbols, compressed relationships, routes, DI providers, packages, and related tests. Primary input: `query` (natural-language question, symbol, or task description; `task` is also supported as a compatibility alias for string or structured TaskSpec dict). Budget controls: `max_tokens` (default 4000, hard cap 20000), `max_files` (default 15, hard cap 30), `max_lines` (default 500, hard cap 1500). Preserves UNKNOWN, POSSIBLE, and AMBIGUOUS states explicitly. Does not return full raw files; use targeted get_file or read_file only if exact omitted lines are needed afterward.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>query</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>task</code>, <code>intent</code>, <code>max_tokens</code>, <code>max_files</code>, <code>max_lines</code>, <code>top_k</code>, <code>plan</code>, <code>mode</code>, <code>explain</code>, <code>resource_mode</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> ContextPacket</div>
+              <div class="code-box"><pre>get_context(query="How does UserRepository get injected into UserController", intent="DEBUG", max_tokens=4000)</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="find_related_tests" data-desc="return test files and test functions statically linked to a target symbol (`symbol`; `canonical_id` supported as alias) via direct calls, imports, fixtures, or route invocation. use when answering 'which tests cover symbol x?' before or after a code change. never fabricates coverage from lexical similarity alone." data-profiles="graph developer full">
+              <div class="item-header">
+                <span class="item-title">find_related_tests</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">graph</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return test files and test functions statically linked to a target symbol (`symbol`; `canonical_id` supported as alias) via direct calls, imports, fixtures, or route invocation. Use when answering 'Which tests cover symbol X?' before or after a code change. Never fabricates coverage from lexical similarity alone.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>symbol</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>canonical_id</code>, <code>max_results</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> RelatedTestsResult</div>
+              <div class="code-box"><pre>find_related_tests(symbol="BillingService.charge_card")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="analyze_impact" data-desc="compute downstream callers, dependents, affected routes, and related tests if a symbol (`symbol`; `canonical_id` supported as alias) is modified. use before refactoring or changing a function/class signature. does not prove runtime failure without inspecting call sites." data-profiles="graph developer full">
+              <div class="item-header">
+                <span class="item-title">analyze_impact</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">graph</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Compute downstream callers, dependents, affected routes, and related tests if a symbol (`symbol`; `canonical_id` supported as alias) is modified. Use before refactoring or changing a function/class signature. Does not prove runtime failure without inspecting call sites.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>symbol</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>canonical_id</code>, <code>max_depth</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> SymbolImpactResult</div>
+              <div class="code-box"><pre>analyze_impact(symbol="DatabasePool.acquire", max_depth=3)</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="read_file" data-desc="read a bounded line range (1..500 lines) of a non-sensitive repository file. use after codegraph tools identify the exact file and line span, or directly for trivial single-file edits. blocks path traversal and sensitive credential files. does not compute cross-file relationships." data-profiles="minimal developer full">
+              <div class="item-header">
+                <span class="item-title">read_file</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Read a bounded line range (1..500 lines) of a non-sensitive repository file. Use AFTER CodeGraph tools identify the exact file and line span, or directly for trivial single-file edits. Blocks path traversal and sensitive credential files. Does not compute cross-file relationships.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>path</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>start_line</code>, <code>end_line</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> FileContentSlice</div>
+              <div class="code-box"><pre>read_file(path="src/auth/service.py", start_line=10, end_line=45)</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="search_code" data-desc="search literal text, html/jinja template ids, ui strings, css selectors, config keys, or route paths across readable repository files and indexed code chunks. use instead of grep when searching for exact text, button labels, or template strings. does not prove semantic call, import, or route relationships; never creates semantic graph edges from text matches." data-profiles="agent minimal developer full">
+              <div class="item-header">
+                <span class="item-title">search_code</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">agent</span><span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Search literal text, HTML/Jinja template IDs, UI strings, CSS selectors, config keys, or route paths across readable repository files and indexed code chunks. Use instead of grep when searching for exact text, button labels, or template strings. Does not prove semantic call, import, or route relationships; never creates semantic graph edges from text matches.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>query</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>top_k</code>, <code>path_filter</code>, <code>file_types</code>, <code>include_tests</code>, <code>include_configs</code>, <code>max_results</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> CodeChunkSearchResult</div>
+              <div class="code-box"><pre>search_code(query="Add Manual Entry", top_k=10)</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="find_symbol" data-desc="find function, method, or class definitions by exact short name or qualified name (`symbol`; `name` and `canonical_id` supported as aliases). use instead of grep when locating where a class, function, or method is defined. does not return callers, callees, or ambiguity alternatives like resolve_symbol." data-profiles="agent minimal developer full">
+              <div class="item-header">
+                <span class="item-title">find_symbol</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">agent</span><span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Find function, method, or class definitions by exact short name or qualified name (`symbol`; `name` and `canonical_id` supported as aliases). Use instead of grep when locating where a class, function, or method is defined. Does not return callers, callees, or ambiguity alternatives like resolve_symbol.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>symbol</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>name</code>, <code>canonical_id</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> SymbolLocationList</div>
+              <div class="code-box"><pre>find_symbol(symbol="InventoryService")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="find_references" data-desc="find textual occurrences and references of a symbol name (`symbol`; `name` and `canonical_id` supported as aliases) across indexed code chunks. use when locating references or mentions of an identifier across files. does not prove semantic call edges; use get_references when full relationship classification is required." data-profiles="agent developer full">
+              <div class="item-header">
+                <span class="item-title">find_references</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">agent</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Find textual occurrences and references of a symbol name (`symbol`; `name` and `canonical_id` supported as aliases) across indexed code chunks. Use when locating references or mentions of an identifier across files. Does not prove semantic call edges; use get_references when full relationship classification is required.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>symbol</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>name</code>, <code>canonical_id</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> ChunkReferenceList</div>
+              <div class="code-box"><pre>find_references(symbol="parse_bill")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="find_callers" data-desc="find functions and methods that call the specified symbol (`symbol`; `canonical_id` supported as alias) up to `max_results`. use instead of grep or search_code when answering 'who calls x?'. does not prove runtime execution of conditional branches; preserves possible and unknown evidence classes." data-profiles="agent developer full">
+              <div class="item-header">
+                <span class="item-title">find_callers</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">agent</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Find functions and methods that call the specified symbol (`symbol`; `canonical_id` supported as alias) up to `max_results`. Use instead of grep or search_code when answering 'who calls X?'. Does not prove runtime execution of conditional branches; preserves POSSIBLE and UNKNOWN evidence classes.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>symbol</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>canonical_id</code>, <code>max_results</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> CallerEdgeList</div>
+              <div class="code-box"><pre>find_callers(symbol="place_order", max_results=20)</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="find_callees" data-desc="find functions and methods called by the specified symbol (`symbol`; `canonical_id` supported as alias) up to `max_results`. use instead of reading multiple files manually when answering 'what does x call?'. does not resolve opaque runtime callbacks; preserves possible and unknown evidence classes." data-profiles="agent developer full">
+              <div class="item-header">
+                <span class="item-title">find_callees</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">agent</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Find functions and methods called by the specified symbol (`symbol`; `canonical_id` supported as alias) up to `max_results`. Use instead of reading multiple files manually when answering 'what does X call?'. Does not resolve opaque runtime callbacks; preserves POSSIBLE and UNKNOWN evidence classes.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>symbol</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>canonical_id</code>, <code>max_results</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> CalleeEdgeList</div>
+              <div class="code-box"><pre>find_callees(symbol="place_order", max_results=20)</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_call_graph" data-desc="compute the multi-hop call graph rooted at `symbol` (`canonical_id` supported as alias) up to `depth` and `max_results`. use when exploring the multi-hop call neighborhood around a central service or controller. does not prove runtime reachability for specific inputs." data-profiles="graph developer full">
+              <div class="item-header">
+                <span class="item-title">get_call_graph</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">graph</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Compute the multi-hop call graph rooted at `symbol` (`canonical_id` supported as alias) up to `depth` and `max_results`. Use when exploring the multi-hop call neighborhood around a central service or controller. Does not prove runtime reachability for specific inputs.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>symbol</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>canonical_id</code>, <code>depth</code>, <code>max_results</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> CallGraphEdgeList</div>
+              <div class="code-box"><pre>get_call_graph(symbol="AuthService.authenticate", depth=2, max_results=50)</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_dependency_graph" data-desc="return module-level `imports` graph edges across the repository or filtered to `file_path`. use when inspecting raw module-to-module import topology. does not prove symbol-level call invocation; prefer get_imports or get_dependents for targeted queries." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">get_dependency_graph</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return module-level `IMPORTS` graph edges across the repository or filtered to `file_path`. Use when inspecting raw module-to-module import topology. Does not prove symbol-level call invocation; prefer get_imports or get_dependents for targeted queries.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>file_path</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> DependencyGraphEdgeList</div>
+              <div class="code-box"><pre>get_dependency_graph(file_path="src/auth/service.py")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="compile_task" data-desc="normalize a developer question or task (`query`; `task` supported as string or taskspec dict alias) into a structured `taskspec`, ground targets against the index, detect ambiguities, and build a `retrievalplan`. use before get_context when you want to inspect target resolution and ambiguity candidates prior to context retrieval. does not retrieve source code snippets." data-profiles="minimal developer full">
+              <div class="item-header">
+                <span class="item-title">compile_task</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Normalize a developer question or task (`query`; `task` supported as string or TaskSpec dict alias) into a structured `TaskSpec`, ground targets against the index, detect ambiguities, and build a `RetrievalPlan`. Use before get_context when you want to inspect target resolution and ambiguity candidates prior to context retrieval. Does not retrieve source code snippets.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>query</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>task</code>, <code>max_tokens</code>, <code>resource_mode</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> CompiledTaskPlan</div>
+              <div class="code-box"><pre>compile_task(query="Debug AuthService")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="plan_retrieval" data-desc="construct a deterministic `retrievalplan` for a question or task (`query`; `task` supported as alias) without executing graph or source retrieval. use to inspect planned retrieval steps, token budgets, and query expansions. does not return code snippets or relationship edges." data-profiles="developer full">
+              <div class="item-header">
+                <span class="item-title">plan_retrieval</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Construct a deterministic `RetrievalPlan` for a question or task (`query`; `task` supported as alias) without executing graph or source retrieval. Use to inspect planned retrieval steps, token budgets, and query expansions. Does not return code snippets or relationship edges.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>query</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>task</code>, <code>max_tokens</code>, <code>resource_mode</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> RetrievalPlanDict</div>
+              <div class="code-box"><pre>plan_retrieval(query="Trace payment processing")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_recent_changes" data-desc="return repository files modified between two git refs (`since`..`until`) in a read-only sandboxed query. use when reviewing recent commits or identifying which files changed before running impact analysis. does not compute downstream symbol callers; use get_git_impact for symbol-level blast radius." data-profiles="developer full">
+              <div class="item-header">
+                <span class="item-title">get_recent_changes</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return repository files modified between two Git refs (`since`..`until`) in a read-only sandboxed query. Use when reviewing recent commits or identifying which files changed before running impact analysis. Does not compute downstream symbol callers; use get_git_impact for symbol-level blast radius.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>since</code>, <code>until</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> GitChangedFilesList</div>
+              <div class="code-box"><pre>get_recent_changes(since="HEAD~5", until="HEAD")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_file_history" data-desc="return recent git commits touching a specific repository file (`path`, up to `n` commits). use when investigating when and why a specific file was recently modified. does not return full commit diffs or cross-file dependency impact." data-profiles="developer full">
+              <div class="item-header">
+                <span class="item-title">get_file_history</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return recent Git commits touching a specific repository file (`path`, up to `n` commits). Use when investigating when and why a specific file was recently modified. Does not return full commit diffs or cross-file dependency impact.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>path</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>n</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> FileCommitHistoryList</div>
+              <div class="code-box"><pre>get_file_history(path="src/auth/service.py", n=5)</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="analyze_change_impact" data-desc="analyze changed files, modified symbols, downstream callers, and related tests between git refs `since` and `until`. use for commit-range impact analysis when `since`/`until` parameter naming is preferred. does not execute tests at runtime." data-profiles="developer full">
+              <div class="item-header">
+                <span class="item-title">analyze_change_impact</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Analyze changed files, modified symbols, downstream callers, and related tests between Git refs `since` and `until`. Use for commit-range impact analysis when `since`/`until` parameter naming is preferred. Does not execute tests at runtime.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>since</code>, <code>until</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> ChangeImpactReport</div>
+              <div class="code-box"><pre>analyze_change_impact(since="HEAD~2", until="HEAD")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_repository_status" data-desc="return repository indexing status, generation counter, freshness state (`fresh` or `stale`), symbol counts, and modified/deleted file lists. use to check whether the index is fresh before trusting cached graph facts after disk edits. does not re-index the repository automatically." data-profiles="minimal developer full">
+              <div class="item-header">
+                <span class="item-title">get_repository_status</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return repository indexing status, generation counter, freshness state (`FRESH` or `STALE`), symbol counts, and modified/deleted file lists. Use to check whether the index is fresh before trusting cached graph facts after disk edits. Does not re-index the repository automatically.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> RepositoryStatusReport</div>
+              <div class="code-box"><pre>get_repository_status()</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="trace_call" data-desc="traverse callers, callees, or both from a single `symbol` (`canonical_id` supported as alias) up to `depth` with confidence and relationship labels. use when exploring upstream and/or downstream call trees from one symbol without a known second endpoint. does not prove runtime branch execution." data-profiles="developer full">
+              <div class="item-header">
+                <span class="item-title">trace_call</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Traverse callers, callees, or both from a single `symbol` (`canonical_id` supported as alias) up to `depth` with confidence and relationship labels. Use when exploring upstream and/or downstream call trees from one symbol without a known second endpoint. Does not prove runtime branch execution.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>symbol</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>canonical_id</code>, <code>depth</code>, <code>callers</code>, <code>callees</code>, <code>both</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> DirectionalCallTraceList</div>
+              <div class="code-box"><pre>trace_call(symbol="verify_password", depth=2, callers=True)</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_project_structure" data-desc="return up to 500 indexed repository-relative source file paths in deterministic sorted order. use for a flat inventory of indexed files when exploring a small project. does not return package dependency graphs or entrypoints (prefer get_architecture)." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">get_project_structure</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return up to 500 indexed repository-relative source file paths in deterministic sorted order. Use for a flat inventory of indexed files when exploring a small project. Does not return package dependency graphs or entrypoints (prefer get_architecture).</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> IndexedFilePathList</div>
+              <div class="code-box"><pre>get_project_structure()</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_dependencies" data-desc="list up to 500 raw parser-extracted `(source_path, imported)` rows from the imports table. use for bulk inspection of raw import statements across the repository. does not resolve workspace package boundaries; prefer get_imports or get_architecture." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">get_dependencies</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">List up to 500 raw parser-extracted `(source_path, imported)` rows from the imports table. Use for bulk inspection of raw import statements across the repository. Does not resolve workspace package boundaries; prefer get_imports or get_architecture.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> RawImportRowList</div>
+              <div class="code-box"><pre>get_dependencies()</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_file_symbols" data-desc="list extracted symbols (`symbol`, `kind`, `start_line`, `end_line`) in a single repository-relative file. use for a lightweight symbol table of one file when imports and artifact metadata are not needed. does not return cross-file relationships; prefer get_file for full file outline." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">get_file_symbols</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">List extracted symbols (`symbol`, `kind`, `start_line`, `end_line`) in a single repository-relative file. Use for a lightweight symbol table of one file when imports and artifact metadata are not needed. Does not return cross-file relationships; prefer get_file for full file outline.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>path</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> FileSymbolRowList</div>
+              <div class="code-box"><pre>get_file_symbols(path="src/auth/service.py")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_graph" data-desc="return up to `limit` (1..500) parser-confirmed definition and import graph edges with evidence metadata. use for inspecting raw structural `defines` and `imports` edges in small repositories or diagnostics. does not replace targeted relationship tools like get_callers or trace_path." data-profiles="developer full">
+              <div class="item-header">
+                <span class="item-title">get_graph</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return up to `limit` (1..500) parser-confirmed definition and import graph edges with evidence metadata. Use for inspecting raw structural `DEFINES` and `IMPORTS` edges in small repositories or diagnostics. Does not replace targeted relationship tools like get_callers or trace_path.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>limit</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> GraphEdgeList</div>
+              <div class="code-box"><pre>get_graph(limit=50)</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="search_memory" data-desc="search local sqlite repository memory notes by keyword up to `limit` (1..100). use only to recall previously stored local session notes. never overrides current ast or source-file evidence; does not prove current repository state." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">search_memory</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Search local SQLite repository memory notes by keyword up to `limit` (1..100). Use only to recall previously stored local session notes. Never overrides current AST or source-file evidence; does not prove current repository state.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>query</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>limit</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> MemoryNoteList</div>
+              <div class="code-box"><pre>search_memory(query="auth", limit=10)</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_evidence" data-desc="return bounded source-derived `evidence` citations (`file`, `start_line`, `end_line`, `symbol`, `snippet`, `content_hash`) for a non-sensitive file or symbol. use when constructing hash-verifiable code citations. blocks sensitive files and does not compute cross-file callers." data-profiles="developer full">
+              <div class="item-header">
+                <span class="item-title">get_evidence</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return bounded source-derived `Evidence` citations (`file`, `start_line`, `end_line`, `symbol`, `snippet`, `content_hash`) for a non-sensitive file or symbol. Use when constructing hash-verifiable code citations. Blocks sensitive files and does not compute cross-file callers.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>path</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>symbol</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> EvidenceCitationList</div>
+              <div class="code-box"><pre>get_evidence(path="src/auth/service.py", symbol="AuthService.authenticate")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="verify_evidence" data-desc="verify that a cited evidence span (`file_path`, `start_line`, `end_line`) exists on disk, matches `expected_hash`, and is not stale. use to validate whether previously retrieved evidence is still current after repository edits. does not re-index modified files." data-profiles="minimal developer full">
+              <div class="item-header">
+                <span class="item-title">verify_evidence</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Verify that a cited evidence span (`file_path`, `start_line`, `end_line`) exists on disk, matches `expected_hash`, and is not stale. Use to validate whether previously retrieved evidence is still current after repository edits. Does not re-index modified files.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>file_path</code>, <code>start_line</code>, <code>end_line</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>expected_hash</code>, <code>symbol</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> EvidenceVerificationResult</div>
+              <div class="code-box"><pre>verify_evidence(file_path="src/auth/service.py", start_line=1, end_line=20)</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_resource_status" data-desc="return current resource governor state including memory usage, pressure level, concurrency limits, and activity mode. use for diagnosing server resource pressure or throttling behavior. does not inspect repository source code or symbols." data-profiles="minimal developer full">
+              <div class="item-header">
+                <span class="item-title">get_resource_status</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">minimal</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return current resource governor state including memory usage, pressure level, concurrency limits, and activity mode. Use for diagnosing server resource pressure or throttling behavior. Does not inspect repository source code or symbols.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> ResourceGovernorState</div>
+              <div class="code-box"><pre>get_resource_status()</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="find_tests" data-desc="find test files and test functions statically linked to a target symbol (`symbol`; `canonical_id` supported as alias) via direct calls, imports, fixtures, or route invocation. use instead of grep when answering 'what tests cover symbol x?'. does not execute tests at runtime and never fabricates coverage from lexical similarity alone." data-profiles="agent developer full">
+              <div class="item-header">
+                <span class="item-title">find_tests</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">agent</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Find test files and test functions statically linked to a target symbol (`symbol`; `canonical_id` supported as alias) via direct calls, imports, fixtures, or route invocation. Use instead of grep when answering 'what tests cover symbol X?'. Does not execute tests at runtime and never fabricates coverage from lexical similarity alone.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>symbol</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>canonical_id</code>, <code>max_results</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> RelatedTestsResult</div>
+              <div class="code-box"><pre>find_tests(symbol="parse_bill")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="find_routes" data-desc="find http/rpc framework routes, mounted router prefixes (`mounts`), methods, and handler symbols across fastapi, flask, django, express, and nestjs. use instead of grep when locating api endpoints or route handlers. does not prove runtime middleware authentication unless traced via trace_path or get_context." data-profiles="agent developer full">
+              <div class="item-header">
+                <span class="item-title">find_routes</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">agent</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Find HTTP/RPC framework routes, mounted router prefixes (`MOUNTS`), methods, and handler symbols across FastAPI, Flask, Django, Express, and NestJS. Use instead of grep when locating API endpoints or route handlers. Does not prove runtime middleware authentication unless traced via trace_path or get_context.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>framework</code>, <code>method</code>, <code>path</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> RouteListResult</div>
+              <div class="code-box"><pre>find_routes(path="/api/scan-bill")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="trace_flow" data-desc="trace multi-hop upstream callers and downstream callees around a single symbol (`symbol`; `canonical_id` supported as alias) up to `depth`. use when exploring bidirectional execution flow around a function or handler without a known second endpoint. does not prove runtime branch execution; use trace_path when both endpoints are known." data-profiles="agent developer full">
+              <div class="item-header">
+                <span class="item-title">trace_flow</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">agent</span><span class="item-badge profile">developer</span><span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Trace multi-hop upstream callers and downstream callees around a single symbol (`symbol`; `canonical_id` supported as alias) up to `depth`. Use when exploring bidirectional execution flow around a function or handler without a known second endpoint. Does not prove runtime branch execution; use trace_path when both endpoints are known.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>symbol</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>canonical_id</code>, <code>depth</code>, <code>callers</code>, <code>callees</code>, <code>both</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> DirectionalCallTraceList</div>
+              <div class="code-box"><pre>trace_flow(symbol="place_order", depth=2)</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="find_db_tables" data-desc="find database tables discovered across orm models, raw sql queries, and migrations. use instead of grep when asking which database tables exist in this repository. returns canonical ids (`db.<dialect>.<schema>.<table>`), columns, orm models, and evidence classes (`framework_verified`, `static_verified`, `possible`, `unknown`). does not connect to live databases or execute sql." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">find_db_tables</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Find database tables discovered across ORM models, raw SQL queries, and migrations. Use instead of grep when asking which database tables exist in this repository. Returns canonical IDs (`db.<dialect>.<schema>.<table>`), columns, ORM models, and evidence classes (`FRAMEWORK_VERIFIED`, `STATIC_VERIFIED`, `POSSIBLE`, `UNKNOWN`). Does not connect to live databases or execute SQL.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>table</code>, <code>dialect</code>, <code>schema</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> DatabaseTableListResult</div>
+              <div class="code-box"><pre>find_db_tables()</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="find_db_columns" data-desc="find database columns, data types, nullability, primary keys, and foreign keys across tables and orm models. use instead of grep when locating where a table column is defined or mapped (`maps_to_column`, `has_primary_key`, `foreign_key_to`). returns column definitions and source coordinates. does not inspect live database catalogs." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">find_db_columns</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Find database columns, data types, nullability, primary keys, and foreign keys across tables and ORM models. Use instead of grep when locating where a table column is defined or mapped (`MAPS_TO_COLUMN`, `HAS_PRIMARY_KEY`, `FOREIGN_KEY_TO`). Returns column definitions and source coordinates. Does not inspect live database catalogs.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>table</code>, <code>column</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> DatabaseColumnListResult</div>
+              <div class="code-box"><pre>find_db_columns(table="bills")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="find_db_models" data-desc="find orm models (sqlalchemy, flask-sqlalchemy, django orm, sqlmodel, prisma) and their `maps_to_table` mappings. use when asking which model class maps to a database table or vice versa. returns model name, table, canonical id, and `framework_verified` evidence. does not import or execute application model modules." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">find_db_models</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Find ORM models (SQLAlchemy, Flask-SQLAlchemy, Django ORM, SQLModel, Prisma) and their `MAPS_TO_TABLE` mappings. Use when asking which model class maps to a database table or vice versa. Returns model name, table, canonical ID, and `FRAMEWORK_VERIFIED` evidence. Does not import or execute application model modules.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>model</code>, <code>table</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> DatabaseModelListResult</div>
+              <div class="code-box"><pre>find_db_models(table="products")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="find_db_queries" data-desc="find database queries (`select`, `insert`, `update`, `delete`) across orm calls, query builders, and raw sql strings. use when asking which queries touch a table or what sql a function executes. returns `reads_table`, `writes_table`, `possible_table`, or `unknown_table` with redacted snippets. never exposes sql literal secret parameters." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">find_db_queries</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Find database queries (`SELECT`, `INSERT`, `UPDATE`, `DELETE`) across ORM calls, query builders, and raw SQL strings. Use when asking which queries touch a table or what SQL a function executes. Returns `READS_TABLE`, `WRITES_TABLE`, `POSSIBLE_TABLE`, or `UNKNOWN_TABLE` with redacted snippets. Never exposes SQL literal secret parameters.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>table</code>, <code>symbol</code>, <code>operation</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> DatabaseQueryListResult</div>
+              <div class="code-box"><pre>find_db_queries(table="orders")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="find_db_callers" data-desc="find all functions, methods, and upstream http routes (`handled_by`) that read from or write to a database table. use instead of grep when asking which code or route reaches a table. returns direct accessors, upstream routes, relationships (`reads_table`, `writes_table`), and evidence classes. does not prove runtime query frequency." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">find_db_callers</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Find all functions, methods, and upstream HTTP routes (`HANDLED_BY`) that read from or write to a database table. Use instead of grep when asking which code or route reaches a table. Returns direct accessors, upstream routes, relationships (`READS_TABLE`, `WRITES_TABLE`), and evidence classes. Does not prove runtime query frequency.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>table</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> DatabaseCallersResult</div>
+              <div class="code-box"><pre>find_db_callers(table="products")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="find_db_writers" data-desc="find all symbols and queries that write (`insert`, `update`, `delete`) to a database table or column (`writes_table`, `writes_column`). use when investigating data mutations, state changes, or write blast radius. returns writer symbols, operations, file:line citations, and redacted snippets. does not execute database transactions." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">find_db_writers</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Find all symbols and queries that write (`INSERT`, `UPDATE`, `DELETE`) to a database table or column (`WRITES_TABLE`, `WRITES_COLUMN`). Use when investigating data mutations, state changes, or write blast radius. Returns writer symbols, operations, file:line citations, and redacted snippets. Does not execute database transactions.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>table</code>, <code>column</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> DatabaseWritersResult</div>
+              <div class="code-box"><pre>find_db_writers(table="products")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="find_db_readers" data-desc="find all symbols and queries that read (`select`, `.query()`, `.objects.filter()`, `.findmany()`) from a database table or column (`reads_table`, `reads_column`). use when tracing where table data is consumed across services and views. returns reader symbols, operations, and evidence classes. does not prove runtime cache hits." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">find_db_readers</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Find all symbols and queries that read (`SELECT`, `.query()`, `.objects.filter()`, `.findMany()`) from a database table or column (`READS_TABLE`, `READS_COLUMN`). Use when tracing where table data is consumed across services and views. Returns reader symbols, operations, and evidence classes. Does not prove runtime cache hits.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>table</code>, <code>column</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> DatabaseReadersResult</div>
+              <div class="code-box"><pre>find_db_readers(table="users")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="find_db_relationships" data-desc="find database schema and orm relationships (`foreign_key_to`, `orm_relation`, `maps_to_table`, `has_primary_key`, `has_index`, `migrates_table`). use when inspecting foreign keys, table joins, or model associations. preserves explicit database relationship types and never collapses them into generic `depends_on`." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">find_db_relationships</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Find database schema and ORM relationships (`FOREIGN_KEY_TO`, `ORM_RELATION`, `MAPS_TO_TABLE`, `HAS_PRIMARY_KEY`, `HAS_INDEX`, `MIGRATES_TABLE`). Use when inspecting foreign keys, table joins, or model associations. Preserves explicit database relationship types and never collapses them into generic `DEPENDS_ON`.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>table</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> DatabaseRelationshipsResult</div>
+              <div class="code-box"><pre>find_db_relationships(table="orders")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_db_table" data-desc="return complete structural details for a database table including columns, primary keys, foreign keys, indexes, constraints, orm models, readers, writers, migrations, and upstream routes. use when inspecting a specific table's schema and code usage in one call. does not query live database servers." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">get_db_table</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return complete structural details for a database table including columns, primary keys, foreign keys, indexes, constraints, ORM models, readers, writers, migrations, and upstream routes. Use when inspecting a specific table's schema and code usage in one call. Does not query live database servers.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> <code>table</code></div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> DatabaseTableDetailResult</div>
+              <div class="code-box"><pre>get_db_table(table="products")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_db_schema" data-desc="return a repository-wide database schema summary including all discovered tables, columns, orm models, foreign keys, and migrations. use for database architecture overviews or schema audits. preserves `unknown` dialect and schema when not statically provable and never guesses database names." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">get_db_schema</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Return a repository-wide database schema summary including all discovered tables, columns, ORM models, foreign keys, and migrations. Use for database architecture overviews or schema audits. Preserves `UNKNOWN` dialect and schema when not statically provable and never guesses database names.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>dialect</code>, <code>schema</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> DatabaseSchemaOverviewResult</div>
+              <div class="code-box"><pre>get_db_schema()</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_db_impact" data-desc="compute bidirectional code <-> database change impact for a table or column, returning affected orm models, readers, writers, upstream http routes, migrations, and statically linked tests. use before renaming or altering a database table or column. does not execute database migrations or tests." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">get_db_impact</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Compute bidirectional Code <-> Database change impact for a table or column, returning affected ORM models, readers, writers, upstream HTTP routes, migrations, and statically linked tests. Use before renaming or altering a database table or column. Does not execute database migrations or tests.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>table</code>, <code>column</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> DatabaseImpactResult</div>
+              <div class="code-box"><pre>get_db_impact(table="products", column="shop_id")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="ingest_runtime_traces" data-desc="ingest optional runtime observation traces (opentelemetry json, structured json/jsonl events, or sql query logs) into codegraph's `runtime_observed` layer. use when grounding static analysis with recorded runtime traces. automatically strips headers/cookies/bodies, redacts sql bind parameters and secrets, and never converts runtime observations into static `ast_verified` proof." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">ingest_runtime_traces</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Ingest optional runtime observation traces (OpenTelemetry JSON, structured JSON/JSONL events, or SQL query logs) into CodeGraph's `RUNTIME_OBSERVED` layer. Use when grounding static analysis with recorded runtime traces. Automatically strips headers/cookies/bodies, redacts SQL bind parameters and secrets, and never converts runtime observations into static `AST_VERIFIED` proof.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>source_path</code>, <code>format</code>, <code>payload</code>, <code>max_events</code>, <code>sample_rate</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> RuntimeIngestResult</div>
+              <div class="code-box"><pre>ingest_runtime_traces(source_path="traces/scan_bill.json")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="get_runtime_trace" data-desc="retrieve aggregated runtime execution edges (`runtime_observed`) and reverse maps (`table -> runtime writers/readers`, `route -> runtime tables`) with `observation_count`, `first_seen`, `last_seen`, and `runtime_generation`. use when asking what actually happened at runtime. does not treat unobserved paths as impossible." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">get_runtime_trace</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Retrieve aggregated runtime execution edges (`RUNTIME_OBSERVED`) and reverse maps (`table -> runtime writers/readers`, `route -> runtime tables`) with `observation_count`, `first_seen`, `last_seen`, and `runtime_generation`. Use when asking what actually happened at runtime. Does not treat unobserved paths as impossible.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>route</code>, <code>symbol</code>, <code>table</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> RuntimeTraceResult</div>
+              <div class="code-box"><pre>get_runtime_trace(route="/api/scan-bill")</pre></div>
+            </div>
+            <div class="item-card tool-item" data-name="reconcile_static_runtime" data-desc="reconcile static repository edges against ingested runtime observations, classifying edges into `confirmed_runtime_path`, `static_runtime_conflict`, `not_observed_at_runtime`, and `runtime_only_observed`. use when comparing static code analysis with runtime behavior. never treats `not_observed_at_runtime` as proof that a path cannot execute." data-profiles="full">
+              <div class="item-header">
+                <span class="item-title">reconcile_static_runtime</span>
+                <div class="item-badges">
+                  <span class="item-badge profile">full</span>
+                </div>
+              </div>
+              <p class="item-desc">Reconcile static repository edges against ingested runtime observations, classifying edges into `CONFIRMED_RUNTIME_PATH`, `STATIC_RUNTIME_CONFLICT`, `NOT_OBSERVED_AT_RUNTIME`, and `RUNTIME_ONLY_OBSERVED`. Use when comparing static code analysis with runtime behavior. Never treats `NOT_OBSERVED_AT_RUNTIME` as proof that a path cannot execute.</p>
+              <div class="item-subfield"><strong>Required Inputs:</strong> None</div>
+              <div class="item-subfield"><strong>Optional Inputs:</strong> <code>symbol</code>, <code>route</code>, <code>table</code></div>
+              <div class="item-subfield"><strong>Guaranteed Output:</strong> StaticRuntimeReconciliationResult</div>
+              <div class="code-box"><pre>reconcile_static_runtime(route="/api/scan-bill")</pre></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="benchmarks" class="doc-section">
+          <div class="section-header">
+            <span class="section-badge">Empirical Results</span>
+            <h2 class="section-title">Measured Performance &amp; Monorepo Scaling</h2>
+            <p class="section-desc">Strict 50-task evaluation across 10 benchmark categories, audited for 0% unsupported claims and sub-50ms query response times.</p>
+          </div>
+
+          <table class="benchmark-table">
+            <thead>
+              <tr>
+                <th>Trust &amp; Efficiency Dimension</th>
+                <th>Measured Result (v2.2.1)</th>
+                <th>Target Threshold</th>
+                <th>Quality Gate</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>FACT Correctness</strong></td>
+                <td>100.0%</td>
+                <td>&ge; 98.0%</td>
+                <td><span class="badge-pass">PASS</span></td>
+              </tr>
+              <tr>
+                <td><strong>Unsupported Claims (Hallucinations)</strong></td>
+                <td>0.0%</td>
+                <td>&le; 1.0%</td>
+                <td><span class="badge-pass">PASS</span></td>
+              </tr>
+              <tr>
+                <td><strong>Task Coverage</strong></td>
+                <td>88.0%</td>
+                <td>&ge; 80.0%</td>
+                <td><span class="badge-pass">PASS</span></td>
+              </tr>
+              <tr>
+                <td><strong>Token Reduction vs Raw File Reads</strong></td>
+                <td>41.8% to 85.6%</td>
+                <td>&ge; 35.0%</td>
+                <td><span class="badge-pass">PASS</span></td>
+              </tr>
+              <tr>
+                <td><strong>Average Query Latency</strong></td>
+                <td>40.52 ms</td>
+                <td>&le; 100 ms</td>
+                <td><span class="badge-pass">PASS</span></td>
+              </tr>
+              <tr>
+                <td><strong>Commit Freshness Check</strong></td>
+                <td>&lt; 5 ms</td>
+                <td>&le; 50 ms</td>
+                <td><span class="badge-pass">PASS</span></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="diagram-container">
+            <img src="assets/large_repo_scaling.svg" alt="Large Repository Scaling Benchmark">
+          </div>
+          <div class="diagram-container" style="margin-top: 1.5rem;">
+            <img src="assets/performance_comparison.svg" alt="Performance Comparison Benchmark">
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer>
+      <p>CodeGraph MCP Engine (v2.2.1) • Open source software under the MIT License • Published on PyPI &amp; GitHub.</p>
+    </footer>
+  </div>
+
+  <script>
+    let currentCategory = 'ALL';
+
+    function setCategoryFilter(category, btn) {
+      currentCategory = category;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filterTools();
+    }
+
+    function filterTools() {
+      const query = document.getElementById('tool-search').value.toLowerCase().trim();
+      const tools = document.querySelectorAll('.tool-item');
+
+      tools.forEach(tool => {
+        const name = tool.getAttribute('data-name');
+        const desc = tool.getAttribute('data-desc');
+        const profiles = tool.getAttribute('data-profiles');
+
+        let matchesCategory = true;
+        if (currentCategory === 'agent') {
+          matchesCategory = profiles.includes('agent');
+        } else if (currentCategory === 'database') {
+          matchesCategory = name.includes('db');
+        } else if (currentCategory === 'runtime') {
+          matchesCategory = name.includes('runtime') || name.includes('trace');
+        } else if (currentCategory === 'graph') {
+          matchesCategory = profiles.includes('graph') || name.includes('call') || name.includes('path') || name.includes('flow');
+        }
+
+        const matchesQuery = query === '' || name.includes(query) || desc.includes(query);
+        tool.style.display = (matchesCategory && matchesQuery) ? 'block' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>
