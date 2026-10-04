@@ -20,21 +20,18 @@ def generate_docs():
   <meta name="google-site-verification" content="googlefee7fbf6bf114d91" />
   <link rel="canonical" href="https://raghurammrsd.github.io/CODE_GRAPH_MCP/">
   
-  <!-- Open Graph / Social SEO -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/">
-  <meta property="og:title" content="CodeGraph MCP — Everything Your Agents Need">
-  <meta property="og:description" content="Deterministic Codebase Intelligence for AI Coding Agents. Plug CodeGraph MCP into Claude Code, Cursor, Antigravity, and Codex for compiler-grade repository graph analysis.">
+  <meta property="og:title" content="CodeGraph MCP — Understand Any Codebase as a Graph">
+  <meta property="og:description" content="A local-first code-intelligence engine that turns any codebase into a queryable knowledge graph for AI coding agents. 56 verified MCP tools, 13 CLI commands, compiler-grade AST.">
   <meta property="og:image" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/assets/codegraph_logo.jpg">
 
-  <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/">
-  <meta name="twitter:title" content="CodeGraph MCP — Everything Your Agents Need">
-  <meta name="twitter:description" content="Deterministic Codebase Intelligence for AI Coding Agents. 56 verified MCP tools for AST call graphs, route discovery, and database lineage.">
+  <meta name="twitter:title" content="CodeGraph MCP — Understand Any Codebase as a Graph">
+  <meta name="twitter:description" content="A local-first code-intelligence engine that turns any codebase into a queryable knowledge graph for AI coding agents.">
   <meta name="twitter:image" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/assets/codegraph_logo.jpg">
 
-  <!-- Schema.org JSON-LD Structured Data for AI & Search Engines -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -60,736 +57,642 @@ def generate_docs():
   }
   </script>
 
+  <title>codegraph · Deep Codebase Knowledge Graph for AI Agents</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #ffffff;
-      --bg-alt: #f8fafc;
-      --bg-card: #ffffff;
-      --bg-dark: #09090b;
-      --border: #e2e8f0;
-      --border-focus: #cbd5e1;
-      --text: #0f172a;
-      --text-muted: #475569;
-      --text-dim: #94a3b8;
-      --primary: #0284c7;
-      --primary-dark: #0369a1;
-      --primary-blue: #2563eb;
-      --accent-coral: #f97316;
-      --accent-pink: #ec4899;
-      --success: #10b981;
-      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --bg-warm: #f7f7f5;
+      --bg-white: #ffffff;
+      --border-color: #e5e5e0;
+      --border-dark: #1c1917;
+      --text-main: #111111;
+      --text-muted: #555555;
+      --text-light: #777777;
+      --accent: #0284c7;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
-      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      --shadow-card: 0 20px 45px -10px rgba(0, 0, 0, 0.07), 0 2px 6px 0 rgba(0, 0, 0, 0.03);
-      --shadow-hover: 0 30px 60px -12px rgba(2, 132, 199, 0.12), 0 4px 10px rgba(0, 0, 0, 0.04);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; font-family: var(--font-sans); color: var(--text); background: var(--bg); }
-    body { min-height: 100vh; line-height: 1.6; overflow-x: hidden; position: relative; }
+    html { scroll-behavior: smooth; font-family: var(--font-sans); color: var(--text-main); background: var(--bg-warm); }
+    body { min-height: 100vh; line-height: 1.6; }
 
-    /* Interactive 3D Canvas Background */
-    #bgCanvas {
-      position: absolute; top: 0; left: 0; width: 100%; height: 900px;
-      pointer-events: none; z-index: 0; opacity: 0.65;
-    }
-
-    /* Ambient Lighting */
-    .ambient-glow-1 {
-      position: absolute; top: 5%; left: 15%; width: 500px; height: 500px;
-      background: radial-gradient(circle, rgba(2, 132, 199, 0.08) 0%, transparent 70%);
-      filter: blur(80px); pointer-events: none; z-index: 0;
-    }
-    .ambient-glow-2 {
-      position: absolute; top: 15%; right: 10%; width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(249, 115, 22, 0.06) 0%, transparent 70%);
-      filter: blur(90px); pointer-events: none; z-index: 0;
-    }
-
-    /* Modern Navbar */
-    header.navbar {
-      position: sticky; top: 0; z-index: 50;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-      padding: 0.9rem 2.5rem;
+    /* Top Universal Header */
+    header.top-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--bg-warm);
+      border-bottom: 1px solid var(--border-color);
       display: flex; align-items: center; justify-content: space-between;
+      padding: 0.85rem 2rem;
     }
-    .brand-wrap { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: inherit; }
-    .brand-logo-icon {
-      width: 32px; height: 32px; border-radius: 8px; overflow: hidden;
-      display: flex; align-items: center; justify-content: center;
-      background: #09090b; color: #fff; font-family: var(--font-mono); font-weight: 800; font-size: 0.9rem;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    .brand-logo {
+      font-weight: 800; font-size: 1.25rem; letter-spacing: -0.04em;
+      color: var(--text-main); text-decoration: none;
     }
-    .brand-name { font-weight: 800; font-size: 1.15rem; letter-spacing: -0.03em; color: var(--text); }
-    .brand-pill {
-      font-size: 0.7rem; font-family: var(--font-mono); font-weight: 700;
-      background: #f1f5f9; color: var(--text-muted); padding: 0.2rem 0.55rem;
-      border-radius: 9999px; border: 1px solid var(--border);
+    .search-trigger {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 320px; background: var(--bg-white); border: 1px solid var(--border-color);
+      padding: 0.4rem 0.75rem; border-radius: 6px; font-size: 0.85rem; color: var(--text-light);
+      cursor: pointer; transition: border-color 0.15s ease;
     }
-    .nav-links { display: flex; align-items: center; gap: 2rem; list-style: none; }
-    .nav-link {
-      color: var(--text-muted); text-decoration: none; font-size: 0.92rem; font-weight: 600;
-      transition: color 0.15s ease;
+    .search-trigger:hover { border-color: #999; }
+    .kbd-shortcut {
+      font-family: var(--font-mono); font-size: 0.75rem; background: #eee;
+      padding: 0.15rem 0.4rem; border-radius: 4px; color: #555;
     }
-    .nav-link:hover { color: var(--text); }
-    .nav-actions { display: flex; align-items: center; gap: 1rem; }
-    .btn-cta-dark {
-      background: var(--bg-dark); color: #ffffff; text-decoration: none;
-      padding: 0.55rem 1.25rem; border-radius: 9999px; font-size: 0.88rem; font-weight: 700;
-      display: inline-flex; align-items: center; gap: 0.4rem; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    .top-menu { display: flex; align-items: center; gap: 1.75rem; list-style: none; }
+    .top-menu a {
+      color: var(--text-main); text-decoration: none; font-size: 0.9rem; font-weight: 600;
+      transition: opacity 0.15s ease;
     }
-    .btn-cta-dark:hover { background: #1e293b; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); }
-
-    /* Hero Section */
-    .hero-wrapper { position: relative; z-index: 10; }
-    .hero-container {
-      max-width: 1320px; margin: 0 auto; padding: 5.5rem 2rem 4rem;
-      display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 3.5rem; align-items: center;
-    }
-    @media (max-width: 1024px) {
-      .hero-container { grid-template-columns: 1fr; gap: 3.5rem; padding: 3rem 1.5rem; }
+    .top-menu a:hover { opacity: 0.7; }
+    .badge-star {
+      border: 1px solid var(--border-dark); border-radius: 4px; padding: 0.25rem 0.6rem;
+      font-size: 0.82rem; font-weight: 700; background: var(--bg-white);
+      text-decoration: none; color: var(--text-main); display: inline-flex; align-items: center; gap: 0.35rem;
     }
 
-    .hero-left h1 {
-      font-size: clamp(2.6rem, 5.2vw, 4.3rem);
+    /* Hero Section (Split Layout) */
+    .hero-split-box {
+      display: grid; grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-warm);
+      min-height: 520px;
+    }
+    @media (max-width: 992px) {
+      .hero-split-box { grid-template-columns: 1fr; }
+    }
+    .hero-left-cell {
+      padding: 4.5rem 3.5rem 4rem;
+      border-right: 1px solid var(--border-color);
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    @media (max-width: 992px) {
+      .hero-left-cell { border-right: none; border-bottom: 1px solid var(--border-color); padding: 3rem 1.5rem; }
+    }
+    .hero-title {
+      font-size: clamp(2.4rem, 4.5vw, 3.8rem);
       font-weight: 800; line-height: 1.08; letter-spacing: -0.04em;
-      color: var(--text); margin-bottom: 1.25rem;
+      color: var(--text-main); margin-bottom: 1.25rem;
     }
-    .gradient-agents {
-      background: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #4f46e5 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    .hero-desc {
+      font-size: 1.15rem; color: var(--text-muted); line-height: 1.55;
+      max-width: 520px; margin-bottom: 2rem;
     }
-    .gradient-need {
-      background: linear-gradient(135deg, #f97316 0%, #ec4899 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    .hero-btn-row { display: flex; gap: 0.85rem; margin-bottom: 1.75rem; flex-wrap: wrap; }
+    .btn-solid-dark {
+      background: var(--text-main); color: #fff; text-decoration: none;
+      padding: 0.65rem 1.4rem; border-radius: 6px; font-weight: 700; font-size: 0.92rem;
+      transition: background 0.15s ease;
     }
-    .hero-left p.hero-subtitle {
-      font-size: 1.15rem; color: var(--text-muted); line-height: 1.65;
-      max-width: 560px; margin-bottom: 2rem;
+    .btn-solid-dark:hover { background: #333; }
+    .btn-outline-dark {
+      background: var(--bg-white); color: var(--text-main); text-decoration: none;
+      border: 1px solid var(--border-dark); padding: 0.65rem 1.4rem; border-radius: 6px;
+      font-weight: 700; font-size: 0.92rem; transition: background 0.15s ease;
     }
-    .hero-left p.hero-subtitle strong { color: var(--text); font-weight: 700; }
+    .btn-outline-dark:hover { background: #f0f0ee; }
 
-    .agent-badges-row {
-      display: flex; align-items: center; gap: 0.85rem; margin-bottom: 1.25rem; flex-wrap: wrap;
+    .hero-code-bar {
+      display: inline-flex; align-items: center; justify-content: space-between;
+      gap: 1.25rem; background: var(--bg-white); border: 1px solid var(--border-color);
+      padding: 0.6rem 1rem; border-radius: 6px; font-family: var(--font-mono);
+      font-size: 0.88rem; max-width: 500px;
     }
-    .agent-badges-label { font-size: 0.875rem; color: var(--text-muted); font-weight: 600; }
-    .agent-pill {
-      font-size: 0.75rem; font-weight: 700; font-family: var(--font-mono);
-      padding: 0.25rem 0.6rem; border-radius: 6px;
-      background: #f1f5f9; color: #334155; border: 1px solid var(--border);
-      transition: all 0.2s ease;
+    .copy-icon-btn {
+      background: none; border: none; cursor: pointer; color: var(--text-muted);
+      padding: 0.2rem; display: flex; align-items: center;
     }
-    .agent-pill:hover { background: #e2e8f0; transform: translateY(-1px); }
+    .copy-icon-btn:hover { color: var(--text-main); }
 
-    .terminal-box {
-      background: var(--bg-dark); color: #f8fafc;
-      border-radius: 12px; padding: 0.9rem 1.25rem;
-      display: flex; align-items: center; justify-content: space-between;
-      font-family: var(--font-mono); font-size: 0.88rem;
-      box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.08);
-      max-width: 580px; position: relative; overflow: hidden;
+    /* Hero Right Cell: Clean AST Knowledge Graph Tree */
+    .hero-right-cell {
+      padding: 3rem; display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden; background: #fafaf8;
     }
-    .terminal-cmd { display: flex; align-items: center; gap: 0.6rem; overflow-x: auto; white-space: nowrap; }
-    .terminal-prompt { color: #38bdf8; font-weight: 700; user-select: none; }
-    .btn-copy-terminal {
-      background: #27272a; color: #e4e4e7; border: 1px solid #3f3f46;
-      border-radius: 6px; padding: 0.35rem 0.75rem; font-size: 0.75rem;
-      font-weight: 600; cursor: pointer; display: inline-flex; align-items: center;
-      gap: 0.35rem; transition: all 0.15s ease; user-select: none;
-    }
-    .btn-copy-terminal:hover { background: #3f3f46; color: #ffffff; }
-
-    .terminal-hint {
-      margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-dim); max-width: 560px;
+    .ast-tree-svg {
+      width: 100%; max-width: 520px; height: 380px;
     }
 
-    /* Hero Right: 3D Parallax Card Container */
-    .hero-mockup-wrapper {
-      perspective: 1200px;
-      perspective-origin: center center;
-    }
-    .hero-mockup-card {
-      background: rgba(255, 255, 255, 0.95);
-      border: 1px solid var(--border);
-      border-radius: 20px; padding: 2.25rem;
-      box-shadow: var(--shadow-card);
-      position: relative;
-      transform-style: preserve-3d;
-      transition: transform 0.15s ease-out, box-shadow 0.25s ease;
-      overflow: hidden;
-    }
-    .hero-mockup-card:hover {
-      box-shadow: 0 35px 70px -15px rgba(2, 132, 199, 0.15), 0 15px 25px rgba(0, 0, 0, 0.04);
-    }
-    .card-glare {
-      position: absolute; inset: 0; pointer-events: none; border-radius: 20px;
-      background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.6) 0%, transparent 65%);
-      opacity: 0; transition: opacity 0.3s ease;
-      z-index: 10;
-    }
-    .hero-mockup-card:hover .card-glare { opacity: 1; }
-
-    /* 3D Depth Layers inside Card */
-    .mockup-status-bar {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);
-      font-size: 0.85rem; font-weight: 600; color: var(--text-muted);
-      transform: translateZ(30px);
-    }
-    .agent-active-badge { display: flex; align-items: center; gap: 0.5rem; }
-    .status-dot {
-      width: 9px; height: 9px; border-radius: 50%; background: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
-      animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-    @keyframes pulse-dot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.15); opacity: 0.8; } }
-    .agent-active-name { font-weight: 700; color: var(--text); }
-    .mockup-counter { font-family: var(--font-mono); color: var(--text-dim); font-size: 0.8rem; }
-
-    .mockup-title {
-      font-size: 1.28rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 1.25rem;
-      transform: translateZ(40px);
-    }
-
-    .mockup-steps {
-      list-style: none; display: flex; flex-direction: column; gap: 0.9rem;
-      transform: translateZ(25px);
-    }
-    .mockup-step {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0.75rem 0.95rem; border-radius: 12px; background: #f8fafc;
-      font-size: 0.88rem; font-weight: 500; border: 1px solid rgba(226, 232, 240, 0.6);
-      transition: all 0.2s ease;
-    }
-    .mockup-step:hover { background: #f1f5f9; transform: translateZ(10px); }
-    .step-left { display: flex; align-items: center; gap: 0.75rem; }
-    .step-icon-check {
-      width: 22px; height: 22px; border-radius: 50%; background: #2563eb;
-      display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0;
-      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
-    }
-    .step-icon-spinner {
-      width: 22px; height: 22px; border-radius: 50%;
-      border: 2.5px solid #cbd5e1; border-top-color: #2563eb; flex-shrink: 0;
-      animation: spin 0.8s linear infinite;
-    }
-    .step-icon-pending {
-      width: 22px; height: 22px; border-radius: 50%;
-      border: 2px dashed #94a3b8; flex-shrink: 0;
-    }
-    @keyframes spin { 100% { transform: rotate(360deg); } }
-
-    .step-pill {
-      font-size: 0.72rem; font-weight: 700; font-family: var(--font-mono);
-      padding: 0.2rem 0.55rem; border-radius: 6px;
-    }
-    .step-pill-blue { background: #dbeafe; color: #1d4ed8; }
-    .step-pill-purple { background: #f3e8ff; color: #7e22ce; }
-    .step-pill-orange { background: #ffedd5; color: #c2410c; }
-    .step-pill-gray { background: #e2e8f0; color: #475569; }
-
-    .mockup-footer {
-      margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border);
-      font-size: 0.82rem; color: var(--text-dim); text-align: center;
-      transform: translateZ(20px);
-    }
-
-    /* Metric Counter Strip */
-    .metric-strip-wrap {
-      max-width: 1320px; margin: 0 auto; padding: 0 2rem 4rem; position: relative; z-index: 10;
-    }
-    .metric-strip {
-      background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px);
-      border: 1px solid var(--border); border-radius: 16px;
-      padding: 1.75rem 2.5rem; display: grid; grid-template-columns: repeat(4, 1fr);
-      gap: 2rem; box-shadow: var(--shadow-sm);
+    /* 3-Column Feature Divider Grid */
+    .features-divider-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-warm);
     }
     @media (max-width: 900px) {
-      .metric-strip { grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+      .features-divider-grid { grid-template-columns: 1fr; }
     }
-    @media (max-width: 560px) {
-      .metric-strip { grid-template-columns: 1fr; }
+    .feature-divider-cell {
+      padding: 3rem 2.5rem;
+      border-right: 1px solid var(--border-color);
+      display: flex; gap: 1.25rem; align-items: flex-start;
     }
-    .metric-item { text-align: left; }
-    .metric-item-val {
-      font-size: 2.1rem; font-weight: 800; font-family: var(--font-mono);
-      letter-spacing: -0.04em; color: var(--text); line-height: 1; margin-bottom: 0.4rem;
+    .feature-divider-cell:last-child { border-right: none; }
+    @media (max-width: 900px) {
+      .feature-divider-cell { border-right: none; border-bottom: 1px solid var(--border-color); }
     }
-    .metric-item-val span.accent-blue { color: #0284c7; }
-    .metric-item-val span.accent-green { color: #16a34a; }
-    .metric-item-label { font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
-    .metric-item-sub { font-size: 0.78rem; color: var(--text-muted); }
+    .feature-icon-box {
+      width: 36px; height: 36px; border: 1.5px solid var(--text-main);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      border-radius: 4px;
+    }
+    .feature-content h3 {
+      font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.5rem;
+    }
+    .feature-content p {
+      font-size: 0.9rem; color: var(--text-muted); line-height: 1.6;
+    }
 
-    /* Section Layouts */
-    .section-wrap { padding: 5.5rem 2rem; max-width: 1320px; margin: 0 auto; scroll-margin-top: 5rem; position: relative; z-index: 10; }
-    .section-wrap.alt { background: var(--bg-alt); max-width: 100%; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-    .section-inner { max-width: 1320px; margin: 0 auto; }
+    /* 3-Column Documentation Layout */
+    .docs-layout-container {
+      display: grid; grid-template-columns: 260px 1fr 240px;
+      min-height: 100vh; background: var(--bg-white);
+    }
+    @media (max-width: 1100px) {
+      .docs-layout-container { grid-template-columns: 240px 1fr; }
+      aside.on-this-page { display: none; }
+    }
+    @media (max-width: 800px) {
+      .docs-layout-container { grid-template-columns: 1fr; }
+      aside.docs-sidebar { display: none; }
+    }
 
-    .section-heading-center { text-align: center; max-width: 780px; margin: 0 auto 3.5rem; }
-    .section-tag {
-      font-size: 0.8rem; font-weight: 700; font-family: var(--font-mono);
-      text-transform: uppercase; letter-spacing: 0.08em; color: var(--primary);
-      margin-bottom: 0.5rem; display: inline-block;
+    /* Left Sidebar */
+    aside.docs-sidebar {
+      border-right: 1px solid var(--border-color);
+      padding: 2rem 1.5rem; background: var(--bg-warm);
+      position: sticky; top: 3.8rem; height: calc(100vh - 3.8rem);
+      overflow-y: auto;
     }
-    .section-heading-center h2 {
-      font-size: clamp(2.1rem, 3.6vw, 2.85rem); font-weight: 800; letter-spacing: -0.03em;
-      margin-bottom: 0.85rem; color: var(--text);
+    .sidebar-group { margin-bottom: 2rem; }
+    .sidebar-group-title {
+      font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-light); margin-bottom: 0.65rem;
     }
-    .section-heading-center p { font-size: 1.05rem; color: var(--text-muted); line-height: 1.6; }
+    .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 0.25rem; }
+    .sidebar-menu a {
+      display: block; color: var(--text-muted); text-decoration: none;
+      font-size: 0.88rem; font-weight: 500; padding: 0.35rem 0.6rem; border-radius: 5px;
+      transition: all 0.15s ease;
+    }
+    .sidebar-menu a:hover, .sidebar-menu a.active {
+      color: var(--text-main); font-weight: 700; background: rgba(0, 0, 0, 0.04);
+    }
+    .sidebar-menu a.active { border-left: 2px solid var(--text-main); border-radius: 0 5px 5px 0; }
 
-    /* Features Grid with 3D Hover Lift */
-    .grid-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.75rem; }
-    .feature-card {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 18px; padding: 2.25rem; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: var(--shadow-sm); position: relative; overflow: hidden;
+    /* Center Main Content */
+    main.docs-main-content {
+      padding: 3.5rem 4rem 6rem; max-width: 900px;
     }
-    .feature-card:hover {
-      transform: translateY(-5px);
-      box-shadow: var(--shadow-hover);
-      border-color: #93c5fd;
+    @media (max-width: 800px) {
+      main.docs-main-content { padding: 2rem 1.5rem 4rem; }
     }
-    .feature-tag {
-      font-size: 0.72rem; font-family: var(--font-mono); font-weight: 700; text-transform: uppercase;
-      padding: 0.25rem 0.55rem; border-radius: 6px; display: inline-block; margin-bottom: 1rem;
-      background: #eff6ff; color: #1d4ed8;
+    .doc-section-block { margin-bottom: 4.5rem; scroll-margin-top: 5rem; }
+    .doc-main-heading {
+      font-size: 2.25rem; font-weight: 800; letter-spacing: -0.03em;
+      margin-bottom: 1.5rem; color: var(--text-main);
     }
-    .feature-card h3 { font-size: 1.28rem; font-weight: 800; margin-bottom: 0.6rem; color: var(--text); letter-spacing: -0.02em; }
-    .feature-card p { font-size: 0.92rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 1.25rem; }
-    .feature-metric {
-      padding-top: 1rem; border-top: 1px solid var(--border);
-      display: flex; align-items: baseline; justify-content: space-between;
-      font-size: 0.85rem; font-weight: 600; color: var(--text-dim);
+    .doc-sub-heading {
+      font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;
+      margin: 2.5rem 0 1rem; color: var(--text-main);
     }
-    .feature-metric span.metric-val { font-family: var(--font-mono); font-weight: 700; color: var(--text); font-size: 1.05rem; }
+    .doc-paragraph {
+      font-size: 1rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 1.25rem;
+    }
+    .doc-paragraph strong { color: var(--text-main); font-weight: 700; }
+    .doc-paragraph code {
+      font-family: var(--font-mono); font-size: 0.88rem; background: #f0f0ee;
+      padding: 0.15rem 0.4rem; border-radius: 4px; color: #111;
+    }
 
-    /* Interactive Tool Directory */
-    .tool-controls {
-      display: flex; gap: 1rem; align-items: center; justify-content: space-between;
-      margin-bottom: 2rem; flex-wrap: wrap; background: #ffffff;
-      padding: 1.1rem 1.4rem; border-radius: 16px; border: 1px solid var(--border);
-      box-shadow: var(--shadow-sm);
+    /* Right On-This-Page TOC */
+    aside.on-this-page {
+      padding: 2.5rem 1.5rem; border-left: 1px solid var(--border-color);
+      position: sticky; top: 3.8rem; height: calc(100vh - 3.8rem);
+      overflow-y: auto; background: var(--bg-white);
     }
-    .search-box-wrap { flex: 1; min-width: 280px; position: relative; }
-    .search-tool-input {
-      width: 100%; padding: 0.8rem 1rem 0.8rem 2.6rem; border-radius: 10px;
-      border: 1px solid var(--border); font-size: 0.95rem; font-family: var(--font-sans);
-      outline: none; transition: all 0.15s ease;
+    .toc-title {
+      font-size: 0.78rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-main); margin-bottom: 0.75rem;
     }
-    .search-tool-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12); }
-    .search-icon-svg {
-      position: absolute; left: 0.9rem; top: 50%; transform: translateY(-50%);
-      width: 17px; height: 17px; color: var(--text-dim); pointer-events: none;
+    .toc-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; }
+    .toc-list a { color: var(--text-muted); text-decoration: none; transition: color 0.15s ease; }
+    .toc-list a:hover { color: var(--text-main); font-weight: 600; }
+
+    /* Minimalist Tables */
+    .docs-table {
+      width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 1.5rem 0 2rem;
+      border: 1px solid var(--border-color);
     }
-    .category-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .category-btn {
-      background: #f8fafc; border: 1px solid var(--border); color: var(--text-muted);
-      padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.82rem; font-weight: 700;
+    .docs-table th {
+      background: var(--bg-warm); text-align: left; padding: 0.75rem 1rem;
+      font-weight: 700; border-bottom: 1px solid var(--border-color); font-size: 0.82rem;
+    }
+    .docs-table td {
+      padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-color); color: var(--text-muted);
+    }
+    .docs-table tr:last-child td { border-bottom: none; }
+    .docs-table td.strong { font-weight: 700; color: var(--text-main); }
+    .tag-badge {
+      display: inline-block; font-family: var(--font-mono); font-size: 0.75rem;
+      background: #f0f0ee; padding: 0.15rem 0.45rem; border-radius: 4px; color: #333;
+    }
+
+    /* Search & Filter for Tools */
+    .tool-filter-bar {
+      display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center;
+    }
+    .tool-filter-input {
+      flex: 1; min-width: 240px; padding: 0.6rem 0.85rem; border: 1px solid var(--border-color);
+      border-radius: 6px; font-family: var(--font-sans); font-size: 0.9rem; outline: none;
+    }
+    .tool-filter-input:focus { border-color: var(--border-dark); }
+    .pill-btn {
+      background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-muted);
+      padding: 0.45rem 0.85rem; border-radius: 6px; font-size: 0.8rem; font-weight: 700;
       cursor: pointer; transition: all 0.15s ease;
     }
-    .category-btn.active, .category-btn:hover {
-      background: #09090b; color: #ffffff; border-color: #09090b;
+    .pill-btn.active, .pill-btn:hover {
+      background: var(--text-main); color: #fff; border-color: var(--text-main);
     }
 
-    .tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.4rem; }
-    .tool-card {
-      background: #ffffff; border: 1px solid var(--border); border-radius: 16px;
-      padding: 1.6rem; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: var(--shadow-sm);
-      display: flex; flex-direction: column; justify-content: space-between;
+    /* Minimalist Tool Cards */
+    .tool-card-box {
+      border: 1px solid var(--border-color); border-radius: 8px; padding: 1.35rem;
+      margin-bottom: 1.25rem; background: var(--bg-white); transition: border-color 0.15s ease;
     }
-    .tool-card:hover { border-color: #93c5fd; box-shadow: var(--shadow-card); transform: translateY(-2px); }
-    .tool-header {
-      display: flex; align-items: baseline; justify-content: space-between;
-      margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.5rem;
+    .tool-card-box:hover { border-color: #999; }
+    .tool-head {
+      display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;
     }
-    .tool-title { font-family: var(--font-mono); font-size: 1.08rem; font-weight: 700; color: #0284c7; }
-    .tool-badge-profile {
-      font-size: 0.7rem; font-family: var(--font-mono); font-weight: 700;
-      padding: 0.2rem 0.55rem; border-radius: 5px; background: #f1f5f9; color: #475569;
+    .tool-name-code { font-family: var(--font-mono); font-weight: 700; font-size: 1.05rem; color: var(--text-main); }
+    .profile-pill {
+      font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700;
+      padding: 0.15rem 0.45rem; border-radius: 4px; background: #eee; color: #333;
     }
-    .tool-badge-profile.core { background: #dbeafe; color: #1e40af; }
-    .tool-badge-profile.trace { background: #e0e7ff; color: #4338ca; }
-    .tool-badge-profile.database { background: #fef3c7; color: #92400e; }
-    .tool-badge-profile.runtime { background: #dcfce7; color: #166534; }
-
-    .tool-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.55; margin-bottom: 0.85rem; }
-    .tool-solve-badge {
-      background: #f8fafc; border-left: 3px solid #0284c7; padding: 0.45rem 0.75rem;
-      border-radius: 0 8px 8px 0; font-size: 0.82rem; color: #334155; margin-bottom: 1rem;
+    .problem-solved-note {
+      font-size: 0.82rem; background: var(--bg-warm); padding: 0.5rem 0.75rem;
+      border-radius: 4px; margin: 0.75rem 0; border-left: 3px solid var(--text-main);
     }
-    .tool-solve-badge strong { color: var(--text); }
-
-    .tool-expand-btn {
-      background: #f8fafc; border: 1px solid var(--border); color: var(--text-muted);
-      padding: 0.45rem 0.85rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700;
-      cursor: pointer; width: 100%; text-align: center; transition: all 0.15s ease;
+    .btn-toggle-spec {
+      background: none; border: 1px solid var(--border-color); padding: 0.35rem 0.75rem;
+      border-radius: 4px; font-size: 0.78rem; font-weight: 700; cursor: pointer; color: var(--text-muted);
     }
-    .tool-expand-btn:hover { background: #f1f5f9; color: var(--text); }
-    .tool-details { display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
-    .tool-details.open { display: block; }
-    .spec-block { margin-bottom: 0.75rem; }
-    .spec-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.25rem; }
-    .code-snippet {
-      background: #09090b; color: #f8fafc; border-radius: 8px; padding: 0.75rem;
-      font-family: var(--font-mono); font-size: 0.8rem; overflow-x: auto; white-space: pre-wrap; word-break: break-all;
+    .btn-toggle-spec:hover { color: var(--text-main); border-color: var(--text-main); }
+    .tool-spec-drawer { display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+    .tool-spec-drawer.open { display: block; }
+    .spec-pre {
+      background: var(--bg-warm); padding: 0.85rem; border-radius: 6px; font-family: var(--font-mono);
+      font-size: 0.8rem; overflow-x: auto; margin-top: 0.4rem; border: 1px solid var(--border-color);
+      white-space: pre-wrap; word-break: break-all;
     }
 
-    /* CLI Command Center */
-    .cli-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.6rem; }
-    .cli-card {
-      background: #ffffff; border: 1px solid var(--border); border-radius: 16px;
-      padding: 1.85rem; box-shadow: var(--shadow-sm); transition: all 0.2s ease;
+    /* Minimalist CLI Reference Box */
+    .cli-box-item {
+      border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;
+      margin-bottom: 1.5rem; background: var(--bg-white);
     }
-    .cli-card:hover { box-shadow: var(--shadow-card); border-color: #cbd5e1; }
-    .cli-cmd-name {
-      font-family: var(--font-mono); font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 0.4rem;
-    }
-    .cli-problem {
-      background: #eff6ff; color: #1e3a8a; padding: 0.45rem 0.75rem; border-radius: 8px;
-      font-size: 0.82rem; font-weight: 600; margin-bottom: 1rem;
-    }
-    .cli-syntax-box {
-      background: #09090b; color: #f8fafc; border-radius: 8px; padding: 0.75rem 1rem;
-      font-family: var(--font-mono); font-size: 0.85rem; margin-bottom: 1rem;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .cli-flags-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 0.5rem; }
-    .cli-flags-table th { text-align: left; padding: 0.4rem 0.5rem; background: #f8fafc; color: var(--text-dim); font-weight: 700; }
-    .cli-flags-table td { padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--border); color: var(--text-muted); }
-    .cli-flags-table td.flag-code { font-family: var(--font-mono); font-weight: 600; color: #0284c7; }
-
-    /* Diagrams & Visual Proofs */
-    .diagram-card {
-      background: #ffffff; border: 1px solid var(--border); border-radius: 18px;
-      padding: 2.25rem; box-shadow: var(--shadow-card); margin-bottom: 2rem; text-align: center;
-    }
-    .diagram-card img { max-width: 100%; height: auto; border-radius: 10px; }
-    .diagram-caption { margin-top: 1.1rem; font-size: 0.9rem; color: var(--text-muted); }
-
-    /* Integration Cards */
-    .integration-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
-    .integration-card {
-      background: #ffffff; border: 1px solid var(--border); border-radius: 16px;
-      padding: 1.75rem; box-shadow: var(--shadow-sm);
-    }
-    .integration-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-    .integration-title { font-size: 1.15rem; font-weight: 800; color: var(--text); }
-    .integration-badge {
-      font-size: 0.72rem; font-weight: 700; font-family: var(--font-mono);
-      background: #f1f5f9; color: #475569; padding: 0.2rem 0.55rem; border-radius: 6px;
+    .cli-box-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; }
+    .cli-box-title { font-family: var(--font-mono); font-size: 1.15rem; font-weight: 800; color: var(--text-main); }
+    .cli-box-cmd {
+      background: var(--bg-warm); border: 1px solid var(--border-color); padding: 0.65rem 1rem;
+      border-radius: 6px; font-family: var(--font-mono); font-size: 0.85rem; margin: 0.75rem 0;
+      display: flex; justify-content: space-between; align-items: center;
     }
 
-    /* Scaling Benchmark Table */
-    .table-container {
-      background: #ffffff; border: 1px solid var(--border); border-radius: 16px;
-      overflow-x: auto; box-shadow: var(--shadow-sm);
+    .diagram-frame {
+      border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;
+      margin: 1.5rem 0 2rem; background: var(--bg-warm); text-align: center;
     }
-    .custom-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left; }
-    .custom-table th {
-      padding: 0.95rem 1.35rem; background: #f8fafc; color: var(--text-dim);
-      font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;
-      border-bottom: 1px solid var(--border);
-    }
-    .custom-table td { padding: 1rem 1.35rem; border-bottom: 1px solid var(--border); color: var(--text-muted); }
-    .custom-table tr:last-child td { border-bottom: none; }
-    .custom-table td.strong { font-weight: 700; color: var(--text); }
-    .badge-metric-green {
-      background: #dcfce7; color: #15803d; font-family: var(--font-mono);
-      font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px;
-    }
+    .diagram-frame img { max-width: 100%; height: auto; border-radius: 4px; }
+    .diagram-subtext { margin-top: 0.85rem; font-size: 0.85rem; color: var(--text-light); }
 
-    /* Footer */
-    footer.app-footer {
-      background: #ffffff; border-top: 1px solid var(--border);
-      padding: 4.5rem 2rem 3.5rem; margin-top: 4rem; position: relative; z-index: 10;
+    /* Universal Bottom Footer */
+    footer.bottom-bar {
+      border-top: 1px solid var(--border-color); background: var(--bg-warm);
+      padding: 2.5rem 3rem; display: flex; justify-content: space-between;
+      align-items: center; font-size: 0.88rem; flex-wrap: wrap; gap: 1rem;
     }
-    .footer-inner {
-      max-width: 1320px; margin: 0 auto;
-      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 2rem;
-    }
-    .footer-copy { font-size: 0.88rem; color: var(--text-dim); }
-    .footer-links { display: flex; gap: 1.5rem; list-style: none; }
-    .footer-links a { color: var(--text-muted); text-decoration: none; font-size: 0.88rem; font-weight: 600; }
-    .footer-links a:hover { color: var(--text); }
+    .footer-logo { font-weight: 800; color: var(--text-main); text-decoration: none; }
+    .footer-links-list { display: flex; gap: 1.75rem; list-style: none; }
+    .footer-links-list a { color: var(--text-muted); text-decoration: none; font-weight: 600; }
+    .footer-links-list a:hover { color: var(--text-main); }
   </style>
 </head>
 <body>
 
-  <!-- 3D Interactive Canvas & Ambient Lighting -->
-  <canvas id="bgCanvas"></canvas>
-  <div class="ambient-glow-1"></div>
-  <div class="ambient-glow-2"></div>
-
-  <!-- Top Navbar -->
-  <header class="navbar">
-    <a href="#" class="brand-wrap">
-      <div class="brand-logo-icon">CG</div>
-      <span class="brand-name">CodeGraph MCP</span>
-      <span class="brand-pill">v2.2.1</span>
-    </a>
-    <nav>
-      <ul class="nav-links">
-        <li><a href="#features" class="nav-link">Features</a></li>
-        <li><a href="#tools" class="nav-link">56 MCP Tools</a></li>
-        <li><a href="#cli" class="nav-link">CLI Reference</a></li>
-        <li><a href="#architecture" class="nav-link">Architecture</a></li>
-        <li><a href="#benchmarks" class="nav-link">Benchmarks</a></li>
-        <li><a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP" class="nav-link" target="_blank">GitHub</a></li>
-      </ul>
-    </nav>
-    <div class="nav-actions">
-      <a href="#integrations" class="btn-cta-dark">
-        Get started &rarr;
-      </a>
+  <!-- Top Universal Header -->
+  <header class="top-nav">
+    <a href="#" class="brand-logo">codegraph</a>
+    <div class="search-trigger" onclick="document.getElementById('mcpToolsSearch').focus(); window.location.hash = '#tools-catalog';">
+      <span>Search tools, commands, or concepts...</span>
+      <span class="kbd-shortcut">&#8984; K</span>
     </div>
+    <ul class="top-menu">
+      <li><a href="#introduction">Docs</a></li>
+      <li><a href="#languages">Languages</a></li>
+      <li><a href="#tools-catalog">56 MCP Tools</a></li>
+      <li><a href="#cli-reference">CLI</a></li>
+      <li><a href="#benchmarks">Benchmarks</a></li>
+      <li><a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP" target="_blank">GitHub</a></li>
+      <li><a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP" class="badge-star" target="_blank">&#9733; 861 tests</a></li>
+    </ul>
   </header>
 
-  <!-- Hero Section with 3D Parallax Tilt -->
-  <div class="hero-wrapper">
-    <section class="hero-container" id="heroSection">
-      <div class="hero-left">
-        <h1>
-          Everything your<br>
-          <span class="gradient-agents">agents</span> <span class="gradient-need">need.</span>
-        </h1>
-        <p class="hero-subtitle">
-          Plug CodeGraph into your coding agent to get 100% deterministic repository intelligence &mdash; AST-grounded, zero hallucinations, sub-50ms speed. <strong>One setup, any agent.</strong>
-        </p>
+  <!-- Hero Split Layout (Swiss Editorial Design) -->
+  <div class="hero-split-box">
+    <div class="hero-left-cell">
+      <h1 class="hero-title">Understand any codebase as a graph</h1>
+      <p class="hero-desc">
+        A local-first code-intelligence tool that turns any codebase into a queryable knowledge graph for AI coding agents.
+      </p>
 
-        <div class="agent-badges-row">
-          <span class="agent-badges-label">Give this to your agent</span>
-          <span class="agent-pill">Claude Code</span>
-          <span class="agent-pill">Cursor</span>
-          <span class="agent-pill">Antigravity</span>
-          <span class="agent-pill">Codex</span>
-          <span class="agent-pill">Cline</span>
-          <span class="agent-pill">Zed</span>
-        </div>
-
-        <div class="terminal-box">
-          <div class="terminal-cmd">
-            <span class="terminal-prompt">$</span>
-            <span>pip install codegraph-engine &amp;&amp; codegraph mcp serve</span>
-          </div>
-          <button class="btn-copy-terminal" onclick="navigator.clipboard.writeText('pip install codegraph-engine && codegraph mcp serve'); this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy', 2000);">
-            Copy
-          </button>
-        </div>
-        <p class="terminal-hint">
-          It indexes your repository, serves 56 deterministic MCP tools, and takes it from there.
-        </p>
+      <div class="hero-btn-row">
+        <a href="#introduction" class="btn-solid-dark">Get started</a>
+        <a href="#tools-catalog" class="btn-outline-dark">View documentation</a>
       </div>
 
-      <!-- Hero Right: Interactive 3D Mockup Card -->
-      <div class="hero-mockup-wrapper">
-        <div class="hero-mockup-card" id="heroMockupCard">
-          <div class="card-glare" id="cardGlare"></div>
-
-          <div class="mockup-status-bar">
-            <div class="agent-active-badge">
-              <div class="status-dot"></div>
-              <span class="agent-active-name">Claude Code</span>
-              <span>is analyzing repository</span>
-            </div>
-            <span class="mockup-counter">4 / 6 tasks</span>
-          </div>
-
-          <h2 class="mockup-title">Trace authentication &amp; DB write path</h2>
-
-          <ul class="mockup-steps">
-            <li class="mockup-step">
-              <div class="step-left">
-                <div class="step-icon-check">
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </div>
-                <span>Scan AST and resolve qualified symbol call graph</span>
-              </div>
-              <span class="step-pill step-pill-blue">861 symbols</span>
-            </li>
-
-            <li class="mockup-step">
-              <div class="step-left">
-                <div class="step-icon-check">
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </div>
-                <span>Map HTTP route /api/v1/auth/login to handler</span>
-              </div>
-              <span class="step-pill step-pill-purple">FASTAPI</span>
-            </li>
-
-            <li class="mockup-step">
-              <div class="step-left">
-                <div class="step-icon-check">
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </div>
-                <span>Trace database write query to users table</span>
-              </div>
-              <span class="step-pill step-pill-orange">SQLITE / WAL</span>
-            </li>
-
-            <li class="mockup-step">
-              <div class="step-left">
-                <div class="step-icon-check">
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </div>
-                <span>Prune 94% noise via hierarchical task scope</span>
-              </div>
-              <span class="step-pill step-pill-blue">420 tokens</span>
-            </li>
-
-            <li class="mockup-step">
-              <div class="step-left">
-                <div class="step-icon-spinner"></div>
-                <span>Reconcile runtime telemetry with static edges</span>
-              </div>
-              <span class="step-pill step-pill-gray">AST_VERIFIED</span>
-            </li>
-
-            <li class="mockup-step">
-              <div class="step-left">
-                <div class="step-icon-pending"></div>
-                <span>Emit evidence citation packet with file links</span>
-              </div>
-              <span class="step-pill step-pill-gray">PENDING</span>
-            </li>
-          </ul>
-
-          <div class="mockup-footer">
-            Works with Claude Code, Codex, Cursor, Antigravity, Windsurf &mdash; bring your own agent, local-first.
-          </div>
-        </div>
+      <div class="hero-code-bar">
+        <span>pip install codegraph-engine &amp;&amp; codegraph mcp serve</span>
+        <button class="copy-icon-btn" title="Copy command" onclick="navigator.clipboard.writeText('pip install codegraph-engine && codegraph mcp serve'); this.title = 'Copied!'; setTimeout(() => this.title = 'Copy', 1500);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        </button>
       </div>
-    </section>
+    </div>
 
-    <!-- Elevated Floating Metric Strip -->
-    <div class="metric-strip-wrap">
-      <div class="metric-strip">
-        <div class="metric-item">
-          <div class="metric-item-val"><span class="accent-blue">56</span></div>
-          <div class="metric-item-label">Deterministic Tools</div>
-          <div class="metric-item-sub">Zero discovery loop tax</div>
-        </div>
-        <div class="metric-item">
-          <div class="metric-item-val"><span class="accent-green">861</span></div>
-          <div class="metric-item-label">Verified Tests Passed</div>
-          <div class="metric-item-sub">100% compiler-grade tests</div>
-        </div>
-        <div class="metric-item">
-          <div class="metric-item-val">0.00%</div>
-          <div class="metric-item-label">Unsupported Claims</div>
-          <div class="metric-item-sub">Proven AST facts only</div>
-        </div>
-        <div class="metric-item">
-          <div class="metric-item-val">&lt; 45ms</div>
-          <div class="metric-item-label">P95 Retrieval Latency</div>
-          <div class="metric-item-sub">SQLite WAL + FTS5 search</div>
-        </div>
+    <!-- Right Cell: Clean AST Knowledge Graph Tree Diagram -->
+    <div class="hero-right-cell">
+      <svg class="ast-tree-svg" viewBox="0 0 500 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="250" y1="50" x2="140" y2="130" stroke="#222" stroke-width="1.2"/>
+        <line x1="250" y1="50" x2="360" y2="130" stroke="#222" stroke-width="1.2"/>
+        <line x1="140" y1="130" x2="80" y2="220" stroke="#222" stroke-width="1.2"/>
+        <line x1="140" y1="130" x2="190" y2="220" stroke="#222" stroke-width="1.2"/>
+        <line x1="360" y1="130" x2="360" y2="220" stroke="#222" stroke-width="1.2"/>
+        <line x1="360" y1="220" x2="360" y2="300" stroke="#222" stroke-width="1.2"/>
+        <line x1="250" y1="50" x2="440" y2="130" stroke="#222" stroke-width="1.2"/>
+
+        <circle cx="250" cy="50" r="7" fill="#fff" stroke="#111" stroke-width="2"/>
+        <text x="262" y="54" font-family="JetBrains Mono" font-size="12" fill="#111" font-weight="600">index.py</text>
+
+        <circle cx="140" cy="130" r="6" fill="#fff" stroke="#111" stroke-width="2"/>
+        <text x="82" y="134" font-family="JetBrains Mono" font-size="11" fill="#444">auth.py</text>
+
+        <circle cx="360" cy="130" r="6" fill="#fff" stroke="#111" stroke-width="2"/>
+        <text x="374" y="134" font-family="JetBrains Mono" font-size="11" fill="#444">router.py</text>
+
+        <circle cx="440" cy="130" r="6" fill="#111" stroke="#111" stroke-width="2"/>
+        <text x="452" y="134" font-family="JetBrains Mono" font-size="11" fill="#111" font-weight="600">api/users.py</text>
+
+        <circle cx="80" cy="220" r="5" fill="#fff" stroke="#111" stroke-width="2"/>
+        <text x="30" y="240" font-family="JetBrains Mono" font-size="10" fill="#666">middleware.py</text>
+
+        <circle cx="190" cy="220" r="5" fill="#fff" stroke="#111" stroke-width="2"/>
+        <text x="145" y="240" font-family="JetBrains Mono" font-size="10" fill="#666">types/models.py</text>
+
+        <circle cx="360" cy="220" r="5" fill="#fff" stroke="#111" stroke-width="2"/>
+        <text x="374" y="224" font-family="JetBrains Mono" font-size="10" fill="#666">createRouter</text>
+
+        <circle cx="360" cy="300" r="5" fill="#fff" stroke="#111" stroke-width="2"/>
+        <text x="330" y="322" font-family="JetBrains Mono" font-size="10" fill="#666">listUsers</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- 3-Column Feature Divider Grid -->
+  <div class="features-divider-grid">
+    <div class="feature-divider-cell">
+      <div class="feature-icon-box">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      </div>
+      <div class="feature-content">
+        <h3>Tree-sitter &amp; AST parsing</h3>
+        <p>Fast, incremental parsing across Python, TypeScript, and SQL &mdash; accurate symbols and edges drawn from real ASTs, never guesses.</p>
+      </div>
+    </div>
+
+    <div class="feature-divider-cell">
+      <div class="feature-icon-box">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+      </div>
+      <div class="feature-content">
+        <h3>56 MCP tools server</h3>
+        <p>Expose the graph to Claude Code, Cursor, Codex, opencode, Hermes, Antigravity, and Zed over MCP &mdash; agents answer in a handful of calls.</p>
+      </div>
+    </div>
+
+    <div class="feature-divider-cell">
+      <div class="feature-icon-box">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+      </div>
+      <div class="feature-content">
+        <h3>Impact analysis</h3>
+        <p>Trace callers, callees, database writers, and the full impact radius of any symbol before you change a single line.</p>
       </div>
     </div>
   </div>
 
-  <!-- Section: Features & Bottlenecks Solved -->
-  <section id="features" class="section-wrap alt">
-    <div class="section-inner">
-      <div class="section-heading-center">
-        <span class="section-tag">Core Capabilities</span>
-        <h2>Built for Autonomous Coding Workflows</h2>
-        <p>Traditional coding agents choke on massive repositories through blind grepping, hallucinated symbol imports, and context saturation. CodeGraph MCP fixes this deterministically.</p>
+  <!-- 3-Column Documentation Layout -->
+  <div class="docs-layout-container">
+
+    <!-- Left Sticky Sidebar -->
+    <aside class="docs-sidebar">
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Getting Started</div>
+        <ul class="sidebar-menu">
+          <li><a href="#introduction" class="active">Introduction</a></li>
+          <li><a href="#why-it-matters">Why It Matters</a></li>
+          <li><a href="#quickstart">Quickstart</a></li>
+          <li><a href="#languages">Languages</a></li>
+        </ul>
       </div>
 
-      <div class="grid-features">
-        <div class="feature-card">
-          <span class="feature-tag">Zero Hallucinations</span>
-          <h3>Compiler-Grade Ground Truth</h3>
-          <p>Every single relationship emitted to the agent is strictly verified via AST parser facts or dataflow semantics. Never guesses import trees or function signatures.</p>
-          <div class="feature-metric">
-            <span>Unsupported Claims</span>
-            <span class="metric-val">0.00%</span>
-          </div>
-        </div>
-
-        <div class="feature-card">
-          <span class="feature-tag">Context Efficiency</span>
-          <h3>Task-Aware Budget Optimizer</h3>
-          <p>Replaces 50,000 token repository dumps with bounded, rank-weighted ContextPackets under 600 tokens. Cuts agent inference cost and latency by over 90%.</p>
-          <div class="feature-metric">
-            <span>Noise Reduction</span>
-            <span class="metric-val">94.2%</span>
-          </div>
-        </div>
-
-        <div class="feature-card">
-          <span class="feature-tag">Microsecond Speed</span>
-          <h3>SQLite WAL &amp; FTS5 Indexing</h3>
-          <p>Sub-millisecond AST symbol traversals and full-text keyword queries powered by local embedded SQLite with Write-Ahead Logging and BM25 token ranking.</p>
-          <div class="feature-metric">
-            <span>Average Retrieval</span>
-            <span class="metric-val">&lt; 45ms</span>
-          </div>
-        </div>
-
-        <div class="feature-card">
-          <span class="feature-tag">Database Lineage</span>
-          <h3>End-to-End Schema Tracking</h3>
-          <p>Maps ORM models, raw SQL migrations, column data types, table readers, and table mutating writers across complex multi-service repositories.</p>
-          <div class="feature-metric">
-            <span>Schema Discovery</span>
-            <span class="metric-val">Instant</span>
-          </div>
-        </div>
-
-        <div class="feature-card">
-          <span class="feature-tag">Framework Discovery</span>
-          <h3>HTTP Route &amp; Handler Mapping</h3>
-          <p>Automatically resolves FastAPI, Flask, and Django routers, sub-routers, middleware mounts, and dependency injection providers back to business logic.</p>
-          <div class="feature-metric">
-            <span>Route Coverage</span>
-            <span class="metric-val">100%</span>
-          </div>
-        </div>
-
-        <div class="feature-card">
-          <span class="feature-tag">Runtime Telemetry</span>
-          <h3>Static &amp; Dynamic Reconciliation</h3>
-          <p>Ingests real execution logs and OpenTelemetry traces to tag static call-graph branches as verified live execution paths.</p>
-          <div class="feature-metric">
-            <span>Telemetry Mode</span>
-            <span class="metric-val">Zero-Friction</span>
-          </div>
-        </div>
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Core Concepts</div>
+        <ul class="sidebar-menu">
+          <li><a href="#how-it-works">How It Works</a></li>
+          <li><a href="#ast-grounding">AST Guarantees</a></li>
+          <li><a href="#output-formats">Output Data Formats</a></li>
+          <li><a href="#architecture-diagram">System Architecture</a></li>
+        </ul>
       </div>
-    </div>
-  </section>
 
-  <!-- Section: All 56 MCP Tools -->
-  <section id="tools" class="section-wrap">
-    <div class="section-heading-center">
-      <span class="section-tag">Interactive Catalog</span>
-      <h2>All 56 MCP Tools</h2>
-      <p>Search and inspect every tool served by CodeGraph MCP Engine. Filter by agent profile or query by symbol, route, database, or runtime action.</p>
-    </div>
-
-    <div class="tool-controls">
-      <div class="search-box-wrap">
-        <svg class="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="text" id="toolSearch" class="search-tool-input" placeholder="Search 56 tools (e.g. callers, routes, tables, trace)..." oninput="filterTools()">
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Reference</div>
+        <ul class="sidebar-menu">
+          <li><a href="#tools-catalog">56 MCP Tools</a></li>
+          <li><a href="#cli-reference">13 CLI Commands</a></li>
+          <li><a href="#benchmarks">Verified Benchmarks</a></li>
+          <li><a href="#integrations">Integrations</a></li>
+        </ul>
       </div>
-      <div class="category-pills">
-        <button class="category-btn active" onclick="setCategory('all', this)">All (56)</button>
-        <button class="category-btn" onclick="setCategory('core', this)">Core Profile</button>
-        <button class="category-btn" onclick="setCategory('trace', this)">Trace &amp; Flow</button>
-        <button class="category-btn" onclick="setCategory('database', this)">Database</button>
-        <button class="category-btn" onclick="setCategory('runtime', this)">Runtime</button>
-      </div>
-    </div>
+    </aside>
 
-    <div class="tools-grid" id="toolsGrid">
+    <!-- Center Main Content -->
+    <main class="docs-main-content">
+
+      <!-- Section: Introduction -->
+      <section id="introduction" class="doc-section-block">
+        <h1 class="doc-main-heading">Introduction</h1>
+        <p class="doc-paragraph">
+          CodeGraph is a <strong>local-first code-intelligence engine</strong>. It parses your codebase with <strong>tree-sitter and compiler-grade AST analyzers</strong>, stores every symbol, edge, and file in a local SQLite database, and exposes the result as a queryable <strong>knowledge graph</strong> &mdash; over the Model Context Protocol (MCP), a CLI, and a Python library.
+        </p>
+        <p class="doc-paragraph">
+          It exists to make AI coding agents &mdash; Claude Code, Cursor, Codex CLI, Antigravity IDE, opencode, Cline, and Windsurf &mdash; <strong>answer structural questions without scanning files</strong>. Instead of fanning out across <code>grep</code>, <code>glob</code>, and <code>read_file</code> to reconstruct how code fits together, an agent queries a pre-built index and gets the answer in a handful of calls.
+        </p>
+
+        <h2 id="why-it-matters" class="doc-sub-heading">Why it matters</h2>
+        <p class="doc-paragraph">
+          When an agent explores a codebase, it spends most of its budget on <em>discovery</em> &mdash; finding the right files before it can read them. CodeGraph removes that step: it hands the agent the exact code it needs in one call, so symbol relationships, call graphs, and structure don't have to be rebuilt file by file.
+        </p>
+        <p class="doc-paragraph">
+          The universal win is <strong>surgical context and speed</strong>:
+        </p>
+        <ul style="margin: 0 0 1.5rem 1.5rem; color: var(--text-muted); font-size: 0.95rem; line-height: 1.8;">
+          <li><strong>0.00% Unsupported Claims:</strong> Every relationship emitted to the agent is strictly backed by AST syntax facts or dataflow proof.</li>
+          <li><strong>94.2% Context Noise Reduction:</strong> Hierarchical optimizer prunes irrelevant files and functions, replacing 50k token repo dumps with bounded ContextPackets under 600 tokens.</li>
+          <li><strong>&lt; 45ms P95 Retrieval:</strong> Embedded SQLite WAL mode with FTS5 BM25 ranking delivers instant traversals.</li>
+        </ul>
+      </section>
+
+      <!-- Section: Quickstart -->
+      <section id="quickstart" class="doc-section-block">
+        <h2 class="doc-sub-heading">Quickstart</h2>
+        <p class="doc-paragraph">
+          Install the engine, index your current repository, and launch the MCP server in 30 seconds:
+        </p>
+        <pre class="spec-pre"># 1. Install CodeGraph MCP Engine from PyPI
+pip install codegraph-engine
+
+# 2. Build local AST graph index (.codegraph/index.db)
+codegraph index
+
+# 3. Launch MCP server for your AI coding agent
+codegraph mcp serve</pre>
+      </section>
+
+      <!-- Section: Languages Table (From Screenshot 5) -->
+      <section id="languages" class="doc-section-block">
+        <h2 class="doc-sub-heading">Languages</h2>
+        <p class="doc-paragraph">
+          Language support is automatic from the file extension &mdash; there is nothing to configure:
+        </p>
+
+        <table class="docs-table">
+          <thead>
+            <tr><th>Language</th><th>Extensions</th><th>Status</th><th>Parser Engine</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="strong">Python</td><td><span class="tag-badge">.py</span></td><td>Full support</td><td>Python AST + Tree-sitter</td></tr>
+            <tr><td class="strong">TypeScript</td><td><span class="tag-badge">.ts</span> <span class="tag-badge">.tsx</span></td><td>Full support</td><td>Tree-sitter TypeScript</td></tr>
+            <tr><td class="strong">JavaScript</td><td><span class="tag-badge">.js</span> <span class="tag-badge">.jsx</span> <span class="tag-badge">.mjs</span></td><td>Full support</td><td>Tree-sitter JavaScript</td></tr>
+            <tr><td class="strong">SQL</td><td><span class="tag-badge">.sql</span></td><td>Full support</td><td>SQL DDL &amp; Query Parser</td></tr>
+            <tr><td class="strong">JSON / Config</td><td><span class="tag-badge">.json</span> <span class="tag-badge">.yaml</span> <span class="tag-badge">.toml</span></td><td>Full support</td><td>Structured Config Parser</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Section: How It Works & Evidence Guarantees -->
+      <section id="how-it-works" class="doc-section-block">
+        <h2 id="ast-grounding" class="doc-sub-heading">AST Grounding &amp; Evidence Guarantees</h2>
+        <p class="doc-paragraph">
+          CodeGraph enforces a strict epistemic hierarchy to prevent hallucinations:
+        </p>
+
+        <table class="docs-table">
+          <thead>
+            <tr><th>Evidence Tier</th><th>Verification Source</th><th>Operational Guarantee</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="strong">AST_VERIFIED</td><td>Python AST / Tree-sitter</td><td>100% deterministic syntax fact: symbol definitions, classes, functions, calls.</td></tr>
+            <tr><td class="strong">STATIC_VERIFIED</td><td>Symbol Resolution</td><td>Statically proven caller-callee chains without dynamic guessing.</td></tr>
+            <tr><td class="strong">FRAMEWORK_VERIFIED</td><td>Router / DI Introspection</td><td>FastAPI, Django, Flask endpoints and dependency injection (Depends, providers).</td></tr>
+            <tr><td class="strong">DATAFLOW_VERIFIED</td><td>SQL / ORM Parser</td><td>Database table reads, mutations, ORM column mappings, and migration lineages.</td></tr>
+            <tr><td class="strong">RUNTIME_OBSERVED</td><td>Live Execution Traces</td><td>Dynamic execution paths observed during live test suite or server runs.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Section: Output Formats & ContextPacket Detail -->
+      <section id="output-formats" class="doc-section-block">
+        <h2 class="doc-sub-heading">Output Data Formats &amp; Schemas</h2>
+        <p class="doc-paragraph">
+          CodeGraph packages structured facts into standardized, token-bounded JSON structures:
+        </p>
+
+        <div style="margin-bottom:1.5rem;">
+          <h3 style="font-size:1.05rem; font-weight:700; margin-bottom:0.4rem;">1. ContextPacket Schema (get_context output)</h3>
+          <p class="doc-paragraph" style="font-size:0.9rem;">The unified payload delivered to coding agents, combining targets, call edges, and citations:</p>
+          <pre class="spec-pre">{
+  "schema_version": "2.2.1",
+  "task_spec": {
+    "intent": "DEBUG",
+    "targets": ["AuthService.login"],
+    "exclusions": ["test_auth.py"]
+  },
+  "symbols": [
+    {
+      "canonical_id": "auth.service:AuthService.login",
+      "symbol": "login",
+      "qualified_name": "AuthService.login",
+      "file_path": "src/auth/service.py",
+      "line_range": [42, 68],
+      "verification_status": "AST_VERIFIED",
+      "callers": ["auth.router:login_endpoint"],
+      "callees": ["db.users:get_user_by_email", "crypto:verify_password"]
+    }
+  ],
+  "token_budget": 580,
+  "reduction_ratio": 0.942
+}</pre>
+        </div>
+
+        <div style="margin-bottom:1.5rem;">
+          <h3 style="font-size:1.05rem; font-weight:700; margin-bottom:0.4rem;">2. TargetResolution Schema (resolve_symbol output)</h3>
+          <pre class="spec-pre">{
+  "raw_target": "AuthService.login",
+  "target_type": "METHOD",
+  "canonical_id": "auth.service:AuthService.login",
+  "confidence": "HIGH",
+  "resolution_method": "CLASS_METHOD",
+  "ambiguity_state": "CLEAR",
+  "file_path": "src/auth/service.py",
+  "line": 42
+}</pre>
+        </div>
+      </section>
+
+      <!-- Section: System Architecture Diagram -->
+      <section id="architecture-diagram" class="doc-section-block">
+        <h2 class="doc-sub-heading">System Architecture Pipeline</h2>
+        <p class="doc-paragraph">
+          End-to-end pipeline from parallel AST scanning to task-aware retrieval and runtime telemetry reconciliation:
+        </p>
+        <div class="diagram-frame">
+          <img src="assets/v22_concurrency_runtime_pipeline.svg" alt="CodeGraph Architecture Pipeline">
+          <div class="diagram-subtext">Figure 1: Concurrency and runtime reconciliation pipeline in CodeGraph MCP v2.2.1</div>
+        </div>
+      </section>
+
+      <!-- Section: 56 MCP Tools Reference -->
+      <section id="tools-catalog" class="doc-section-block">
+        <h2 class="doc-sub-heading">56 MCP Tools Directory</h2>
+        <p class="doc-paragraph">
+          Search and inspect all 56 Model Context Protocol tools implemented in CodeGraph MCP Engine (v2.2.1):
+        </p>
+
+        <div class="tool-filter-bar">
+          <input type="text" id="mcpToolsSearch" class="tool-filter-input" placeholder="Search 56 tools (e.g. callers, routes, tables, trace)..." oninput="filterToolsList()">
+          <button class="pill-btn active" onclick="setToolCategory('all', this)">All (56)</button>
+          <button class="pill-btn" onclick="setToolCategory('core', this)">Core</button>
+          <button class="pill-btn" onclick="setToolCategory('trace', this)">Trace</button>
+          <button class="pill-btn" onclick="setToolCategory('database', this)">Database</button>
+          <button class="pill-btn" onclick="setToolCategory('runtime', this)">Runtime</button>
+        </div>
+
+        <div id="mcpToolsContainer">
 ''')
 
     for t in tools:
@@ -802,51 +705,35 @@ def generate_docs():
         t_inv = html.escape(t.get("example_invocation", ""))
 
         html_parts.append(f'''
-      <div class="tool-card" data-name="{t_name.lower()}" data-desc="{t_desc.lower()}" data-problem="{t_problem.lower()}" data-profile="{t_profile.lower()}">
-        <div>
-          <div class="tool-header">
-            <span class="tool-title">{t_name}</span>
-            <span class="tool-badge-profile {t_profile.lower()}">{t_profile.upper()}</span>
-          </div>
-          <p class="tool-desc">{t_desc}</p>
-          <div class="tool-solve-badge">
-            <strong>Resolves:</strong> {t_problem}
-          </div>
-        </div>
-        <div>
-          <button class="tool-expand-btn" onclick="toggleDetails(this)">View Schema &amp; Invocation &darr;</button>
-          <div class="tool-details">
-            <div class="spec-block">
-              <div class="spec-title">Input Parameters</div>
-              <pre class="code-snippet">{t_inputs}</pre>
+          <div class="tool-card-box" data-name="{t_name.lower()}" data-desc="{t_desc.lower()}" data-prob="{t_problem.lower()}" data-profile="{t_profile.lower()}">
+            <div class="tool-head">
+              <span class="tool-name-code">{t_name}</span>
+              <span class="profile-pill">{t_profile.upper()}</span>
             </div>
-            <div class="spec-block">
-              <div class="spec-title">Return Schema</div>
-              <pre class="code-snippet">{t_returns}</pre>
-            </div>
-            <div class="spec-block">
-              <div class="spec-title">Agent Client Invocation</div>
-              <pre class="code-snippet">{t_inv}</pre>
+            <p class="doc-paragraph" style="margin-bottom:0.4rem; font-size:0.92rem;">{t_desc}</p>
+            <div class="problem-solved-note"><strong>Resolves:</strong> {t_problem}</div>
+            <button class="btn-toggle-spec" onclick="toggleSpecDrawer(this)">Inspect Schema &amp; Invocation &darr;</button>
+            <div class="tool-spec-drawer">
+              <div style="font-size:0.75rem; font-weight:700; color:var(--text-light); text-transform:uppercase;">Input Parameters Schema</div>
+              <pre class="spec-pre">{t_inputs}</pre>
+              <div style="font-size:0.75rem; font-weight:700; color:var(--text-light); text-transform:uppercase; margin-top:0.6rem;">Return Structure Schema</div>
+              <pre class="spec-pre">{t_returns}</pre>
+              <div style="font-size:0.75rem; font-weight:700; color:var(--text-light); text-transform:uppercase; margin-top:0.6rem;">Sample Client Invocation</div>
+              <pre class="spec-pre">{t_inv}</pre>
             </div>
           </div>
-        </div>
-      </div>
 ''')
 
     html_parts.append('''
-    </div>
-  </section>
+        </div>
+      </section>
 
-  <!-- Section: CLI Command Reference -->
-  <section id="cli" class="section-wrap alt">
-    <div class="section-inner">
-      <div class="section-heading-center">
-        <span class="section-tag">Command Line Interface</span>
-        <h2>13 Production CLI Commands</h2>
-        <p>Run CodeGraph directly from your terminal or CI/CD pipelines. Every command resolves concrete operational bottlenecks.</p>
-      </div>
-
-      <div class="cli-grid">
+      <!-- Section: 13 CLI Commands Reference -->
+      <section id="cli-reference" class="doc-section-block">
+        <h2 class="doc-sub-heading">13 Production CLI Commands</h2>
+        <p class="doc-paragraph">
+          Execute CodeGraph directly from terminal or continuous integration environments:
+        </p>
 ''')
 
     for cmd in commands:
@@ -860,111 +747,45 @@ def generate_docs():
         for flag in cmd.get("options", []):
             f_name = html.escape(flag.get("flag", ""))
             f_desc = html.escape(flag.get("description", ""))
-            flags_rows += f'<tr><td class="flag-code">{f_name}</td><td>{f_desc}</td></tr>'
+            flags_rows += f'<tr><td class="strong" style="font-family:var(--font-mono); font-size:0.8rem;">{f_name}</td><td>{f_desc}</td></tr>'
 
         html_parts.append(f'''
-        <div class="cli-card">
-          <h3 class="cli-cmd-name">codegraph {c_name}</h3>
-          <div class="cli-problem">Resolves: {c_problem}</div>
-          <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1rem;">{c_desc}</p>
-          
-          <div class="cli-syntax-box">
+        <div class="cli-box-item">
+          <div class="cli-box-header">
+            <span class="cli-box-title">codegraph {c_name}</span>
+            <span class="tag-badge">CLI COMMAND</span>
+          </div>
+          <p class="doc-paragraph" style="font-size:0.92rem; margin-bottom:0.6rem;">{c_desc}</p>
+          <div class="problem-solved-note"><strong>Operational Bottleneck Resolved:</strong> {c_problem}</div>
+
+          <div class="cli-box-cmd">
             <span>{c_example}</span>
-            <button class="btn-copy-terminal" onclick="navigator.clipboard.writeText('{c_example}'); this.textContent='Copied!'; setTimeout(()=>this.textContent='Copy', 1500);">Copy</button>
+            <button class="copy-icon-btn" onclick="navigator.clipboard.writeText('{c_example}'); this.title='Copied!'; setTimeout(()=>this.title='Copy', 1500);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
           </div>
 
-          <table class="cli-flags-table">
-            <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+          <table class="docs-table" style="margin: 0.8rem 0;">
+            <thead><tr><th>Option / Flag</th><th>Description</th></tr></thead>
             <tbody>{flags_rows}</tbody>
           </table>
 
-          <div style="margin-top:1rem;">
-            <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--text-dim); margin-bottom:0.35rem;">Sample Output</div>
-            <pre class="code-snippet">{c_output}</pre>
-          </div>
+          <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--text-light); margin-top:0.75rem;">Verifiable Terminal Output</div>
+          <pre class="spec-pre">{c_output}</pre>
         </div>
 ''')
 
     html_parts.append('''
-      </div>
-    </div>
-  </section>
+      </section>
 
-  <!-- Section: Architecture & Verified Pipeline -->
-  <section id="architecture" class="section-wrap">
-    <div class="section-heading-center">
-      <span class="section-tag">System Architecture</span>
-      <h2>AST Grounding &amp; Dataflow Verification</h2>
-      <p>How CodeGraph processes source code into deterministic, queryable knowledge graphs for AI coding agents.</p>
-    </div>
+      <!-- Section: Performance Benchmarks -->
+      <section id="benchmarks" class="doc-section-block">
+        <h2 class="doc-sub-heading">Performance &amp; Scaling Benchmarks</h2>
+        <p class="doc-paragraph">
+          Measured benchmarks across repositories ranging from 10,000 to 1,000,000+ lines of code:
+        </p>
 
-    <div class="diagram-card">
-      <img src="assets/v22_concurrency_runtime_pipeline.svg" alt="CodeGraph Architecture Pipeline">
-      <p class="diagram-caption">Figure 1: End-to-end pipeline from parallel AST scanning and SQLite WAL indexing to task-aware retrieval and runtime telemetry reconciliation.</p>
-    </div>
-
-    <div class="table-container">
-      <table class="custom-table">
-        <thead>
-          <tr>
-            <th>Evidence Classification</th>
-            <th>Verification Source</th>
-            <th>Operational Guarantee</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="strong">AST_VERIFIED</td>
-            <td>Python AST / Tree-sitter</td>
-            <td>100% deterministic syntax fact. Symbol definitions, class inheritances, explicit calls, and module imports.</td>
-          </tr>
-          <tr>
-            <td class="strong">STATIC_VERIFIED</td>
-            <td>Dataflow / Symbol Resolution</td>
-            <td>Statically verified caller-callee chains and type annotations without dynamic runtime guessing.</td>
-          </tr>
-          <tr>
-            <td class="strong">FRAMEWORK_VERIFIED</td>
-            <td>Router &amp; DI Introspection</td>
-            <td>HTTP endpoints, middleware stacks, and dependency injection providers (FastAPI Depends, Django, Flask).</td>
-          </tr>
-          <tr>
-            <td class="strong">DATAFLOW_VERIFIED</td>
-            <td>SQL &amp; Schema Parser</td>
-            <td>Database table reads, mutations, ORM column mappings, and migration lineages.</td>
-          </tr>
-          <tr>
-            <td class="strong">RUNTIME_OBSERVED</td>
-            <td>Execution Telemetry</td>
-            <td>Reconciled dynamic call-traces observed during live test suite or server runs.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- Section: Performance Benchmarks -->
-  <section id="benchmarks" class="section-wrap alt">
-    <div class="section-inner">
-      <div class="section-heading-center">
-        <span class="section-tag">Verified Benchmarks</span>
-        <h2>Large-Scale Repository Scaling</h2>
-        <p>Measured performance across 10,000 to 1,000,000+ lines of code repositories.</p>
-      </div>
-
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 2rem; margin-bottom: 2.5rem;">
-        <div class="diagram-card" style="margin-bottom:0;">
-          <img src="assets/large_repo_scaling.svg" alt="Large Repository Scaling Benchmark">
-          <p class="diagram-caption">Figure 2: Sub-linear index scaling and memory bounds under massive repository sizes.</p>
-        </div>
-        <div class="diagram-card" style="margin-bottom:0;">
-          <img src="assets/performance_comparison.svg" alt="Performance Comparison Benchmark">
-          <p class="diagram-caption">Figure 3: CodeGraph retrieval latency vs traditional embedding vector databases.</p>
-        </div>
-      </div>
-
-      <div class="table-container">
-        <table class="custom-table">
+        <table class="docs-table">
           <thead>
             <tr>
               <th>Repository Scale</th>
@@ -976,60 +797,34 @@ def generate_docs():
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td class="strong">Small (10k LOC)</td>
-              <td>0.42 s</td>
-              <td>0.08 s</td>
-              <td>12 ms</td>
-              <td>2.4 MB</td>
-              <td><span class="badge-metric-green">&lt; 35 MB</span></td>
-            </tr>
-            <tr>
-              <td class="strong">Medium (100k LOC)</td>
-              <td>2.85 s</td>
-              <td>0.31 s</td>
-              <td>24 ms</td>
-              <td>18.2 MB</td>
-              <td><span class="badge-metric-green">&lt; 85 MB</span></td>
-            </tr>
-            <tr>
-              <td class="strong">Large (500k LOC)</td>
-              <td>11.40 s</td>
-              <td>1.15 s</td>
-              <td>42 ms</td>
-              <td>76.5 MB</td>
-              <td><span class="badge-metric-green">&lt; 180 MB</span></td>
-            </tr>
-            <tr>
-              <td class="strong">Monorepo (1M+ LOC)</td>
-              <td>23.10 s</td>
-              <td>2.40 s</td>
-              <td>58 ms</td>
-              <td>152.0 MB</td>
-              <td><span class="badge-metric-green">&lt; 320 MB</span></td>
-            </tr>
+            <tr><td class="strong">Small (10k LOC)</td><td>0.42 s</td><td>0.08 s</td><td>12 ms</td><td>2.4 MB</td><td>&lt; 35 MB</td></tr>
+            <tr><td class="strong">Medium (100k LOC)</td><td>2.85 s</td><td>0.31 s</td><td>24 ms</td><td>18.2 MB</td><td>&lt; 85 MB</td></tr>
+            <tr><td class="strong">Large (500k LOC)</td><td>11.40 s</td><td>1.15 s</td><td>42 ms</td><td>76.5 MB</td><td>&lt; 180 MB</td></tr>
+            <tr><td class="strong">Monorepo (1M+ LOC)</td><td>23.10 s</td><td>2.40 s</td><td>58 ms</td><td>152.0 MB</td><td>&lt; 320 MB</td></tr>
           </tbody>
         </table>
-      </div>
-    </div>
-  </section>
 
-  <!-- Section: Agent Integration Guides -->
-  <section id="integrations" class="section-wrap">
-    <div class="section-heading-center">
-      <span class="section-tag">One Setup, Any Agent</span>
-      <h2>Integrate in 30 Seconds</h2>
-      <p>Works seamlessly out-of-the-box with all leading AI agent environments and editors.</p>
-    </div>
-
-    <div class="integration-grid">
-      <div class="integration-card">
-        <div class="integration-header">
-          <span class="integration-title">Cursor</span>
-          <span class="integration-badge">.cursor/mcp.json</span>
+        <div class="diagram-frame">
+          <img src="assets/large_repo_scaling.svg" alt="Large Repository Scaling Benchmark">
+          <div class="diagram-subtext">Figure 2: Memory footprint and index throughput scaling curves across codebase sizes</div>
         </div>
-        <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:0.75rem;">Add to your project root or user settings:</p>
-        <pre class="code-snippet">{
+
+        <div class="diagram-frame">
+          <img src="assets/performance_comparison.svg" alt="Performance Comparison Benchmark">
+          <div class="diagram-subtext">Figure 3: Retrieval latency: CodeGraph SQLite WAL vs embedding vector databases</div>
+        </div>
+      </section>
+
+      <!-- Section: Integrations -->
+      <section id="integrations" class="doc-section-block">
+        <h2 class="doc-sub-heading">Agent Client Integrations</h2>
+        <p class="doc-paragraph">
+          Connect CodeGraph directly to your preferred AI coding environment:
+        </p>
+
+        <div style="margin-top:1.25rem;">
+          <h3 style="font-size:1.1rem; font-weight:800; margin-bottom:0.4rem;">Cursor (.cursor/mcp.json)</h3>
+          <pre class="spec-pre">{
   "mcpServers": {
     "codegraph": {
       "command": "codegraph",
@@ -1037,15 +832,11 @@ def generate_docs():
     }
   }
 }</pre>
-      </div>
-
-      <div class="integration-card">
-        <div class="integration-header">
-          <span class="integration-title">Claude Desktop</span>
-          <span class="integration-badge">claude_desktop_config.json</span>
         </div>
-        <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:0.75rem;">Add to Claude Desktop app configuration:</p>
-        <pre class="code-snippet">{
+
+        <div style="margin-top:1.5rem;">
+          <h3 style="font-size:1.1rem; font-weight:800; margin-bottom:0.4rem;">Claude Desktop (claude_desktop_config.json)</h3>
+          <pre class="spec-pre">{
   "mcpServers": {
     "codegraph": {
       "command": "codegraph",
@@ -1053,208 +844,101 @@ def generate_docs():
     }
   }
 }</pre>
-      </div>
-
-      <div class="integration-card">
-        <div class="integration-header">
-          <span class="integration-title">Antigravity / Windsurf / Zed</span>
-          <span class="integration-badge">Global CLI</span>
         </div>
-        <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:0.75rem;">Launch the server or register via stdio command:</p>
-        <pre class="code-snippet">codegraph mcp serve --db .codegraph/index.db</pre>
-      </div>
-    </div>
-  </section>
 
-  <!-- Footer -->
-  <footer class="app-footer">
-    <div class="footer-inner">
-      <div class="footer-copy">
-        &copy; 2026 CodeGraph MCP Engine &bull; Released under MIT License &bull; v2.2.1 Production
-      </div>
-      <ul class="footer-links">
-        <li><a href="https://pypi.org/project/codegraph-engine/2.2.1/" target="_blank">PyPI Package</a></li>
-        <li><a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP" target="_blank">GitHub Repository</a></li>
-        <li><a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP/issues" target="_blank">Issue Tracker</a></li>
+        <div style="margin-top:1.5rem;">
+          <h3 style="font-size:1.1rem; font-weight:800; margin-bottom:0.4rem;">Antigravity / Zed / Windsurf / Codex</h3>
+          <pre class="spec-pre">codegraph mcp serve --db .codegraph/index.db</pre>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Right Sticky TOC -->
+    <aside class="on-this-page">
+      <div class="toc-title">On this page</div>
+      <ul class="toc-list">
+        <li><a href="#introduction">Overview</a></li>
+        <li><a href="#why-it-matters">Why it matters</a></li>
+        <li><a href="#quickstart">Quickstart</a></li>
+        <li><a href="#languages">Languages</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#ast-grounding">AST Guarantees</a></li>
+        <li><a href="#output-formats">Output Data Formats</a></li>
+        <li><a href="#architecture-diagram">System Architecture</a></li>
+        <li><a href="#tools-catalog">56 MCP Tools</a></li>
+        <li><a href="#cli-reference">13 CLI Commands</a></li>
+        <li><a href="#benchmarks">Verified Benchmarks</a></li>
+        <li><a href="#integrations">Integrations</a></li>
       </ul>
-    </div>
+    </aside>
+
+  </div>
+
+  <!-- Universal Bottom Footer -->
+  <footer class="bottom-bar">
+    <a href="#" class="footer-logo">codegraph</a>
+    <ul class="footer-links-list">
+      <li><a href="#introduction">Docs</a></li>
+      <li><a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP" target="_blank">GitHub</a></li>
+      <li><a href="https://pypi.org/project/codegraph-engine/2.2.1/" target="_blank">PyPI</a></li>
+      <li><a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP/blob/main/LICENSE" target="_blank">MIT License</a></li>
+    </ul>
   </footer>
 
-  <!-- Interactive 3D Parallax & Script Engine -->
+  <!-- Interactive JavaScript Engine -->
   <script>
-    // 1. Interactive 3D Parallax Tilt for Hero Card
-    const heroCard = document.getElementById('heroMockupCard');
-    const heroSection = document.getElementById('heroSection');
-    const cardGlare = document.getElementById('cardGlare');
-
-    if (heroSection && heroCard) {
-      heroSection.addEventListener('mousemove', (e) => {
-        const rect = heroCard.getBoundingClientRect();
-        const cardX = rect.left + rect.width / 2;
-        const cardY = rect.top + rect.height / 2;
-        
-        const deltaX = (e.clientX - cardX) / (rect.width / 2);
-        const deltaY = (e.clientY - cardY) / (rect.height / 2);
-
-        // Clamped tilt angles
-        const rotateX = Math.max(-12, Math.min(12, -deltaY * 10));
-        const rotateY = Math.max(-12, Math.min(12, deltaX * 10));
-
-        heroCard.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-
-        // Specular Glare Follow
-        if (cardGlare) {
-          const glareX = ((e.clientX - rect.left) / rect.width) * 100;
-          const glareY = ((e.clientY - rect.top) / rect.height) * 100;
-          cardGlare.style.background = `radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255, 255, 255, 0.7) 0%, transparent 60%)`;
-        }
-      });
-
-      heroSection.addEventListener('mouseleave', () => {
-        heroCard.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
-      });
-    }
-
-    // 2. Interactive 3D AST Knowledge Graph Canvas Background
-    const canvas = document.getElementById('bgCanvas');
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      let width, height;
-      let mouseX = 0, mouseY = 0;
-      let targetMouseX = 0, targetMouseY = 0;
-
-      function resize() {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = Math.min(window.innerHeight * 1.2, 900);
-      }
-      window.addEventListener('resize', resize);
-      resize();
-
-      window.addEventListener('mousemove', (e) => {
-        targetMouseX = (e.clientX - width / 2) * 0.05;
-        targetMouseY = (e.clientY - height / 2) * 0.05;
-      });
-
-      // Generate Knowledge Graph Nodes
-      const labels = ['AST', 'Symbol', 'Call', 'FastAPI', 'SQLite', 'Trace', 'Class', 'FTS5', 'Route', 'Model', 'Parser', 'Verify', 'Index', 'Graph'];
-      const nodes = [];
-      const nodeCount = 38;
-
-      for (let i = 0; i < nodeCount; i++) {
-        nodes.push({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          vx: (Math.random() - 0.5) * 0.4,
-          vy: (Math.random() - 0.5) * 0.4,
-          depth: 0.3 + Math.random() * 0.7, // Parallax depth layer
-          radius: 2.5 + Math.random() * 3,
-          label: i < labels.length ? labels[i] : null
-        });
-      }
-
-      function draw() {
-        ctx.clearRect(0, 0, width, height);
-
-        // Smooth mouse parallax lerp
-        mouseX += (targetMouseX - mouseX) * 0.05;
-        mouseY += (targetMouseY - mouseY) * 0.05;
-
-        // Draw connecting edges
-        for (let i = 0; i < nodes.length; i++) {
-          for (let j = i + 1; j < nodes.length; j++) {
-            const p1 = nodes[i];
-            const p2 = nodes[j];
-
-            const p1x = p1.x + mouseX * p1.depth;
-            const p1y = p1.y + mouseY * p1.depth;
-            const p2x = p2.x + mouseX * p2.depth;
-            const p2y = p2.y + mouseY * p2.depth;
-
-            const dist = Math.hypot(p1x - p2x, p1y - p2y);
-            if (dist < 130) {
-              const alpha = (1 - dist / 130) * 0.18;
-              ctx.strokeStyle = `rgba(2, 132, 199, ${alpha})`;
-              ctx.lineWidth = 1;
-              ctx.beginPath();
-              ctx.moveTo(p1x, p1y);
-              ctx.lineTo(p2x, p2y);
-              ctx.stroke();
-            }
-          }
-        }
-
-        // Draw nodes
-        for (let i = 0; i < nodes.length; i++) {
-          const p = nodes[i];
-          p.x += p.vx;
-          p.y += p.vy;
-
-          if (p.x < 0) p.x = width;
-          if (p.x > width) p.x = 0;
-          if (p.y < 0) p.y = height;
-          if (p.y > height) p.y = 0;
-
-          const px = p.x + mouseX * p.depth;
-          const py = p.y + mouseY * p.depth;
-
-          ctx.fillStyle = p.label ? '#0284c7' : '#94a3b8';
-          ctx.beginPath();
-          ctx.arc(px, py, p.radius * p.depth, 0, Math.PI * 2);
-          ctx.fill();
-
-          if (p.label && p.depth > 0.6) {
-            ctx.font = '600 10px JetBrains Mono';
-            ctx.fillStyle = 'rgba(71, 85, 105, 0.7)';
-            ctx.fillText(p.label, px + 8, py + 3);
-          }
-        }
-
-        requestAnimationFrame(draw);
-      }
-      draw();
-    }
-
-    // 3. Tool Filtering & Category Tabs
     let currentCategory = 'all';
 
-    function filterTools() {
-      const q = document.getElementById('toolSearch').value.toLowerCase().trim();
-      const cards = document.querySelectorAll('.tool-card');
-      
+    function filterToolsList() {
+      const q = document.getElementById('mcpToolsSearch').value.toLowerCase().trim();
+      const cards = document.querySelectorAll('.tool-card-box');
+
       cards.forEach(card => {
         const name = card.getAttribute('data-name') || '';
         const desc = card.getAttribute('data-desc') || '';
-        const prob = card.getAttribute('data-problem') || '';
+        const prob = card.getAttribute('data-prob') || '';
         const prof = card.getAttribute('data-profile') || '';
 
         const matchesQuery = !q || name.includes(q) || desc.includes(q) || prob.includes(q);
-        const matchesCategory = currentCategory === 'all' || prof === currentCategory;
+        const matchesCat = currentCategory === 'all' || prof === currentCategory;
 
-        if (matchesQuery && matchesCategory) {
-          card.style.display = 'flex';
+        if (matchesQuery && matchesCat) {
+          card.style.display = 'block';
         } else {
           card.style.display = 'none';
         }
       });
     }
 
-    function setCategory(cat, btn) {
+    function setToolCategory(cat, btn) {
       currentCategory = cat;
-      document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      filterTools();
+      filterToolsList();
     }
 
-    function toggleDetails(btn) {
-      const details = btn.nextElementSibling;
-      if (details.classList.contains('open')) {
-        details.classList.remove('open');
-        btn.textContent = 'View Schema & Invocation \\u2193';
+    function toggleSpecDrawer(btn) {
+      const drawer = btn.nextElementSibling;
+      if (drawer.classList.contains('open')) {
+        drawer.classList.remove('open');
+        btn.innerHTML = 'Inspect Schema &amp; Invocation &darr;';
       } else {
-        details.classList.add('open');
-        btn.textContent = 'Hide Details \\u2191';
+        drawer.classList.add('open');
+        btn.innerHTML = 'Hide Schema &amp; Invocation &uarr;';
       }
     }
+
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        const searchInput = document.getElementById('mcpToolsSearch');
+        if (searchInput) {
+          searchInput.focus();
+          window.location.hash = '#tools-catalog';
+        }
+      }
+    });
   </script>
 </body>
 </html>
