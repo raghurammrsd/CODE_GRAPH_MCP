@@ -6,7 +6,7 @@
   <meta name="google-site-verification" content="googlefee7fbf6bf114d91" />
   <link rel="canonical" href="https://raghurammrsd.github.io/CODE_GRAPH_MCP/">
   
-  <!-- Open Graph / Facebook -->
+  <!-- Open Graph / Social SEO -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/">
   <meta property="og:title" content="CodeGraph MCP — Everything Your Agents Need">
@@ -69,19 +69,37 @@
       --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
       --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      --shadow-card: 0 20px 40px -10px rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.04);
-      --shadow-hover: 0 25px 50px -12px rgba(0, 0, 0, 0.09);
+      --shadow-card: 0 20px 45px -10px rgba(0, 0, 0, 0.07), 0 2px 6px 0 rgba(0, 0, 0, 0.03);
+      --shadow-hover: 0 30px 60px -12px rgba(2, 132, 199, 0.12), 0 4px 10px rgba(0, 0, 0, 0.04);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; font-family: var(--font-sans); color: var(--text); background: var(--bg); }
-    body { min-height: 100vh; line-height: 1.6; overflow-x: hidden; }
+    body { min-height: 100vh; line-height: 1.6; overflow-x: hidden; position: relative; }
+
+    /* Interactive 3D Canvas Background */
+    #bgCanvas {
+      position: absolute; top: 0; left: 0; width: 100%; height: 900px;
+      pointer-events: none; z-index: 0; opacity: 0.65;
+    }
+
+    /* Ambient Lighting */
+    .ambient-glow-1 {
+      position: absolute; top: 5%; left: 15%; width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(2, 132, 199, 0.08) 0%, transparent 70%);
+      filter: blur(80px); pointer-events: none; z-index: 0;
+    }
+    .ambient-glow-2 {
+      position: absolute; top: 15%; right: 10%; width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(249, 115, 22, 0.06) 0%, transparent 70%);
+      filter: blur(90px); pointer-events: none; z-index: 0;
+    }
 
     /* Modern Navbar */
     header.navbar {
       position: sticky; top: 0; z-index: 50;
-      background: rgba(255, 255, 255, 0.88);
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
       padding: 0.9rem 2.5rem;
       display: flex; align-items: center; justify-content: space-between;
@@ -91,6 +109,7 @@
       width: 32px; height: 32px; border-radius: 8px; overflow: hidden;
       display: flex; align-items: center; justify-content: center;
       background: #09090b; color: #fff; font-family: var(--font-mono); font-weight: 800; font-size: 0.9rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
     }
     .brand-name { font-weight: 800; font-size: 1.15rem; letter-spacing: -0.03em; color: var(--text); }
     .brand-pill {
@@ -107,23 +126,24 @@
     .nav-actions { display: flex; align-items: center; gap: 1rem; }
     .btn-cta-dark {
       background: var(--bg-dark); color: #ffffff; text-decoration: none;
-      padding: 0.55rem 1.2rem; border-radius: 9999px; font-size: 0.88rem; font-weight: 700;
-      display: inline-flex; align-items: center; gap: 0.4rem; transition: all 0.2s ease;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 0.55rem 1.25rem; border-radius: 9999px; font-size: 0.88rem; font-weight: 700;
+      display: inline-flex; align-items: center; gap: 0.4rem; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
     }
-    .btn-cta-dark:hover { background: #1e293b; transform: translateY(-1px); }
+    .btn-cta-dark:hover { background: #1e293b; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); }
 
     /* Hero Section */
+    .hero-wrapper { position: relative; z-index: 10; }
     .hero-container {
-      max-width: 1320px; margin: 0 auto; padding: 5.5rem 2rem 4.5rem;
+      max-width: 1320px; margin: 0 auto; padding: 5.5rem 2rem 4rem;
       display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 3.5rem; align-items: center;
     }
     @media (max-width: 1024px) {
-      .hero-container { grid-template-columns: 1fr; gap: 3rem; padding: 3rem 1.5rem; }
+      .hero-container { grid-template-columns: 1fr; gap: 3.5rem; padding: 3rem 1.5rem; }
     }
 
     .hero-left h1 {
-      font-size: clamp(2.6rem, 5.2vw, 4.2rem);
+      font-size: clamp(2.6rem, 5.2vw, 4.3rem);
       font-weight: 800; line-height: 1.08; letter-spacing: -0.04em;
       color: var(--text); margin-bottom: 1.25rem;
     }
@@ -149,16 +169,17 @@
       font-size: 0.75rem; font-weight: 700; font-family: var(--font-mono);
       padding: 0.25rem 0.6rem; border-radius: 6px;
       background: #f1f5f9; color: #334155; border: 1px solid var(--border);
+      transition: all 0.2s ease;
     }
+    .agent-pill:hover { background: #e2e8f0; transform: translateY(-1px); }
 
     .terminal-box {
       background: var(--bg-dark); color: #f8fafc;
       border-radius: 12px; padding: 0.9rem 1.25rem;
       display: flex; align-items: center; justify-content: space-between;
       font-family: var(--font-mono); font-size: 0.88rem;
-      box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      max-width: 580px;
+      box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      max-width: 580px; position: relative; overflow: hidden;
     }
     .terminal-cmd { display: flex; align-items: center; gap: 0.6rem; overflow-x: auto; white-space: nowrap; }
     .terminal-prompt { color: #38bdf8; font-weight: 700; user-select: none; }
@@ -174,53 +195,85 @@
       margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-dim); max-width: 560px;
     }
 
-    /* Hero Right: Modern Elevated Task Card */
+    /* Hero Right: 3D Parallax Card Container */
+    .hero-mockup-wrapper {
+      perspective: 1200px;
+      perspective-origin: center center;
+    }
     .hero-mockup-card {
-      background: #ffffff; border: 1px solid var(--border);
-      border-radius: 20px; padding: 2rem;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 2.25rem;
       box-shadow: var(--shadow-card);
       position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.15s ease-out, box-shadow 0.25s ease;
+      overflow: hidden;
     }
+    .hero-mockup-card:hover {
+      box-shadow: 0 35px 70px -15px rgba(2, 132, 199, 0.15), 0 15px 25px rgba(0, 0, 0, 0.04);
+    }
+    .card-glare {
+      position: absolute; inset: 0; pointer-events: none; border-radius: 20px;
+      background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.6) 0%, transparent 65%);
+      opacity: 0; transition: opacity 0.3s ease;
+      z-index: 10;
+    }
+    .hero-mockup-card:hover .card-glare { opacity: 1; }
+
+    /* 3D Depth Layers inside Card */
     .mockup-status-bar {
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);
       font-size: 0.85rem; font-weight: 600; color: var(--text-muted);
+      transform: translateZ(30px);
     }
     .agent-active-badge { display: flex; align-items: center; gap: 0.5rem; }
     .status-dot {
-      width: 8px; height: 8px; border-radius: 50%; background: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+      width: 9px; height: 9px; border-radius: 50%; background: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+      animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
+    @keyframes pulse-dot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.15); opacity: 0.8; } }
     .agent-active-name { font-weight: 700; color: var(--text); }
     .mockup-counter { font-family: var(--font-mono); color: var(--text-dim); font-size: 0.8rem; }
 
-    .mockup-title { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 1.25rem; }
+    .mockup-title {
+      font-size: 1.28rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 1.25rem;
+      transform: translateZ(40px);
+    }
 
-    .mockup-steps { list-style: none; display: flex; flex-direction: column; gap: 0.9rem; }
+    .mockup-steps {
+      list-style: none; display: flex; flex-direction: column; gap: 0.9rem;
+      transform: translateZ(25px);
+    }
     .mockup-step {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 0.65rem 0.85rem; border-radius: 10px; background: #f8fafc;
-      font-size: 0.88rem; font-weight: 500;
+      padding: 0.75rem 0.95rem; border-radius: 12px; background: #f8fafc;
+      font-size: 0.88rem; font-weight: 500; border: 1px solid rgba(226, 232, 240, 0.6);
+      transition: all 0.2s ease;
     }
+    .mockup-step:hover { background: #f1f5f9; transform: translateZ(10px); }
     .step-left { display: flex; align-items: center; gap: 0.75rem; }
     .step-icon-check {
-      width: 20px; height: 20px; border-radius: 50%; background: #3b82f6;
+      width: 22px; height: 22px; border-radius: 50%; background: #2563eb;
       display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
     }
     .step-icon-spinner {
-      width: 20px; height: 20px; border-radius: 50%;
-      border: 2px solid #cbd5e1; border-top-color: #2563eb; flex-shrink: 0;
-      animation: spin 1s linear infinite;
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 2.5px solid #cbd5e1; border-top-color: #2563eb; flex-shrink: 0;
+      animation: spin 0.8s linear infinite;
     }
     .step-icon-pending {
-      width: 20px; height: 20px; border-radius: 50%;
-      border: 2px solid #cbd5e1; flex-shrink: 0;
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 2px dashed #94a3b8; flex-shrink: 0;
     }
     @keyframes spin { 100% { transform: rotate(360deg); } }
 
     .step-pill {
       font-size: 0.72rem; font-weight: 700; font-family: var(--font-mono);
-      padding: 0.2rem 0.5rem; border-radius: 6px;
+      padding: 0.2rem 0.55rem; border-radius: 6px;
     }
     .step-pill-blue { background: #dbeafe; color: #1d4ed8; }
     .step-pill-purple { background: #f3e8ff; color: #7e22ce; }
@@ -229,11 +282,38 @@
 
     .mockup-footer {
       margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border);
-      font-size: 0.8rem; color: var(--text-dim); text-align: center;
+      font-size: 0.82rem; color: var(--text-dim); text-align: center;
+      transform: translateZ(20px);
     }
 
+    /* Metric Counter Strip */
+    .metric-strip-wrap {
+      max-width: 1320px; margin: 0 auto; padding: 0 2rem 4rem; position: relative; z-index: 10;
+    }
+    .metric-strip {
+      background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px);
+      border: 1px solid var(--border); border-radius: 16px;
+      padding: 1.75rem 2.5rem; display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 2rem; box-shadow: var(--shadow-sm);
+    }
+    @media (max-width: 900px) {
+      .metric-strip { grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+    }
+    @media (max-width: 560px) {
+      .metric-strip { grid-template-columns: 1fr; }
+    }
+    .metric-item { text-align: left; }
+    .metric-item-val {
+      font-size: 2.1rem; font-weight: 800; font-family: var(--font-mono);
+      letter-spacing: -0.04em; color: var(--text); line-height: 1; margin-bottom: 0.4rem;
+    }
+    .metric-item-val span.accent-blue { color: #0284c7; }
+    .metric-item-val span.accent-green { color: #16a34a; }
+    .metric-item-label { font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .metric-item-sub { font-size: 0.78rem; color: var(--text-muted); }
+
     /* Section Layouts */
-    .section-wrap { padding: 5rem 2rem; max-width: 1320px; margin: 0 auto; scroll-margin-top: 5rem; }
+    .section-wrap { padding: 5.5rem 2rem; max-width: 1320px; margin: 0 auto; scroll-margin-top: 5rem; position: relative; z-index: 10; }
     .section-wrap.alt { background: var(--bg-alt); max-width: 100%; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
     .section-inner { max-width: 1320px; margin: 0 auto; }
 
@@ -244,74 +324,80 @@
       margin-bottom: 0.5rem; display: inline-block;
     }
     .section-heading-center h2 {
-      font-size: clamp(2rem, 3.5vw, 2.75rem); font-weight: 800; letter-spacing: -0.03em;
+      font-size: clamp(2.1rem, 3.6vw, 2.85rem); font-weight: 800; letter-spacing: -0.03em;
       margin-bottom: 0.85rem; color: var(--text);
     }
     .section-heading-center p { font-size: 1.05rem; color: var(--text-muted); line-height: 1.6; }
 
-    /* Features Grid */
-    .grid-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; }
+    /* Features Grid with 3D Hover Lift */
+    .grid-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.75rem; }
     .feature-card {
       background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 16px; padding: 2rem; transition: all 0.2s ease; box-shadow: var(--shadow-sm);
+      border-radius: 18px; padding: 2.25rem; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: var(--shadow-sm); position: relative; overflow: hidden;
     }
-    .feature-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); border-color: var(--border-focus); }
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-hover);
+      border-color: #93c5fd;
+    }
     .feature-tag {
       font-size: 0.72rem; font-family: var(--font-mono); font-weight: 700; text-transform: uppercase;
-      padding: 0.2rem 0.5rem; border-radius: 4px; display: inline-block; margin-bottom: 1rem;
+      padding: 0.25rem 0.55rem; border-radius: 6px; display: inline-block; margin-bottom: 1rem;
       background: #eff6ff; color: #1d4ed8;
     }
-    .feature-card h3 { font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--text); }
-    .feature-card p { font-size: 0.92rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1rem; }
+    .feature-card h3 { font-size: 1.28rem; font-weight: 800; margin-bottom: 0.6rem; color: var(--text); letter-spacing: -0.02em; }
+    .feature-card p { font-size: 0.92rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 1.25rem; }
     .feature-metric {
       padding-top: 1rem; border-top: 1px solid var(--border);
       display: flex; align-items: baseline; justify-content: space-between;
       font-size: 0.85rem; font-weight: 600; color: var(--text-dim);
     }
-    .feature-metric span.metric-val { font-family: var(--font-mono); font-weight: 700; color: var(--text); font-size: 1rem; }
+    .feature-metric span.metric-val { font-family: var(--font-mono); font-weight: 700; color: var(--text); font-size: 1.05rem; }
 
     /* Interactive Tool Directory */
     .tool-controls {
       display: flex; gap: 1rem; align-items: center; justify-content: space-between;
       margin-bottom: 2rem; flex-wrap: wrap; background: #ffffff;
-      padding: 1rem 1.25rem; border-radius: 14px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+      padding: 1.1rem 1.4rem; border-radius: 16px; border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
     }
     .search-box-wrap { flex: 1; min-width: 280px; position: relative; }
     .search-tool-input {
-      width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; border-radius: 8px;
+      width: 100%; padding: 0.8rem 1rem 0.8rem 2.6rem; border-radius: 10px;
       border: 1px solid var(--border); font-size: 0.95rem; font-family: var(--font-sans);
-      outline: none; transition: border-color 0.15s ease;
+      outline: none; transition: all 0.15s ease;
     }
-    .search-tool-input:focus { border-color: var(--primary); }
+    .search-tool-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12); }
     .search-icon-svg {
-      position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%);
-      width: 16px; height: 16px; color: var(--text-dim); pointer-events: none;
+      position: absolute; left: 0.9rem; top: 50%; transform: translateY(-50%);
+      width: 17px; height: 17px; color: var(--text-dim); pointer-events: none;
     }
     .category-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .category-btn {
       background: #f8fafc; border: 1px solid var(--border); color: var(--text-muted);
-      padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.82rem; font-weight: 700;
+      padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.82rem; font-weight: 700;
       cursor: pointer; transition: all 0.15s ease;
     }
     .category-btn.active, .category-btn:hover {
       background: #09090b; color: #ffffff; border-color: #09090b;
     }
 
-    .tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.25rem; }
+    .tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.4rem; }
     .tool-card {
-      background: #ffffff; border: 1px solid var(--border); border-radius: 14px;
-      padding: 1.5rem; transition: all 0.2s ease; box-shadow: var(--shadow-sm);
+      background: #ffffff; border: 1px solid var(--border); border-radius: 16px;
+      padding: 1.6rem; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: var(--shadow-sm);
       display: flex; flex-direction: column; justify-content: space-between;
     }
-    .tool-card:hover { border-color: var(--border-focus); box-shadow: var(--shadow-card); }
+    .tool-card:hover { border-color: #93c5fd; box-shadow: var(--shadow-card); transform: translateY(-2px); }
     .tool-header {
       display: flex; align-items: baseline; justify-content: space-between;
       margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.5rem;
     }
-    .tool-title { font-family: var(--font-mono); font-size: 1.05rem; font-weight: 700; color: #0284c7; }
+    .tool-title { font-family: var(--font-mono); font-size: 1.08rem; font-weight: 700; color: #0284c7; }
     .tool-badge-profile {
       font-size: 0.7rem; font-family: var(--font-mono); font-weight: 700;
-      padding: 0.2rem 0.5rem; border-radius: 4px; background: #f1f5f9; color: #475569;
+      padding: 0.2rem 0.55rem; border-radius: 5px; background: #f1f5f9; color: #475569;
     }
     .tool-badge-profile.core { background: #dbeafe; color: #1e40af; }
     .tool-badge-profile.trace { background: #e0e7ff; color: #4338ca; }
@@ -320,14 +406,14 @@
 
     .tool-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.55; margin-bottom: 0.85rem; }
     .tool-solve-badge {
-      background: #f8fafc; border-left: 3px solid #0284c7; padding: 0.4rem 0.65rem;
-      border-radius: 0 6px 6px 0; font-size: 0.8rem; color: #334155; margin-bottom: 1rem;
+      background: #f8fafc; border-left: 3px solid #0284c7; padding: 0.45rem 0.75rem;
+      border-radius: 0 8px 8px 0; font-size: 0.82rem; color: #334155; margin-bottom: 1rem;
     }
     .tool-solve-badge strong { color: var(--text); }
 
     .tool-expand-btn {
       background: #f8fafc; border: 1px solid var(--border); color: var(--text-muted);
-      padding: 0.4rem 0.75rem; border-radius: 6px; font-size: 0.78rem; font-weight: 700;
+      padding: 0.45rem 0.85rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700;
       cursor: pointer; width: 100%; text-align: center; transition: all 0.15s ease;
     }
     .tool-expand-btn:hover { background: #f1f5f9; color: var(--text); }
@@ -341,16 +427,17 @@
     }
 
     /* CLI Command Center */
-    .cli-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem; }
+    .cli-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.6rem; }
     .cli-card {
-      background: #ffffff; border: 1px solid var(--border); border-radius: 14px;
-      padding: 1.75rem; box-shadow: var(--shadow-sm);
+      background: #ffffff; border: 1px solid var(--border); border-radius: 16px;
+      padding: 1.85rem; box-shadow: var(--shadow-sm); transition: all 0.2s ease;
     }
+    .cli-card:hover { box-shadow: var(--shadow-card); border-color: #cbd5e1; }
     .cli-cmd-name {
       font-family: var(--font-mono); font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 0.4rem;
     }
     .cli-problem {
-      background: #eff6ff; color: #1e3a8a; padding: 0.45rem 0.75rem; border-radius: 6px;
+      background: #eff6ff; color: #1e3a8a; padding: 0.45rem 0.75rem; border-radius: 8px;
       font-size: 0.82rem; font-weight: 600; margin-bottom: 1rem;
     }
     .cli-syntax-box {
@@ -365,37 +452,37 @@
 
     /* Diagrams & Visual Proofs */
     .diagram-card {
-      background: #ffffff; border: 1px solid var(--border); border-radius: 16px;
-      padding: 2rem; box-shadow: var(--shadow-card); margin-bottom: 2rem; text-align: center;
+      background: #ffffff; border: 1px solid var(--border); border-radius: 18px;
+      padding: 2.25rem; box-shadow: var(--shadow-card); margin-bottom: 2rem; text-align: center;
     }
-    .diagram-card img { max-width: 100%; height: auto; border-radius: 8px; }
-    .diagram-caption { margin-top: 1rem; font-size: 0.9rem; color: var(--text-muted); }
+    .diagram-card img { max-width: 100%; height: auto; border-radius: 10px; }
+    .diagram-caption { margin-top: 1.1rem; font-size: 0.9rem; color: var(--text-muted); }
 
     /* Integration Cards */
     .integration-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
     .integration-card {
-      background: #ffffff; border: 1px solid var(--border); border-radius: 14px;
-      padding: 1.5rem; box-shadow: var(--shadow-sm);
+      background: #ffffff; border: 1px solid var(--border); border-radius: 16px;
+      padding: 1.75rem; box-shadow: var(--shadow-sm);
     }
     .integration-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-    .integration-title { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+    .integration-title { font-size: 1.15rem; font-weight: 800; color: var(--text); }
     .integration-badge {
       font-size: 0.72rem; font-weight: 700; font-family: var(--font-mono);
-      background: #f1f5f9; color: #475569; padding: 0.2rem 0.5rem; border-radius: 4px;
+      background: #f1f5f9; color: #475569; padding: 0.2rem 0.55rem; border-radius: 6px;
     }
 
     /* Scaling Benchmark Table */
     .table-container {
-      background: #ffffff; border: 1px solid var(--border); border-radius: 14px;
+      background: #ffffff; border: 1px solid var(--border); border-radius: 16px;
       overflow-x: auto; box-shadow: var(--shadow-sm);
     }
     .custom-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left; }
     .custom-table th {
-      padding: 0.85rem 1.25rem; background: #f8fafc; color: var(--text-dim);
+      padding: 0.95rem 1.35rem; background: #f8fafc; color: var(--text-dim);
       font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;
       border-bottom: 1px solid var(--border);
     }
-    .custom-table td { padding: 0.95rem 1.25rem; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+    .custom-table td { padding: 1rem 1.35rem; border-bottom: 1px solid var(--border); color: var(--text-muted); }
     .custom-table tr:last-child td { border-bottom: none; }
     .custom-table td.strong { font-weight: 700; color: var(--text); }
     .badge-metric-green {
@@ -406,7 +493,7 @@
     /* Footer */
     footer.app-footer {
       background: #ffffff; border-top: 1px solid var(--border);
-      padding: 4rem 2rem 3rem; margin-top: 4rem;
+      padding: 4.5rem 2rem 3.5rem; margin-top: 4rem; position: relative; z-index: 10;
     }
     .footer-inner {
       max-width: 1320px; margin: 0 auto;
@@ -419,6 +506,11 @@
   </style>
 </head>
 <body>
+
+  <!-- 3D Interactive Canvas & Ambient Lighting -->
+  <canvas id="bgCanvas"></canvas>
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
 
   <!-- Top Navbar -->
   <header class="navbar">
@@ -444,117 +536,149 @@
     </div>
   </header>
 
-  <!-- Hero Section -->
-  <section class="hero-container">
-    <div class="hero-left">
-      <h1>
-        Everything your<br>
-        <span class="gradient-agents">agents</span> <span class="gradient-need">need.</span>
-      </h1>
-      <p class="hero-subtitle">
-        Plug CodeGraph into your coding agent to get 100% deterministic repository intelligence &mdash; AST-grounded, zero hallucinations, sub-50ms speed. <strong>One setup, any agent.</strong>
-      </p>
+  <!-- Hero Section with 3D Parallax Tilt -->
+  <div class="hero-wrapper">
+    <section class="hero-container" id="heroSection">
+      <div class="hero-left">
+        <h1>
+          Everything your<br>
+          <span class="gradient-agents">agents</span> <span class="gradient-need">need.</span>
+        </h1>
+        <p class="hero-subtitle">
+          Plug CodeGraph into your coding agent to get 100% deterministic repository intelligence &mdash; AST-grounded, zero hallucinations, sub-50ms speed. <strong>One setup, any agent.</strong>
+        </p>
 
-      <div class="agent-badges-row">
-        <span class="agent-badges-label">Give this to your agent</span>
-        <span class="agent-pill">Claude Code</span>
-        <span class="agent-pill">Cursor</span>
-        <span class="agent-pill">Antigravity</span>
-        <span class="agent-pill">Codex</span>
-        <span class="agent-pill">Cline</span>
-        <span class="agent-pill">Zed</span>
-      </div>
-
-      <div class="terminal-box">
-        <div class="terminal-cmd">
-          <span class="terminal-prompt">$</span>
-          <span>pip install codegraph-engine &amp;&amp; codegraph mcp serve</span>
+        <div class="agent-badges-row">
+          <span class="agent-badges-label">Give this to your agent</span>
+          <span class="agent-pill">Claude Code</span>
+          <span class="agent-pill">Cursor</span>
+          <span class="agent-pill">Antigravity</span>
+          <span class="agent-pill">Codex</span>
+          <span class="agent-pill">Cline</span>
+          <span class="agent-pill">Zed</span>
         </div>
-        <button class="btn-copy-terminal" onclick="navigator.clipboard.writeText('pip install codegraph-engine && codegraph mcp serve'); this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy', 2000);">
-          Copy
-        </button>
-      </div>
-      <p class="terminal-hint">
-        It indexes your repository, serves 56 deterministic MCP tools, and takes it from there.
-      </p>
-    </div>
 
-    <!-- Hero Right: Live Task Execution Card -->
-    <div class="hero-mockup-card">
-      <div class="mockup-status-bar">
-        <div class="agent-active-badge">
-          <div class="status-dot"></div>
-          <span class="agent-active-name">Claude Code</span>
-          <span>is analyzing repository</span>
+        <div class="terminal-box">
+          <div class="terminal-cmd">
+            <span class="terminal-prompt">$</span>
+            <span>pip install codegraph-engine &amp;&amp; codegraph mcp serve</span>
+          </div>
+          <button class="btn-copy-terminal" onclick="navigator.clipboard.writeText('pip install codegraph-engine && codegraph mcp serve'); this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy', 2000);">
+            Copy
+          </button>
         </div>
-        <span class="mockup-counter">4 / 6 tasks</span>
+        <p class="terminal-hint">
+          It indexes your repository, serves 56 deterministic MCP tools, and takes it from there.
+        </p>
       </div>
 
-      <h2 class="mockup-title">Trace authentication &amp; DB write path</h2>
+      <!-- Hero Right: Interactive 3D Mockup Card -->
+      <div class="hero-mockup-wrapper">
+        <div class="hero-mockup-card" id="heroMockupCard">
+          <div class="card-glare" id="cardGlare"></div>
 
-      <ul class="mockup-steps">
-        <li class="mockup-step">
-          <div class="step-left">
-            <div class="step-icon-check">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="mockup-status-bar">
+            <div class="agent-active-badge">
+              <div class="status-dot"></div>
+              <span class="agent-active-name">Claude Code</span>
+              <span>is analyzing repository</span>
             </div>
-            <span>Scan AST and resolve qualified symbol call graph</span>
+            <span class="mockup-counter">4 / 6 tasks</span>
           </div>
-          <span class="step-pill step-pill-blue">861 symbols</span>
-        </li>
 
-        <li class="mockup-step">
-          <div class="step-left">
-            <div class="step-icon-check">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <span>Map HTTP route /api/v1/auth/login to handler</span>
+          <h2 class="mockup-title">Trace authentication &amp; DB write path</h2>
+
+          <ul class="mockup-steps">
+            <li class="mockup-step">
+              <div class="step-left">
+                <div class="step-icon-check">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span>Scan AST and resolve qualified symbol call graph</span>
+              </div>
+              <span class="step-pill step-pill-blue">861 symbols</span>
+            </li>
+
+            <li class="mockup-step">
+              <div class="step-left">
+                <div class="step-icon-check">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span>Map HTTP route /api/v1/auth/login to handler</span>
+              </div>
+              <span class="step-pill step-pill-purple">FASTAPI</span>
+            </li>
+
+            <li class="mockup-step">
+              <div class="step-left">
+                <div class="step-icon-check">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span>Trace database write query to users table</span>
+              </div>
+              <span class="step-pill step-pill-orange">SQLITE / WAL</span>
+            </li>
+
+            <li class="mockup-step">
+              <div class="step-left">
+                <div class="step-icon-check">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span>Prune 94% noise via hierarchical task scope</span>
+              </div>
+              <span class="step-pill step-pill-blue">420 tokens</span>
+            </li>
+
+            <li class="mockup-step">
+              <div class="step-left">
+                <div class="step-icon-spinner"></div>
+                <span>Reconcile runtime telemetry with static edges</span>
+              </div>
+              <span class="step-pill step-pill-gray">AST_VERIFIED</span>
+            </li>
+
+            <li class="mockup-step">
+              <div class="step-left">
+                <div class="step-icon-pending"></div>
+                <span>Emit evidence citation packet with file links</span>
+              </div>
+              <span class="step-pill step-pill-gray">PENDING</span>
+            </li>
+          </ul>
+
+          <div class="mockup-footer">
+            Works with Claude Code, Codex, Cursor, Antigravity, Windsurf &mdash; bring your own agent, local-first.
           </div>
-          <span class="step-pill step-pill-purple">FASTAPI</span>
-        </li>
+        </div>
+      </div>
+    </section>
 
-        <li class="mockup-step">
-          <div class="step-left">
-            <div class="step-icon-check">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <span>Trace database write query to users table</span>
-          </div>
-          <span class="step-pill step-pill-orange">SQLITE / WAL</span>
-        </li>
-
-        <li class="mockup-step">
-          <div class="step-left">
-            <div class="step-icon-check">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <span>Prune 94% noise via hierarchical task scope</span>
-          </div>
-          <span class="step-pill step-pill-blue">420 tokens</span>
-        </li>
-
-        <li class="mockup-step">
-          <div class="step-left">
-            <div class="step-icon-spinner"></div>
-            <span>Reconcile runtime telemetry with static edges</span>
-          </div>
-          <span class="step-pill step-pill-gray">AST_VERIFIED</span>
-        </li>
-
-        <li class="mockup-step">
-          <div class="step-left">
-            <div class="step-icon-pending"></div>
-            <span>Emit evidence citation packet with file links</span>
-          </div>
-          <span class="step-pill step-pill-gray">PENDING</span>
-        </li>
-      </ul>
-
-      <div class="mockup-footer">
-        Works with Claude Code, Codex, Cursor, Antigravity, Windsurf &mdash; bring your own agent, local-first.
+    <!-- Elevated Floating Metric Strip -->
+    <div class="metric-strip-wrap">
+      <div class="metric-strip">
+        <div class="metric-item">
+          <div class="metric-item-val"><span class="accent-blue">56</span></div>
+          <div class="metric-item-label">Deterministic Tools</div>
+          <div class="metric-item-sub">Zero discovery loop tax</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-item-val"><span class="accent-green">861</span></div>
+          <div class="metric-item-label">Verified Tests Passed</div>
+          <div class="metric-item-sub">100% compiler-grade tests</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-item-val">0.00%</div>
+          <div class="metric-item-label">Unsupported Claims</div>
+          <div class="metric-item-sub">Proven AST facts only</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-item-val">&lt; 45ms</div>
+          <div class="metric-item-label">P95 Retrieval Latency</div>
+          <div class="metric-item-sub">SQLite WAL + FTS5 search</div>
+        </div>
       </div>
     </div>
-  </section>
+  </div>
 
   <!-- Section: Features & Bottlenecks Solved -->
   <section id="features" class="section-wrap alt">
@@ -2818,8 +2942,141 @@ codegraph run uvicorn main:app --reload'); this.textContent='Copied!'; setTimeou
     </div>
   </footer>
 
-  <!-- Interactive JavaScript -->
+  <!-- Interactive 3D Parallax & Script Engine -->
   <script>
+    // 1. Interactive 3D Parallax Tilt for Hero Card
+    const heroCard = document.getElementById('heroMockupCard');
+    const heroSection = document.getElementById('heroSection');
+    const cardGlare = document.getElementById('cardGlare');
+
+    if (heroSection && heroCard) {
+      heroSection.addEventListener('mousemove', (e) => {
+        const rect = heroCard.getBoundingClientRect();
+        const cardX = rect.left + rect.width / 2;
+        const cardY = rect.top + rect.height / 2;
+        
+        const deltaX = (e.clientX - cardX) / (rect.width / 2);
+        const deltaY = (e.clientY - cardY) / (rect.height / 2);
+
+        // Clamped tilt angles
+        const rotateX = Math.max(-12, Math.min(12, -deltaY * 10));
+        const rotateY = Math.max(-12, Math.min(12, deltaX * 10));
+
+        heroCard.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+
+        // Specular Glare Follow
+        if (cardGlare) {
+          const glareX = ((e.clientX - rect.left) / rect.width) * 100;
+          const glareY = ((e.clientY - rect.top) / rect.height) * 100;
+          cardGlare.style.background = `radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255, 255, 255, 0.7) 0%, transparent 60%)`;
+        }
+      });
+
+      heroSection.addEventListener('mouseleave', () => {
+        heroCard.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+      });
+    }
+
+    // 2. Interactive 3D AST Knowledge Graph Canvas Background
+    const canvas = document.getElementById('bgCanvas');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let mouseX = 0, mouseY = 0;
+      let targetMouseX = 0, targetMouseY = 0;
+
+      function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = Math.min(window.innerHeight * 1.2, 900);
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      window.addEventListener('mousemove', (e) => {
+        targetMouseX = (e.clientX - width / 2) * 0.05;
+        targetMouseY = (e.clientY - height / 2) * 0.05;
+      });
+
+      // Generate Knowledge Graph Nodes
+      const labels = ['AST', 'Symbol', 'Call', 'FastAPI', 'SQLite', 'Trace', 'Class', 'FTS5', 'Route', 'Model', 'Parser', 'Verify', 'Index', 'Graph'];
+      const nodes = [];
+      const nodeCount = 38;
+
+      for (let i = 0; i < nodeCount; i++) {
+        nodes.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: (Math.random() - 0.5) * 0.4,
+          depth: 0.3 + Math.random() * 0.7, // Parallax depth layer
+          radius: 2.5 + Math.random() * 3,
+          label: i < labels.length ? labels[i] : null
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        // Smooth mouse parallax lerp
+        mouseX += (targetMouseX - mouseX) * 0.05;
+        mouseY += (targetMouseY - mouseY) * 0.05;
+
+        // Draw connecting edges
+        for (let i = 0; i < nodes.length; i++) {
+          for (let j = i + 1; j < nodes.length; j++) {
+            const p1 = nodes[i];
+            const p2 = nodes[j];
+
+            const p1x = p1.x + mouseX * p1.depth;
+            const p1y = p1.y + mouseY * p1.depth;
+            const p2x = p2.x + mouseX * p2.depth;
+            const p2y = p2.y + mouseY * p2.depth;
+
+            const dist = Math.hypot(p1x - p2x, p1y - p2y);
+            if (dist < 130) {
+              const alpha = (1 - dist / 130) * 0.18;
+              ctx.strokeStyle = `rgba(2, 132, 199, ${alpha})`;
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(p1x, p1y);
+              ctx.lineTo(p2x, p2y);
+              ctx.stroke();
+            }
+          }
+        }
+
+        // Draw nodes
+        for (let i = 0; i < nodes.length; i++) {
+          const p = nodes[i];
+          p.x += p.vx;
+          p.y += p.vy;
+
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+
+          const px = p.x + mouseX * p.depth;
+          const py = p.y + mouseY * p.depth;
+
+          ctx.fillStyle = p.label ? '#0284c7' : '#94a3b8';
+          ctx.beginPath();
+          ctx.arc(px, py, p.radius * p.depth, 0, Math.PI * 2);
+          ctx.fill();
+
+          if (p.label && p.depth > 0.6) {
+            ctx.font = '600 10px JetBrains Mono';
+            ctx.fillStyle = 'rgba(71, 85, 105, 0.7)';
+            ctx.fillText(p.label, px + 8, py + 3);
+          }
+        }
+
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    // 3. Tool Filtering & Category Tabs
     let currentCategory = 'all';
 
     function filterTools() {
