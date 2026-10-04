@@ -22,21 +22,21 @@ def generate_docs():
   
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/">
-  <meta property="og:title" content="CodeGraph MCP — Understand Any Codebase with MCP">
-  <meta property="og:description" content="A local-first code-intelligence engine that turns any codebase into a queryable knowledge graph for AI coding agents. 56 verified MCP tools, 13 CLI commands.">
+  <meta property="og:title" content="CodeGraph — Runtime & Database Codebase Intelligence">
+  <meta property="og:description" content="Local-first code-intelligence engine with runtime telemetry reconciliation, database lineage, and 56 verified MCP tools for AI coding agents.">
   <meta property="og:image" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/assets/codegraph_logo.jpg">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/">
-  <meta name="twitter:title" content="CodeGraph MCP — Understand Any Codebase with MCP">
-  <meta name="twitter:description" content="A local-first code-intelligence engine that turns any codebase into a queryable knowledge graph for AI coding agents.">
+  <meta name="twitter:title" content="CodeGraph — Runtime & Database Codebase Intelligence">
+  <meta name="twitter:description" content="Local-first code-intelligence engine with runtime telemetry reconciliation and database lineage.">
   <meta name="twitter:image" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/assets/codegraph_logo.jpg">
 
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "CodeGraph MCP Engine",
+    "name": "CodeGraph Engine",
     "alternateName": "codegraph-engine",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Cross-platform (Linux, macOS, Windows)",
@@ -45,7 +45,7 @@ def generate_docs():
       "price": "0",
       "priceCurrency": "USD"
     },
-    "description": "Production Model Context Protocol (MCP) server providing deterministic AST code intelligence, 56 graph analysis tools, database lineage, and runtime telemetry for AI coding agents.",
+    "description": "Production Model Context Protocol (MCP) server providing runtime telemetry reconciliation, database lineage, and 56 graph analysis tools for AI coding agents.",
     "softwareVersion": "2.2.1",
     "author": {
       "@type": "Person",
@@ -57,523 +57,544 @@ def generate_docs():
   }
   </script>
 
-  <title>CodeGraph · Understand Any Codebase with MCP</title>
+  <title>CodeGraph · Runtime &amp; Database Codebase Intelligence</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #090d16;
-      --bg-surface: #0e1424;
-      --bg-surface-elevated: #131b2e;
-      --border: rgba(255, 255, 255, 0.08);
-      --border-light: rgba(255, 255, 255, 0.14);
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --text-dim: #64748b;
-      --primary: #3b82f6;
-      --primary-hover: #2563eb;
-      --indigo: #6366f1;
+      --bg: #ffffff;
+      --bg-alt: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-dark: #090d16;
+      --border: #e2e8f0;
+      --border-dark: #0f172a;
+      --border-focus: #cbd5e1;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #94a3b8;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --indigo: #4f46e5;
       --emerald: #10b981;
       --amber: #f59e0b;
-      --rose: #f43f5e;
+      --rose: #e11d48;
       --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+      --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+      --shadow-hover: 0 20px 35px -5px rgba(0, 0, 0, 0.08);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; font-family: var(--font-sans); color: var(--text); background: var(--bg); }
     body { min-height: 100vh; line-height: 1.6; overflow-x: hidden; }
 
-    /* Top Universal Header */
-    header.studio-nav {
+    /* Clean Universal Header */
+    header.clean-nav {
       position: sticky; top: 0; z-index: 100;
-      background: rgba(9, 13, 22, 0.92);
+      background: rgba(255, 255, 255, 0.92);
       backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
-      padding: 0.75rem 2rem;
+      padding: 0.85rem 2.5rem;
       display: flex; align-items: center; justify-content: space-between;
     }
-    .brand-wrap { display: flex; align-items: center; gap: 0.65rem; text-decoration: none; color: inherit; }
-    .brand-cube-icon {
-      width: 28px; height: 28px; border-radius: 6px; object-fit: cover;
-      border: 1px solid var(--border-light);
-    }
-    .brand-text { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.03em; color: #ffffff; }
+    .brand-wrap { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: inherit; }
+    .brand-logo-svg { width: 30px; height: 30px; flex-shrink: 0; }
+    .brand-text { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.03em; color: var(--text); }
 
-    .header-search {
-      display: flex; align-items: center; gap: 0.6rem;
-      background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border);
-      border-radius: 8px; padding: 0.4rem 0.85rem; width: 340px; cursor: pointer;
-      color: var(--text-dim); font-size: 0.85rem; transition: all 0.15s ease;
+    .header-search-bar {
+      display: flex; align-items: center; gap: 0.65rem;
+      background: #f8fafc; border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.45rem 0.95rem; width: 340px; cursor: pointer;
+      color: var(--text-dim); font-size: 0.88rem; transition: all 0.15s ease;
     }
-    .header-search:hover { border-color: var(--border-light); color: var(--text-muted); }
-    .kbd-tag {
-      font-family: var(--font-mono); font-size: 0.72rem; background: rgba(255, 255, 255, 0.08);
-      padding: 0.15rem 0.4rem; border-radius: 4px; color: var(--text-muted); margin-left: auto;
+    .header-search-bar:hover { border-color: var(--border-focus); color: var(--text-muted); }
+    .kbd-pill {
+      font-family: var(--font-mono); font-size: 0.72rem; background: #e2e8f0;
+      padding: 0.15rem 0.45rem; border-radius: 4px; color: #475569; margin-left: auto;
     }
 
-    .top-links { display: flex; align-items: center; gap: 1.6rem; list-style: none; }
-    .top-links a {
-      color: var(--text-muted); text-decoration: none; font-size: 0.88rem; font-weight: 600;
+    .nav-links-menu { display: flex; align-items: center; gap: 1.75rem; list-style: none; }
+    .nav-links-menu a {
+      color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 600;
       transition: color 0.15s ease;
     }
-    .top-links a:hover { color: #ffffff; }
-    .badge-test-star {
-      background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border);
-      color: #ffffff; text-decoration: none; padding: 0.35rem 0.75rem; border-radius: 6px;
-      font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem;
+    .nav-links-menu a:hover { color: var(--text); }
+    .badge-star-pill {
+      background: #f1f5f9; border: 1px solid var(--border);
+      color: var(--text); text-decoration: none; padding: 0.4rem 0.8rem; border-radius: 6px;
+      font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem;
       transition: all 0.15s ease;
     }
-    .badge-test-star:hover { background: rgba(255, 255, 255, 0.12); }
+    .badge-star-pill:hover { background: #e2e8f0; }
 
-    /* Hero Blueprint (2-Column Grid) */
-    .hero-blueprint-container {
-      max-width: 1380px; margin: 0 auto; padding: 4.5rem 2rem 3rem;
-      display: grid; grid-template-columns: 1.05fr 1.15fr; gap: 3rem; align-items: center;
+    /* Hero Section (White Layout) */
+    .hero-white-container {
+      max-width: 1380px; margin: 0 auto; padding: 4.5rem 2.5rem 3rem;
+      display: grid; grid-template-columns: 1fr 1.15fr; gap: 3.5rem; align-items: center;
     }
     @media (max-width: 1080px) {
-      .hero-blueprint-container { grid-template-columns: 1fr; gap: 3.5rem; padding: 3rem 1.5rem; }
+      .hero-white-container { grid-template-columns: 1fr; gap: 3.5rem; padding: 3rem 1.5rem; }
     }
 
     /* Left Column */
-    .version-pill-row {
+    .badge-highlight-row {
       display: inline-flex; align-items: center; gap: 0.5rem;
-      background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25);
-      border-radius: 9999px; padding: 0.3rem 0.85rem; font-size: 0.78rem; font-family: var(--font-mono);
-      font-weight: 700; color: #34d399; margin-bottom: 1.5rem;
+      background: #eff6ff; border: 1px solid #bfdbfe;
+      border-radius: 9999px; padding: 0.35rem 0.9rem; font-size: 0.8rem; font-family: var(--font-mono);
+      font-weight: 700; color: #1d4ed8; margin-bottom: 1.5rem;
     }
-    .pill-green-dot { width: 7px; height: 7px; border-radius: 50%; background: #10b981; }
+    .badge-dot-green { width: 7px; height: 7px; border-radius: 50%; background: #10b981; }
 
-    .hero-h1-title {
-      font-size: clamp(2.5rem, 4.4vw, 3.8rem); font-weight: 800; line-height: 1.1;
-      letter-spacing: -0.04em; color: #ffffff; margin-bottom: 1.25rem;
+    .hero-main-title {
+      font-size: clamp(2.5rem, 4.5vw, 3.8rem); font-weight: 800; line-height: 1.12;
+      letter-spacing: -0.04em; color: var(--text); margin-bottom: 1.25rem;
     }
-    .gradient-codebase {
-      background: linear-gradient(135deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%);
+    .gradient-blue-text {
+      background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
 
-    .hero-subtitle-p {
-      font-size: 1.1rem; color: var(--text-muted); line-height: 1.6;
-      max-width: 540px; margin-bottom: 1.75rem;
+    .hero-lead-text {
+      font-size: 1.12rem; color: var(--text-muted); line-height: 1.65;
+      max-width: 550px; margin-bottom: 1.85rem;
     }
+    .hero-lead-text strong { color: var(--text); font-weight: 700; }
 
-    .feature-pill-strip {
+    .pills-capability-row {
       display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 2rem;
     }
-    .spec-pill {
+    .cap-pill {
       display: inline-flex; align-items: center; gap: 0.4rem;
-      background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border);
-      color: #cbd5e1; font-size: 0.8rem; font-weight: 600; padding: 0.35rem 0.75rem;
+      background: #f8fafc; border: 1px solid var(--border);
+      color: #334155; font-size: 0.82rem; font-weight: 700; padding: 0.35rem 0.75rem;
       border-radius: 6px;
     }
-    .spec-pill svg { width: 14px; height: 14px; color: var(--primary); }
+    .cap-pill.highlight-db { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+    .cap-pill.highlight-runtime { background: #dcfce7; border-color: #bbf7d0; color: #166534; }
 
-    .hero-cta-btns { display: flex; gap: 0.85rem; flex-wrap: wrap; margin-bottom: 2rem; }
-    .btn-action-primary {
-      background: var(--primary); color: #ffffff; text-decoration: none;
-      padding: 0.7rem 1.5rem; border-radius: 8px; font-size: 0.9rem; font-weight: 700;
+    .hero-btn-actions { display: flex; gap: 0.85rem; flex-wrap: wrap; margin-bottom: 2rem; }
+    .btn-solid-black {
+      background: #0f172a; color: #ffffff; text-decoration: none;
+      padding: 0.75rem 1.6rem; border-radius: 8px; font-size: 0.92rem; font-weight: 700;
       display: inline-flex; align-items: center; gap: 0.5rem; transition: background 0.15s ease;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
     }
-    .btn-action-primary:hover { background: var(--primary-hover); }
-    .btn-action-secondary {
-      background: rgba(255, 255, 255, 0.05); color: #ffffff; text-decoration: none;
-      border: 1px solid var(--border); padding: 0.7rem 1.5rem; border-radius: 8px;
-      font-size: 0.9rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem;
+    .btn-solid-black:hover { background: #1e293b; }
+    .btn-outline-white {
+      background: #ffffff; color: var(--text); text-decoration: none;
+      border: 1px solid var(--border); padding: 0.75rem 1.6rem; border-radius: 8px;
+      font-size: 0.92rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem;
       transition: all 0.15s ease;
     }
-    .btn-action-secondary:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--border-light); }
+    .btn-outline-white:hover { background: #f8fafc; border-color: #cbd5e1; }
 
-    /* Terminal Tab Box */
-    .tabbed-terminal-card {
-      background: #060911; border: 1px solid var(--border); border-radius: 12px;
-      padding: 0.85rem 1.25rem; max-width: 540px;
+    /* Tabbed Terminal Box */
+    .terminal-tab-box {
+      background: #090d16; border: 1px solid #1e293b; border-radius: 12px;
+      padding: 0.9rem 1.25rem; max-width: 550px; box-shadow: var(--shadow-card);
     }
-    .terminal-tabs { display: flex; gap: 1rem; margin-bottom: 0.65rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
-    .term-tab {
+    .term-tab-strip { display: flex; gap: 1rem; margin-bottom: 0.65rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.5rem; }
+    .term-tab-btn {
       background: none; border: none; font-size: 0.78rem; font-weight: 700;
-      color: var(--text-dim); cursor: pointer; padding: 0.2rem 0.4rem; transition: color 0.15s ease;
+      color: #94a3b8; cursor: pointer; padding: 0.2rem 0.4rem; transition: color 0.15s ease;
     }
-    .term-tab.active { color: #ffffff; border-bottom: 2px solid var(--primary); }
-    .term-code-line {
+    .term-tab-btn.active { color: #ffffff; border-bottom: 2px solid #38bdf8; }
+    .term-code-display {
       display: flex; align-items: center; justify-content: space-between;
-      font-family: var(--font-mono); font-size: 0.85rem; color: #e2e8f0;
+      font-family: var(--font-mono); font-size: 0.85rem; color: #f8fafc;
     }
-    .btn-copy-term {
-      background: none; border: none; color: var(--text-dim); cursor: pointer;
+    .btn-copy-code {
+      background: none; border: none; color: #94a3b8; cursor: pointer;
       display: flex; align-items: center; padding: 0.2rem;
     }
-    .btn-copy-term:hover { color: #ffffff; }
+    .btn-copy-code:hover { color: #ffffff; }
 
-    /* Right Column: CodeGraph IDE Mockup Window */
-    .ide-mockup-window {
-      background: var(--bg-surface); border: 1px solid var(--border-light);
-      border-radius: 16px; overflow: hidden; box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+    /* Right Column: CodeGraph Studio IDE Window (Clean Matte Dark Frame) */
+    .ide-studio-window {
+      background: #0d121f; border: 1px solid #1e293b;
+      border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-card);
     }
-    .ide-top-bar {
-      background: rgba(6, 9, 17, 0.6); border-bottom: 1px solid var(--border);
-      padding: 0.65rem 1rem; display: flex; align-items: center; justify-content: space-between;
+    .ide-header-bar {
+      background: #080c15; border-bottom: 1px solid #1e293b;
+      padding: 0.7rem 1rem; display: flex; align-items: center; justify-content: space-between;
       flex-wrap: wrap; gap: 0.75rem;
     }
-    .ide-view-pills { display: flex; gap: 0.4rem; }
-    .ide-pill {
-      background: none; border: none; color: var(--text-muted); font-size: 0.78rem;
-      font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 6px; cursor: pointer;
+    .ide-tabs-row { display: flex; gap: 0.4rem; }
+    .ide-tab-pill {
+      background: none; border: none; color: #94a3b8; font-size: 0.78rem;
+      font-weight: 600; padding: 0.25rem 0.65rem; border-radius: 6px; cursor: pointer;
     }
-    .ide-pill.active { background: rgba(255, 255, 255, 0.08); color: #ffffff; font-weight: 700; }
-    .ide-search-box {
-      display: flex; align-items: center; gap: 0.4rem; background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border); border-radius: 6px; padding: 0.25rem 0.6rem;
-      font-size: 0.75rem; color: var(--text-dim); width: 160px;
+    .ide-tab-pill.active { background: rgba(37, 99, 235, 0.25); color: #60a5fa; font-weight: 700; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .ide-search-pill {
+      display: flex; align-items: center; gap: 0.4rem; background: rgba(255, 255, 255, 0.05);
+      border: 1px solid #1e293b; border-radius: 6px; padding: 0.25rem 0.6rem;
+      font-size: 0.75rem; color: #64748b; width: 150px;
     }
 
-    .ide-body-split {
-      display: grid; grid-template-columns: 140px 1fr 150px; min-height: 290px;
-      border-bottom: 1px solid var(--border);
+    .ide-split-body {
+      display: grid; grid-template-columns: 140px 1fr 160px; min-height: 290px;
+      border-bottom: 1px solid #1e293b;
     }
     @media (max-width: 680px) {
-      .ide-body-split { grid-template-columns: 1fr; }
+      .ide-split-body { grid-template-columns: 1fr; }
     }
 
-    /* Left Pane: File Tree */
-    .ide-tree-pane {
-      background: rgba(6, 9, 17, 0.4); border-right: 1px solid var(--border);
-      padding: 0.85rem; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);
+    /* Left: File Tree */
+    .tree-pane-wrap {
+      background: #090d16; border-right: 1px solid #1e293b;
+      padding: 0.85rem; font-family: var(--font-mono); font-size: 0.75rem; color: #94a3b8;
     }
-    .tree-title { font-weight: 700; font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.5rem; }
-    .tree-item { padding: 0.2rem 0.4rem; border-radius: 4px; display: flex; align-items: center; gap: 0.35rem; }
-    .tree-item.selected { background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-weight: 600; }
-    .tree-item.indent { padding-left: 0.85rem; }
-    .tree-item.indent-2 { padding-left: 1.4rem; }
+    .tree-header-tag { font-weight: 700; font-size: 0.7rem; color: #64748b; text-transform: uppercase; margin-bottom: 0.5rem; }
+    .tree-node-line { padding: 0.2rem 0.4rem; border-radius: 4px; display: flex; align-items: center; gap: 0.35rem; }
+    .tree-node-line.selected { background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-weight: 600; }
+    .tree-node-line.indent { padding-left: 0.85rem; }
+    .tree-node-line.indent-2 { padding-left: 1.4rem; }
 
-    /* Center Pane: Graph Visualization */
-    .ide-canvas-pane {
+    /* Center: Graph Canvas */
+    .graph-canvas-wrap {
       padding: 1rem; display: flex; align-items: center; justify-content: center;
       position: relative; background: radial-gradient(#1e293b 1px, transparent 1px);
       background-size: 16px 16px;
     }
-    .ide-graph-svg { width: 100%; height: 260px; }
+    .graph-vector-svg { width: 100%; height: 260px; }
 
-    /* Right Pane: Inspector Panel */
-    .ide-inspector-pane {
-      background: rgba(6, 9, 17, 0.4); border-left: 1px solid var(--border);
+    /* Right: Inspector Pane (Focus on Runtime & DB) */
+    .inspector-pane-wrap {
+      background: #090d16; border-left: 1px solid #1e293b;
       padding: 0.85rem; font-size: 0.75rem; display: flex; flex-direction: column; justify-content: space-between;
     }
-    .inspector-header { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem; font-weight: 700; color: #fff; }
-    .inspector-path { color: var(--text-dim); font-size: 0.68rem; font-family: var(--font-mono); margin-bottom: 0.75rem; }
-    .meta-row { display: flex; justify-content: space-between; padding: 0.2rem 0; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.03); }
-    .meta-val { color: #fff; font-family: var(--font-mono); font-weight: 600; }
-    .btn-view-src {
-      background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border);
+    .inspector-head-title { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem; font-weight: 700; color: #fff; }
+    .inspector-file-sub { color: #64748b; font-size: 0.68rem; font-family: var(--font-mono); margin-bottom: 0.75rem; }
+    .prop-row { display: flex; justify-content: space-between; padding: 0.2rem 0; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .prop-val { color: #fff; font-family: var(--font-mono); font-weight: 600; }
+    .prop-val.green { color: #34d399; }
+    .prop-val.amber { color: #fbbf24; }
+    .btn-action-view {
+      background: rgba(255, 255, 255, 0.05); border: 1px solid #1e293b;
       color: #fff; padding: 0.35rem; border-radius: 5px; font-size: 0.72rem; font-weight: 600;
       cursor: pointer; text-align: center; margin-top: 0.5rem;
     }
 
-    /* Bottom 4-Card Strip of IDE */
-    .ide-bottom-stats {
+    /* Bottom 4 Stats Strip */
+    .ide-stats-strip-bottom {
       padding: 0.75rem 1rem; display: grid; grid-template-columns: repeat(4, 1fr);
-      gap: 0.75rem; background: rgba(6, 9, 17, 0.6);
+      gap: 0.75rem; background: #080c15;
     }
-    .ide-stat-card {
-      background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border);
+    .stat-tile-card {
+      background: rgba(255, 255, 255, 0.03); border: 1px solid #1e293b;
       border-radius: 8px; padding: 0.5rem 0.65rem; display: flex; align-items: center; gap: 0.5rem;
     }
-    .stat-card-icon {
-      width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center;
-      justify-content: center; font-size: 0.75rem;
-    }
-    .stat-icon-purple { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
-    .stat-icon-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-    .stat-icon-green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-    .stat-icon-slate { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
-    .stat-card-num { font-size: 0.88rem; font-weight: 800; font-family: var(--font-mono); color: #fff; line-height: 1; }
-    .stat-card-label { font-size: 0.68rem; color: var(--text-dim); }
+    .stat-tile-num { font-size: 0.88rem; font-weight: 800; font-family: var(--font-mono); color: #fff; line-height: 1; }
+    .stat-tile-tag { font-size: 0.68rem; color: #64748b; }
 
-    /* 6 Feature Cards Grid (From Blueprint) */
-    .blueprint-features-section {
-      max-width: 1380px; margin: 0 auto; padding: 2rem 2rem 5rem;
+    /* 6 Feature Cards Grid (Clean White Enterprise Design) */
+    .features-grid-section {
+      max-width: 1380px; margin: 0 auto; padding: 2rem 2.5rem 5rem;
     }
-    .grid-6-features {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;
+    .features-6-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.35rem;
     }
     @media (max-width: 960px) {
-      .grid-6-features { grid-template-columns: 1fr; }
+      .features-6-grid { grid-template-columns: 1fr; }
     }
-    .blueprint-card {
-      background: var(--bg-surface); border: 1px solid var(--border);
-      border-radius: 14px; padding: 1.5rem; display: flex; align-items: flex-start;
-      justify-content: space-between; gap: 1rem; transition: all 0.2s ease; text-decoration: none; color: inherit;
+    .feature-clean-card {
+      background: #ffffff; border: 1px solid var(--border);
+      border-radius: 14px; padding: 1.65rem; display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 1rem; transition: all 0.2s ease;
+      text-decoration: none; color: inherit; box-shadow: var(--shadow-sm);
     }
-    .blueprint-card:hover { border-color: var(--border-light); transform: translateY(-2px); }
-    .bp-card-left { display: flex; gap: 1rem; }
-    .bp-icon-box {
-      width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center;
+    .feature-clean-card:hover {
+      border-color: #cbd5e1; transform: translateY(-3px); box-shadow: var(--shadow-hover);
+    }
+    .card-left-part { display: flex; gap: 1rem; }
+    .icon-square-box {
+      width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center;
       justify-content: center; flex-shrink: 0;
     }
-    .bp-icon-purple { background: rgba(99, 102, 241, 0.12); color: #818cf8; }
-    .bp-icon-blue { background: rgba(59, 130, 246, 0.12); color: #60a5fa; }
-    .bp-icon-green { background: rgba(16, 185, 129, 0.12); color: #34d399; }
-    .bp-icon-rose { background: rgba(244, 63, 94, 0.12); color: #fb7185; }
-    .bp-icon-amber { background: rgba(245, 158, 11 volcanic, 0.12); color: #fbbf24; }
-    .bp-icon-shield { background: rgba(56, 189, 248, 0.12); color: #38bdf8; }
+    .icon-emerald { background: #dcfce7; color: #15803d; }
+    .icon-amber { background: #fef3c7; color: #b45309; }
+    .icon-blue { background: #dbeafe; color: #1d4ed8; }
+    .icon-indigo { background: #e0e7ff; color: #4338ca; }
+    .icon-rose { background: #ffe4e6; color: #be123c; }
 
-    .bp-card-text h3 { font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 0.35rem; }
-    .bp-card-text p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
-    .bp-arrow-box {
-      width: 24px; height: 24px; border-radius: 50%; background: rgba(255, 255, 255, 0.04);
+    .card-text-part h3 { font-size: 1.1rem; font-weight: 800; color: var(--text); margin-bottom: 0.35rem; }
+    .card-text-part p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.55; }
+    .arrow-circle-pill {
+      width: 26px; height: 26px; border-radius: 50%; background: #f8fafc;
       display: flex; align-items: center; justify-content: center; color: var(--text-dim); flex-shrink: 0;
+      border: 1px solid var(--border);
     }
 
-    /* Documentation Section (56 Tools & CLI) */
-    .docs-container-block {
-      max-width: 1380px; margin: 0 auto; padding: 4rem 2rem 5rem;
-      border-top: 1px solid var(--border);
+    /* Documentation Section (Clean White) */
+    .docs-white-section {
+      background: #f8fafc; border-top: 1px solid var(--border);
+      padding: 5rem 2.5rem 6rem;
     }
-    .docs-sec-header { margin-bottom: 2.5rem; text-align: center; }
-    .docs-sec-tag { font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
-    .docs-sec-h2 { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.03em; color: #fff; }
+    .docs-inner-wrapper { max-width: 1380px; margin: 0 auto; }
+    .docs-section-heading { text-align: center; max-width: 780px; margin: 0 auto 3.5rem; }
+    .docs-badge-sub {
+      font-family: var(--font-mono); font-size: 0.78rem; font-weight: 800;
+      color: var(--primary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;
+      display: inline-block;
+    }
+    .docs-title-h2 { font-size: 2.35rem; font-weight: 800; letter-spacing: -0.03em; color: var(--text); margin-bottom: 0.75rem; }
+    .docs-desc-p { font-size: 1.05rem; color: var(--text-muted); line-height: 1.6; }
 
-    /* Tool Filter Bar */
-    .tool-filter-toolbar {
-      display: flex; gap: 0.75rem; margin-bottom: 1.75rem; flex-wrap: wrap; align-items: center;
-      background: var(--bg-surface); padding: 0.85rem 1.25rem; border-radius: 12px; border: 1px solid var(--border);
+    /* Tool Toolbar */
+    .tool-white-toolbar {
+      display: flex; gap: 0.75rem; margin-bottom: 2rem; flex-wrap: wrap; align-items: center;
+      background: #ffffff; padding: 1rem 1.35rem; border-radius: 14px; border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
     }
-    .tool-search-input {
-      flex: 1; min-width: 240px; background: #060911; border: 1px solid var(--border);
-      border-radius: 8px; padding: 0.55rem 0.85rem; color: #fff; font-family: var(--font-sans); font-size: 0.88rem; outline: none;
+    .tool-search-white-input {
+      flex: 1; min-width: 260px; background: #f8fafc; border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.65rem 0.95rem; color: var(--text); font-family: var(--font-sans);
+      font-size: 0.92rem; outline: none; transition: border-color 0.15s ease;
     }
-    .tool-search-input:focus { border-color: var(--primary); }
-    .tool-cat-btn {
-      background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border);
-      color: var(--text-muted); padding: 0.4rem 0.85rem; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+    .tool-search-white-input:focus { border-color: var(--primary); }
+    .btn-pill-filter {
+      background: #f8fafc; border: 1px solid var(--border); color: var(--text-muted);
+      padding: 0.45rem 0.95rem; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+      transition: all 0.15s ease;
     }
-    .tool-cat-btn.active, .tool-cat-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
-
-    .tools-list-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.25rem; }
-    .tool-item-card {
-      background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px;
-      padding: 1.35rem; display: flex; flex-direction: column; justify-content: space-between;
-    }
-    .tool-item-card:hover { border-color: var(--border-light); }
-    .tool-card-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; }
-    .tool-name-heading { font-family: var(--font-mono); font-size: 1.05rem; font-weight: 700; color: #60a5fa; }
-    .profile-badge {
-      font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700;
-      padding: 0.15rem 0.45rem; border-radius: 4px; background: rgba(255, 255, 255, 0.06); color: var(--text-muted);
-    }
-    .profile-badge.core { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-    .profile-badge.trace { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
-    .profile-badge.database { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-    .profile-badge.runtime { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-
-    .tool-desc-p { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.5; }
-    .tool-solve-box {
-      background: rgba(6, 9, 17, 0.6); border-left: 3px solid var(--primary); padding: 0.45rem 0.75rem;
-      border-radius: 0 6px 6px 0; font-size: 0.8rem; color: #cbd5e1; margin-bottom: 1rem;
-    }
-    .btn-schema-toggle {
-      background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); color: var(--text-muted);
-      padding: 0.4rem; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; width: 100%; text-align: center;
-    }
-    .btn-schema-toggle:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
-    .schema-drawer { display: none; margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px solid var(--border); }
-    .schema-drawer.open { display: block; }
-    .code-block-dark {
-      background: #060911; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px;
-      padding: 0.75rem; font-family: var(--font-mono); font-size: 0.8rem; color: #e2e8f0;
-      overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 0.35rem 0 0.75rem;
+    .btn-pill-filter.active, .btn-pill-filter:hover {
+      background: var(--text); color: #fff; border-color: var(--text);
     }
 
-    /* CLI Grid */
-    .cli-grid-block { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.35rem; margin-top: 1.5rem; }
-    .cli-card-box {
-      background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px;
-      padding: 1.5rem;
+    .tools-white-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.35rem; }
+    .tool-white-card {
+      background: #ffffff; border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;
+      box-shadow: var(--shadow-sm); transition: all 0.2s ease;
     }
-    .cli-card-title { font-family: var(--font-mono); font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 0.35rem; }
-    .cli-problem-callout {
-      background: rgba(59, 130, 246, 0.1); color: #60a5fa; padding: 0.4rem 0.65rem; border-radius: 6px;
-      font-size: 0.8rem; font-weight: 600; margin-bottom: 0.85rem;
+    .tool-white-card:hover { border-color: #cbd5e1; box-shadow: var(--shadow-card); }
+    .tool-card-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; }
+    .tool-code-title { font-family: var(--font-mono); font-size: 1.05rem; font-weight: 700; color: #1d4ed8; }
+    .prof-tag-pill {
+      font-size: 0.7rem; font-family: var(--font-mono); font-weight: 700;
+      padding: 0.18rem 0.5rem; border-radius: 4px; background: #f1f5f9; color: #475569;
     }
-    .cli-syntax-strip {
-      background: #060911; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px;
-      padding: 0.65rem 0.85rem; font-family: var(--font-mono); font-size: 0.82rem; margin-bottom: 0.85rem;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .custom-spec-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 0.5rem 0; }
-    .custom-spec-table th { text-align: left; padding: 0.45rem 0.6rem; background: rgba(255, 255, 255, 0.03); color: var(--text-dim); }
-    .custom-spec-table td { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); color: var(--text-muted); }
-    .custom-spec-table td.flag-code { font-family: var(--font-mono); font-weight: 600; color: #60a5fa; }
+    .prof-tag-pill.core { background: #dbeafe; color: #1e40af; }
+    .prof-tag-pill.trace { background: #e0e7ff; color: #4338ca; }
+    .prof-tag-pill.database { background: #fef3c7; color: #92400e; }
+    .prof-tag-pill.runtime { background: #dcfce7; color: #166534; }
 
-    /* Scaling Table */
-    .benchmarks-table-wrap {
-      background: var(--bg-surface); border: 1px solid var(--border); border-radius: 14px;
-      overflow-x: auto; margin: 1.5rem 0 2rem;
+    .tool-desc-body { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.85rem; line-height: 1.55; }
+    .tool-problem-note {
+      background: #f8fafc; border-left: 3px solid #2563eb; padding: 0.45rem 0.75rem;
+      border-radius: 0 6px 6px 0; font-size: 0.82rem; color: #334155; margin-bottom: 1rem;
     }
-    .bench-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-    .bench-table th {
-      text-align: left; padding: 0.75rem 1.1rem; background: rgba(255, 255, 255, 0.03);
+    .btn-drawer-expand {
+      background: #f8fafc; border: 1px solid var(--border); color: var(--text-muted);
+      padding: 0.45rem; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+      width: 100%; text-align: center; transition: all 0.15s ease;
+    }
+    .btn-drawer-expand:hover { color: var(--text); background: #f1f5f9; }
+    .drawer-content { display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .drawer-content.open { display: block; }
+    .code-box-pre {
+      background: #090d16; border: 1px solid #1e293b; border-radius: 8px;
+      padding: 0.8rem; font-family: var(--font-mono); font-size: 0.8rem; color: #f8fafc;
+      overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 0.35rem 0 0.85rem;
+    }
+
+    /* CLI Grid (Clean White) */
+    .cli-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+    .cli-card-unit {
+      background: #ffffff; border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.65rem; box-shadow: var(--shadow-sm);
+    }
+    .cli-name-h3 { font-family: var(--font-mono); font-size: 1.15rem; font-weight: 800; color: var(--text); margin-bottom: 0.35rem; }
+    .cli-solve-bar {
+      background: #eff6ff; color: #1e40af; padding: 0.45rem 0.75rem; border-radius: 6px;
+      font-size: 0.82rem; font-weight: 600; margin-bottom: 0.85rem;
+    }
+    .cli-cmd-display {
+      background: #090d16; border: 1px solid #1e293b; border-radius: 6px;
+      padding: 0.7rem 0.95rem; font-family: var(--font-mono); font-size: 0.85rem; color: #f8fafc;
+      margin-bottom: 0.85rem; display: flex; justify-content: space-between; align-items: center;
+    }
+    .table-spec-clean { width: 100%; border-collapse: collapse; font-size: 0.84rem; margin: 0.5rem 0; }
+    .table-spec-clean th { text-align: left; padding: 0.45rem 0.6rem; background: #f8fafc; color: var(--text-dim); }
+    .table-spec-clean td { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+    .table-spec-clean td.flag-bold { font-family: var(--font-mono); font-weight: 700; color: #2563eb; }
+
+    /* Scaling Table (Clean White) */
+    .table-scaling-box {
+      background: #ffffff; border: 1px solid var(--border); border-radius: 14px;
+      overflow-x: auto; margin: 2rem 0; box-shadow: var(--shadow-sm);
+    }
+    .scaling-table-main { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .scaling-table-main th {
+      text-align: left; padding: 0.85rem 1.25rem; background: #f8fafc;
       color: var(--text-dim); font-weight: 700; border-bottom: 1px solid var(--border);
     }
-    .bench-table td { padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border); color: var(--text-muted); }
-    .bench-table td.strong { font-weight: 700; color: #fff; }
-
-    /* Footer */
-    footer.blueprint-footer {
-      border-top: 1px solid var(--border); background: #060911;
-      padding: 4rem 2rem 3rem; margin-top: 5rem;
+    .scaling-table-main td { padding: 0.95rem 1.25rem; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+    .scaling-table-main td.strong { font-weight: 700; color: var(--text); }
+    .badge-green-mem {
+      background: #dcfce7; color: #15803d; font-family: var(--font-mono); font-size: 0.75rem;
+      font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px;
     }
-    .footer-inner-box {
+
+    /* Clean Footer */
+    footer.clean-footer {
+      border-top: 1px solid var(--border); background: #ffffff;
+      padding: 4.5rem 2.5rem 3.5rem;
+    }
+    .footer-box-inner {
       max-width: 1380px; margin: 0 auto;
       display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 2rem;
     }
-    .footer-copy { font-size: 0.85rem; color: var(--text-dim); }
-    .footer-links-row { display: flex; gap: 1.5rem; list-style: none; }
-    .footer-links-row a { color: var(--text-muted); text-decoration: none; font-size: 0.85rem; font-weight: 600; }
-    .footer-links-row a:hover { color: #fff; }
+    .footer-copy-text { font-size: 0.88rem; color: var(--text-dim); }
+    .footer-links-group { display: flex; gap: 1.75rem; list-style: none; }
+    .footer-links-group a { color: var(--text-muted); text-decoration: none; font-size: 0.88rem; font-weight: 600; }
+    .footer-links-group a:hover { color: var(--text); }
   </style>
 </head>
 <body>
 
   <!-- Top Universal Header -->
-  <header class="studio-nav">
+  <header class="clean-nav">
     <a href="#" class="brand-wrap">
-      <img src="assets/codegraph_logo.jpg" alt="CodeGraph Logo" class="brand-cube-icon">
+      <!-- 3D Geometric Isometric Graph Logo (From Reference Blueprint) -->
+      <svg class="brand-logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 2L28 9V23L16 30L4 23V9L16 2Z" stroke="#2563eb" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M16 2V16M28 9L16 16M4 9L16 16M16 16V30" stroke="#3b82f6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="16" cy="16" r="3" fill="#2563eb"/>
+        <circle cx="16" cy="2" r="2" fill="#3b82f6"/>
+        <circle cx="28" cy="9" r="2" fill="#3b82f6"/>
+        <circle cx="4" cy="9" r="2" fill="#3b82f6"/>
+        <circle cx="28" cy="23" r="2" fill="#3b82f6"/>
+        <circle cx="4" cy="23" r="2" fill="#3b82f6"/>
+        <circle cx="16" cy="30" r="2" fill="#3b82f6"/>
+      </svg>
       <span class="brand-text">CodeGraph</span>
     </a>
 
-    <div class="header-search" onclick="document.getElementById('toolSearchInput').focus(); window.location.hash='#tools';">
+    <div class="header-search-bar" onclick="document.getElementById('toolSearchInput').focus(); window.location.hash='#tools';">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
       <span>Search tools, concepts, or documentation...</span>
-      <span class="kbd-tag">&#8984; K</span>
+      <span class="kbd-pill">&#8984; K</span>
     </div>
 
-    <ul class="top-links">
+    <ul class="nav-links-menu">
       <li><a href="#features">Docs</a></li>
       <li><a href="#tools">Tools</a></li>
       <li><a href="#cli">CLI</a></li>
       <li><a href="#benchmarks">Benchmarks</a></li>
       <li><a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP" target="_blank">GitHub &nearr;</a></li>
-      <li><a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP" class="badge-test-star" target="_blank">&#9733; 861 tests</a></li>
+      <li><a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP" class="badge-star-pill" target="_blank">&#9733; 861 tests</a></li>
     </ul>
   </header>
 
-  <!-- Hero Blueprint (Split View) -->
-  <section class="hero-blueprint-container">
+  <!-- Hero Blueprint (Clean White Mode) -->
+  <section class="hero-white-container">
     
-    <!-- Left Column -->
+    <!-- Left Column: Highlighting Runtime & Database Intelligence -->
     <div class="hero-left-column">
-      <div class="version-pill-row">
-        <span class="pill-green-dot"></span>
-        <span>v2.2.1 &middot; MCP Server for AI Coding Agents</span>
+      <div class="badge-highlight-row">
+        <span class="badge-dot-green"></span>
+        <span>v2.2.1 &middot; Runtime Telemetry &amp; Database Lineage</span>
       </div>
 
-      <h1 class="hero-h1-title">
+      <h1 class="hero-main-title">
         Understand any<br>
-        <span class="gradient-codebase">codebase</span> with MCP
+        <span class="gradient-blue-text">codebase</span> with runtime &amp; DB intelligence
       </h1>
 
-      <p class="hero-subtitle-p">
-        A local-first code-intelligence tool that turns any codebase into a queryable MCP knowledge server for AI coding agents.
+      <p class="hero-lead-text">
+        A local-first code-intelligence engine that turns any codebase into a queryable knowledge graph &mdash; tracing ORM models to database writers and reconciling static AST graphs with live execution telemetry.
       </p>
 
-      <div class="feature-pill-strip">
-        <span class="spec-pill">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-          Deterministic
+      <div class="pills-capability-row">
+        <span class="cap-pill highlight-runtime">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+          Runtime Evidence
         </span>
-        <span class="spec-pill">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
-          Local-first
+        <span class="cap-pill highlight-db">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+          Database Intelligence
         </span>
-        <span class="spec-pill">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-          Multi-language
-        </span>
-        <span class="spec-pill">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-          MCP Server
-        </span>
-        <span class="spec-pill">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83m13.79-4l-5.74 9.94"></path></svg>
-          Open Source
-        </span>
+        <span class="cap-pill">Deterministic AST</span>
+        <span class="cap-pill">Local-First</span>
+        <span class="cap-pill">Multi-Language</span>
       </div>
 
-      <div class="hero-cta-btns">
-        <a href="#tools" class="btn-action-primary">&gt;_ Get started &rarr;</a>
-        <a href="#features" class="btn-action-secondary">View documentation</a>
+      <div class="hero-btn-actions">
+        <a href="#tools" class="btn-solid-black">&gt;_ Get started &rarr;</a>
+        <a href="#features" class="btn-outline-white">View documentation</a>
       </div>
 
       <!-- Tabbed Terminal Box -->
-      <div class="tabbed-terminal-card">
-        <div class="terminal-tabs">
-          <button class="term-tab active" onclick="setTerminalCmd('pip install codegraph-engine[mcp]', this)">Install</button>
-          <button class="term-tab" onclick="setTerminalCmd('codegraph mcp serve --profile full', this)">MCP Server</button>
-          <button class="term-tab" onclick="setTerminalCmd('codegraph query \'find_callers(AuthService.login)\'', this)">CLI</button>
-          <button class="term-tab" onclick="setTerminalCmd('from codegraph import get_context', this)">Python API</button>
+      <div class="terminal-tab-box">
+        <div class="term-tab-strip">
+          <button class="term-tab-btn active" onclick="setTerminalCmd('pip install codegraph-engine[mcp]', this)">Install</button>
+          <button class="term-tab-btn" onclick="setTerminalCmd('codegraph query \'find_db_writers(users)\'', this)">Database CLI</button>
+          <button class="term-tab-btn" onclick="setTerminalCmd('codegraph query \'get_runtime_trace(auth)\'', this)">Runtime Traces</button>
+          <button class="term-tab-btn" onclick="setTerminalCmd('from codegraph import get_context', this)">Python API</button>
         </div>
-        <div class="term-code-line">
+        <div class="term-code-display">
           <span id="terminalCmdText">$ pip install codegraph-engine[mcp]</span>
-          <button class="btn-copy-term" title="Copy command" onclick="copyTerminalCode()">
+          <button class="btn-copy-code" title="Copy command" onclick="copyTerminalCode()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Right Column: CodeGraph Mockup IDE Window -->
+    <!-- Right Column: CodeGraph Mockup IDE Window (Clean Matte Dark Frame) -->
     <div class="hero-right-column">
-      <div class="ide-mockup-window">
-        <div class="ide-top-bar">
-          <div class="ide-view-pills">
-            <button class="ide-pill active">Codebase MCP</button>
-            <button class="ide-pill">Call Graph</button>
-            <button class="ide-pill">Dependencies</button>
-            <button class="ide-pill">Routes</button>
-            <button class="ide-pill">Database</button>
+      <div class="ide-studio-window">
+        <div class="ide-header-bar">
+          <div class="ide-tabs-row">
+            <button class="ide-tab-pill active">Runtime Trace</button>
+            <button class="ide-tab-pill">Database Schema</button>
+            <button class="ide-tab-pill">Call Graph</button>
+            <button class="ide-tab-pill">Routes</button>
+            <button class="ide-tab-pill">Dependencies</button>
           </div>
-          <div class="ide-search-box">
+          <div class="ide-search-pill">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <span>Search symbols...</span>
           </div>
         </div>
 
-        <div class="ide-body-split">
-          <!-- Left: Repository Tree -->
-          <div class="ide-tree-pane">
-            <div class="tree-title">Repository</div>
-            <div class="tree-item">&blacktriangledown; app/</div>
-            <div class="tree-item indent">&blacktriangledown; routes/</div>
-            <div class="tree-item indent-2">auth.py</div>
-            <div class="tree-item indent-2 selected">&bull; router.py</div>
-            <div class="tree-item indent-2">users.py</div>
-            <div class="tree-item indent">&blacktriangledown; models/</div>
-            <div class="tree-item indent-2">user.py</div>
-            <div class="tree-item indent-2">base.py</div>
-            <div class="tree-item indent">&blacktriangledown; services/</div>
-            <div class="tree-item indent-2">middleware.py</div>
-            <div class="tree-item">&blacktriangledown; tests/</div>
-            <div class="tree-item">requirements.txt</div>
+        <div class="ide-split-body">
+          <!-- Left: File Tree -->
+          <div class="tree-pane-wrap">
+            <div class="tree-header-tag">Repository</div>
+            <div class="tree-node-line">&blacktriangledown; app/</div>
+            <div class="tree-node-line indent">&blacktriangledown; routes/</div>
+            <div class="tree-node-line indent-2">auth.py</div>
+            <div class="tree-node-line indent-2 selected">&bull; router.py</div>
+            <div class="tree-node-line indent-2">users.py</div>
+            <div class="tree-node-line indent">&blacktriangledown; models/</div>
+            <div class="tree-node-line indent-2">user.py</div>
+            <div class="tree-node-line indent-2">orders.py</div>
+            <div class="tree-node-line indent">&blacktriangledown; services/</div>
+            <div class="tree-node-line indent-2">db_writer.py</div>
+            <div class="tree-node-line">&blacktriangledown; tests/</div>
+            <div class="tree-node-line">requirements.txt</div>
           </div>
 
-          <!-- Center: Graph Visualization -->
-          <div class="ide-canvas-pane">
-            <svg class="ide-graph-svg" viewBox="0 0 400 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Center: Graph Visualization (Featuring DB + Runtime Edges) -->
+          <div class="graph-canvas-wrap">
+            <svg class="graph-vector-svg" viewBox="0 0 400 240" fill="none" xmlns="http://www.w3.org/2000/svg">
               <!-- Edge Lines -->
               <line x1="200" y1="120" x2="270" y2="40" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="3 3"/>
               <line x1="200" y1="120" x2="90" y2="85" stroke="#475569" stroke-width="1.2"/>
-              <line x1="200" y1="120" x2="330" y2="90" stroke="#475569" stroke-width="1.2"/>
+              <line x1="200" y1="120" x2="330" y2="90" stroke="#f59e0b" stroke-width="1.5"/>
               <line x1="200" y1="120" x2="130" y2="185" stroke="#475569" stroke-width="1.2"/>
-              <line x1="200" y1="120" x2="270" y2="195" stroke="#475569" stroke-width="1.2"/>
+              <line x1="200" y1="120" x2="270" y2="195" stroke="#10b981" stroke-width="1.5"/>
 
               <!-- Edge Labels -->
               <text x="245" y="75" font-family="JetBrains Mono" font-size="8" fill="#94a3b8">imports</text>
               <text x="135" y="95" font-family="JetBrains Mono" font-size="8" fill="#94a3b8">uses</text>
-              <text x="270" y="105" font-family="JetBrains Mono" font-size="8" fill="#94a3b8">defines</text>
+              <text x="270" y="105" font-family="JetBrains Mono" font-size="8" fill="#fbbf24">writes DB</text>
               <text x="155" y="160" font-family="JetBrains Mono" font-size="8" fill="#94a3b8">calls</text>
-              <text x="245" y="165" font-family="JetBrains Mono" font-size="8" fill="#94a3b8">calls</text>
+              <text x="245" y="165" font-family="JetBrains Mono" font-size="8" fill="#34d399">runtime span</text>
 
               <!-- Node: index.py (Top) -->
               <circle cx="270" cy="40" r="14" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/>
@@ -593,12 +614,12 @@ def generate_docs():
               <rect x="75" y="115" width="28" height="10" rx="2" fill="#065f46"/>
               <text x="89" y="123" text-anchor="middle" font-family="JetBrains Mono" font-size="6" fill="#6ee7b7">ROUTE</text>
 
-              <!-- Node: api/users (Right) -->
-              <circle cx="330" cy="90" r="14" fill="#0f172a" stroke="#818cf8" stroke-width="1.8"/>
+              <!-- Node: DB users table (Right - Highlighting Database) -->
+              <circle cx="330" cy="90" r="14" fill="#0f172a" stroke="#f59e0b" stroke-width="1.8"/>
               <text x="330" y="93" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#fff">users</text>
-              <text x="315" y="115" font-family="JetBrains Mono" font-size="7" fill="#cbd5e1">api/users</text>
-              <rect x="310" y="118" width="46" height="10" rx="2" fill="#3730a3"/>
-              <text x="333" y="126" text-anchor="middle" font-family="JetBrains Mono" font-size="6" fill="#c7d2fe">API ENDPOINT</text>
+              <text x="315" y="115" font-family="JetBrains Mono" font-size="7" fill="#fbbf24">users (DB)</text>
+              <rect x="310" y="118" width="46" height="10" rx="2" fill="#78350f"/>
+              <text x="333" y="126" text-anchor="middle" font-family="JetBrains Mono" font-size="6" fill="#fde68a">SQL WRITER</text>
 
               <!-- Node: createRouter (Bottom Left) -->
               <circle cx="130" cy="185" r="12" fill="#064e3b" stroke="#10b981" stroke-width="1.8"/>
@@ -607,79 +628,63 @@ def generate_docs():
               <rect x="148" y="186" width="36" height="9" rx="2" fill="#065f46"/>
               <text x="166" y="193" text-anchor="middle" font-family="JetBrains Mono" font-size="6" fill="#6ee7b7">FUNCTION</text>
 
-              <!-- Node: listUsers (Bottom Right) -->
-              <circle cx="270" cy="195" r="12" fill="#064e3b" stroke="#10b981" stroke-width="1.8"/>
-              <text x="270" y="198" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#fff">&gt;_</text>
-              <text x="288" y="192" font-family="JetBrains Mono" font-size="7" fill="#cbd5e1">listUsers</text>
-              <rect x="288" y="196" width="36" height="9" rx="2" fill="#065f46"/>
-              <text x="306" y="203" text-anchor="middle" font-family="JetBrains Mono" font-size="6" fill="#6ee7b7">FUNCTION</text>
+              <!-- Node: Live Telemetry Reconciled (Bottom Right) -->
+              <circle cx="270" cy="195" r="12" fill="#064e3b" stroke="#34d399" stroke-width="1.8"/>
+              <text x="270" y="198" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#fff">&#10003;</text>
+              <text x="288" y="192" font-family="JetBrains Mono" font-size="7" fill="#34d399">runtimeTrace</text>
+              <rect x="288" y="196" width="38" height="9" rx="2" fill="#065f46"/>
+              <text x="307" y="203" text-anchor="middle" font-family="JetBrains Mono" font-size="6" fill="#a7f3d0">RECONCILED</text>
             </svg>
           </div>
 
           <!-- Right: Inspector Panel -->
-          <div class="ide-inspector-pane">
+          <div class="inspector-pane-wrap">
             <div>
-              <div class="inspector-header">
+              <div class="inspector-head-title">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                 <span>router.py</span>
               </div>
-              <div class="inspector-path">app/routes/router.py</div>
+              <div class="inspector-file-sub">app/routes/router.py</div>
 
-              <div class="meta-row"><span>Type</span><span class="meta-val">File</span></div>
-              <div class="meta-row"><span>Language</span><span class="meta-val">Python</span></div>
-              <div class="meta-row"><span>Lines</span><span class="meta-val">124</span></div>
-              <div class="meta-row"><span>Functions</span><span class="meta-val">5</span></div>
-              <div class="meta-row"><span>Classes</span><span class="meta-val">0</span></div>
-              <div class="meta-row"><span>Imports</span><span class="meta-val">12</span></div>
-              <div class="meta-row"><span>Routes</span><span class="meta-val">3</span></div>
+              <div class="prop-row"><span>Type</span><span class="prop-val">File</span></div>
+              <div class="prop-row"><span>Language</span><span class="prop-val">Python</span></div>
+              <div class="prop-row"><span>DB Writers</span><span class="prop-val amber">users, orders</span></div>
+              <div class="prop-row"><span>Telemetry</span><span class="prop-val green">Observed</span></div>
+              <div class="prop-row"><span>Routes</span><span class="prop-val">3</span></div>
+              <div class="prop-row"><span>Verification</span><span class="prop-val green">100% AST</span></div>
             </div>
 
             <div>
-              <button class="btn-view-src" style="width:100%; margin-bottom:0.35rem;">View source &rarr;</button>
-              <button class="btn-view-src" style="width:100%; background:none;">Find usages</button>
+              <button class="btn-action-view" style="width:100%; margin-bottom:0.35rem;">View source &rarr;</button>
+              <button class="btn-action-view" style="width:100%; background:none;">Find DB queries</button>
             </div>
           </div>
         </div>
 
         <!-- Bottom 4 Stats Strip -->
-        <div class="ide-bottom-stats">
-          <div class="ide-stat-card">
-            <div class="stat-card-icon stat-icon-purple">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>
-            </div>
+        <div class="ide-stats-strip-bottom">
+          <div class="stat-tile-card">
             <div>
-              <div class="stat-card-num">199</div>
-              <div class="stat-card-label">Symbols</div>
+              <div class="stat-tile-num">199</div>
+              <div class="stat-tile-tag">Symbols</div>
             </div>
           </div>
-
-          <div class="ide-stat-card">
-            <div class="stat-card-icon stat-icon-blue">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-            </div>
+          <div class="stat-tile-card">
             <div>
-              <div class="stat-card-num">618</div>
-              <div class="stat-card-label">Relationships</div>
+              <div class="stat-tile-num">618</div>
+              <div class="stat-tile-tag">Relationships</div>
             </div>
           </div>
-
-          <div class="ide-stat-card">
-            <div class="stat-card-icon stat-icon-green">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="9" y="9" width="6" height="6"></rect></svg>
-            </div>
+          <div class="stat-tile-card">
             <div>
-              <div class="stat-card-num">84</div>
-              <div class="stat-card-label">API Routes</div>
+              <div class="stat-tile-num">84</div>
+              <div class="stat-tile-tag">API Routes</div>
             </div>
           </div>
-
-          <div class="ide-stat-card">
-            <div class="stat-card-icon stat-icon-slate">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-            </div>
+          <div class="stat-tile-card">
             <div>
-              <div class="stat-card-num">58</div>
-              <div class="stat-card-label">Files</div>
+              <div class="stat-tile-num">58</div>
+              <div class="stat-tile-tag">Files</div>
             </div>
           </div>
         </div>
@@ -687,114 +692,118 @@ def generate_docs():
     </div>
   </section>
 
-  <!-- 6 Feature Cards Row (Directly from Blueprint) -->
-  <section class="blueprint-features-section" id="features">
-    <div class="grid-6-features">
+  <!-- 6 Feature Cards Row (Highlighting Runtime & Database) -->
+  <section class="features-grid-section" id="features">
+    <div class="features-6-grid">
       
-      <!-- Card 1 -->
-      <a href="#tools" class="blueprint-card">
-        <div class="bp-card-left">
-          <div class="bp-icon-box bp-icon-purple">
+      <!-- Card 1: Runtime Evidence (Highlighted!) -->
+      <a href="#tools" class="feature-clean-card" style="border-top: 3px solid #10b981;">
+        <div class="card-left-part">
+          <div class="icon-square-box icon-emerald">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          </div>
+          <div class="card-text-part">
+            <h3>Runtime evidence</h3>
+            <p>Combine static analysis with runtime traces for verified execution context.</p>
+          </div>
+        </div>
+        <div class="arrow-circle-pill">&rarr;</div>
+      </a>
+
+      <!-- Card 2: Database Intelligence (Highlighted!) -->
+      <a href="#tools" class="feature-clean-card" style="border-top: 3px solid #f59e0b;">
+        <div class="card-left-part">
+          <div class="icon-square-box icon-amber">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+          </div>
+          <div class="card-text-part">
+            <h3>Database intelligence</h3>
+            <p>Trace ORM/SQL to tables, columns, mutating queries, and data flows.</p>
+          </div>
+        </div>
+        <div class="arrow-circle-pill">&rarr;</div>
+      </a>
+
+      <!-- Card 3: Tree-sitter & AST parsing -->
+      <a href="#tools" class="feature-clean-card">
+        <div class="card-left-part">
+          <div class="icon-square-box icon-indigo">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
           </div>
-          <div class="bp-card-text">
+          <div class="card-text-part">
             <h3>Tree-sitter &amp; AST parsing</h3>
             <p>Fast, incremental parsing across Python, JavaScript, and TypeScript.</p>
           </div>
         </div>
-        <div class="bp-arrow-box">&rarr;</div>
+        <div class="arrow-circle-pill">&rarr;</div>
       </a>
 
-      <!-- Card 2 -->
-      <a href="#tools" class="blueprint-card">
-        <div class="bp-card-left">
-          <div class="bp-icon-box bp-icon-blue">
+      <!-- Card 4: 56 MCP tools server -->
+      <a href="#tools" class="feature-clean-card">
+        <div class="card-left-part">
+          <div class="icon-square-box icon-blue">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
           </div>
-          <div class="bp-card-text">
+          <div class="card-text-part">
             <h3>56 MCP tools server</h3>
-            <p>Expose the graph to Claude Code, Cursor, Codex, and other agents.</p>
+            <p>Expose the graph to Claude Code, Cursor, Codex, and Antigravity agents.</p>
           </div>
         </div>
-        <div class="bp-arrow-box">&rarr;</div>
+        <div class="arrow-circle-pill">&rarr;</div>
       </a>
 
-      <!-- Card 3 -->
-      <a href="#tools" class="blueprint-card">
-        <div class="bp-card-left">
-          <div class="bp-icon-box bp-icon-green">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
-          </div>
-          <div class="bp-card-text">
-            <h3>Database intelligence</h3>
-            <p>Trace ORM/SQL to tables, columns, and data flows.</p>
-          </div>
-        </div>
-        <div class="bp-arrow-box">&rarr;</div>
-      </a>
-
-      <!-- Card 4 -->
-      <a href="#tools" class="blueprint-card">
-        <div class="bp-card-left">
-          <div class="bp-icon-box bp-icon-rose">
+      <!-- Card 5: Framework-aware routes -->
+      <a href="#tools" class="feature-clean-card">
+        <div class="card-left-part">
+          <div class="icon-square-box icon-rose">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
           </div>
-          <div class="bp-card-text">
+          <div class="card-text-part">
             <h3>Framework-aware routes</h3>
             <p>FastAPI, Flask, Django, Express.js route discovery.</p>
           </div>
         </div>
-        <div class="bp-arrow-box">&rarr;</div>
+        <div class="arrow-circle-pill">&rarr;</div>
       </a>
 
-      <!-- Card 5 -->
-      <a href="#tools" class="blueprint-card">
-        <div class="bp-card-left">
-          <div class="bp-icon-box bp-icon-amber">
+      <!-- Card 6: Impact analysis -->
+      <a href="#tools" class="feature-clean-card">
+        <div class="card-left-part">
+          <div class="icon-square-box icon-amber">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
           </div>
-          <div class="bp-card-text">
+          <div class="card-text-part">
             <h3>Impact analysis</h3>
             <p>Trace callers, callees, and potential impact of changes.</p>
           </div>
         </div>
-        <div class="bp-arrow-box">&rarr;</div>
-      </a>
-
-      <!-- Card 6 -->
-      <a href="#tools" class="blueprint-card">
-        <div class="bp-card-left">
-          <div class="bp-icon-box bp-icon-shield">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-          </div>
-          <div class="bp-card-text">
-            <h3>Runtime evidence</h3>
-            <p>Combine static analysis with runtime traces for verified context.</p>
-          </div>
-        </div>
-        <div class="bp-arrow-box">&rarr;</div>
+        <div class="arrow-circle-pill">&rarr;</div>
       </a>
 
     </div>
   </section>
 
-  <!-- Complete 56 MCP Tools Reference -->
-  <section class="docs-container-block" id="tools">
-    <div class="docs-sec-header">
-      <div class="docs-sec-tag">Model Context Protocol Registry</div>
-      <h2 class="docs-sec-h2">56 Verified MCP Tools</h2>
-    </div>
+  <!-- Complete Documentation Section (Clean White) -->
+  <section class="docs-white-section" id="tools">
+    <div class="docs-inner-wrapper">
+      <div class="docs-section-heading">
+        <span class="docs-badge-sub">Full Technical Registry</span>
+        <h2 class="docs-title-h2">56 Verified MCP Tools</h2>
+        <p class="docs-desc-p">
+          Search and inspect every tool exposed by CodeGraph. Filter specifically by Database, Runtime, Core, or Trace capabilities.
+        </p>
+      </div>
 
-    <div class="tool-filter-toolbar">
-      <input type="text" id="toolSearchInput" class="tool-search-input" placeholder="Search 56 tools (e.g., callers, routes, tables, trace, impact)..." oninput="filterToolsGrid()">
-      <button class="tool-cat-btn active" onclick="setCategoryFilter('all', this)">All (56)</button>
-      <button class="tool-cat-btn" onclick="setCategoryFilter('core', this)">Core Profile</button>
-      <button class="tool-cat-btn" onclick="setCategoryFilter('trace', this)">Trace &amp; Flow</button>
-      <button class="tool-cat-btn" onclick="setCategoryFilter('database', this)">Database</button>
-      <button class="tool-cat-btn" onclick="setCategoryFilter('runtime', this)">Runtime</button>
-    </div>
+      <div class="tool-white-toolbar">
+        <input type="text" id="toolSearchInput" class="tool-search-white-input" placeholder="Search 56 tools (e.g. database, runtime, callers, trace, routes)..." oninput="filterToolsWhiteGrid()">
+        <button class="btn-pill-filter active" onclick="setCategoryFilter('all', this)">All (56)</button>
+        <button class="btn-pill-filter" onclick="setCategoryFilter('database', this)">Database (8)</button>
+        <button class="btn-pill-filter" onclick="setCategoryFilter('runtime', this)">Runtime (4)</button>
+        <button class="btn-pill-filter" onclick="setCategoryFilter('core', this)">Core Profile</button>
+        <button class="btn-pill-filter" onclick="setCategoryFilter('trace', this)">Trace &amp; Flow</button>
+      </div>
 
-    <div class="tools-list-grid" id="toolsContainer">
+      <div class="tools-white-grid" id="toolsContainer">
 ''')
 
     for t in tools:
@@ -807,43 +816,46 @@ def generate_docs():
         t_inv = html.escape(t.get("example_invocation", ""))
 
         html_parts.append(f'''
-      <div class="tool-item-card" data-name="{t_name.lower()}" data-desc="{t_desc.lower()}" data-prob="{t_problem.lower()}" data-prof="{t_profile.lower()}">
-        <div>
-          <div class="tool-card-top">
-            <span class="tool-name-heading">{t_name}</span>
-            <span class="profile-badge {t_profile.lower()}">{t_profile.upper()}</span>
+        <div class="tool-white-card" data-name="{t_name.lower()}" data-desc="{t_desc.lower()}" data-prob="{t_problem.lower()}" data-prof="{t_profile.lower()}">
+          <div>
+            <div class="tool-card-head">
+              <span class="tool-code-title">{t_name}</span>
+              <span class="prof-tag-pill {t_profile.lower()}">{t_profile.upper()}</span>
+            </div>
+            <p class="tool-desc-body">{t_desc}</p>
+            <div class="tool-problem-note">
+              <strong>Resolves:</strong> {t_problem}
+            </div>
           </div>
-          <p class="tool-desc-p">{t_desc}</p>
-          <div class="tool-solve-box">
-            <strong>Problem Resolved:</strong> {t_problem}
+          <div>
+            <button class="btn-drawer-expand" onclick="toggleSchemaDrawer(this)">Inspect Schema &amp; Invocation &darr;</button>
+            <div class="drawer-content">
+              <div style="font-size:0.75rem; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Input Parameters</div>
+              <pre class="code-box-pre">{t_inputs}</pre>
+              <div style="font-size:0.75rem; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Return Structure</div>
+              <pre class="code-box-pre">{t_returns}</pre>
+              <div style="font-size:0.75rem; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Client Invocation</div>
+              <pre class="code-box-pre">{t_inv}</pre>
+            </div>
           </div>
         </div>
-        <div>
-          <button class="btn-schema-toggle" onclick="toggleSchemaDrawer(this)">Inspect Schema &amp; Invocation &darr;</button>
-          <div class="schema-drawer">
-            <div style="font-size:0.75rem; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Input Parameters Schema</div>
-            <pre class="code-block-dark">{t_inputs}</pre>
-            <div style="font-size:0.75rem; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Return Structure Schema</div>
-            <pre class="code-block-dark">{t_returns}</pre>
-            <div style="font-size:0.75rem; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Client Invocation</div>
-            <pre class="code-block-dark">{t_inv}</pre>
-          </div>
-        </div>
-      </div>
 ''')
 
     html_parts.append('''
+      </div>
     </div>
   </section>
 
-  <!-- Complete 13 CLI Commands Reference -->
-  <section class="docs-container-block" id="cli">
-    <div class="docs-sec-header">
-      <div class="docs-sec-tag">Terminal Command Center</div>
-      <h2 class="docs-sec-h2">13 Production CLI Commands</h2>
-    </div>
+  <!-- Complete 13 CLI Commands Section -->
+  <section class="docs-white-section" id="cli" style="background:#ffffff; border-top:1px solid var(--border);">
+    <div class="docs-inner-wrapper">
+      <div class="docs-section-heading">
+        <span class="docs-badge-sub">Command Line Interface</span>
+        <h2 class="docs-title-h2">13 Production CLI Commands</h2>
+        <p class="docs-desc-p">Run CodeGraph directly from terminal or CI/CD pipelines with deterministic outputs.</p>
+      </div>
 
-    <div class="cli-grid-block">
+      <div class="cli-cards-grid">
 ''')
 
     for cmd in commands:
@@ -857,125 +869,94 @@ def generate_docs():
         for flag in cmd.get("options", []):
             f_name = html.escape(flag.get("flag", ""))
             f_desc = html.escape(flag.get("description", ""))
-            flags_rows += f'<tr><td class="flag-code">{f_name}</td><td>{f_desc}</td></tr>'
+            flags_rows += f'<tr><td class="flag-bold">{f_name}</td><td>{f_desc}</td></tr>'
 
         html_parts.append(f'''
-      <div class="cli-card-box">
-        <div class="cli-card-title">codegraph {c_name}</div>
-        <div class="cli-problem-callout">Resolves: {c_problem}</div>
-        <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:0.75rem;">{c_desc}</p>
+        <div class="cli-card-unit">
+          <div class="cli-name-h3">codegraph {c_name}</div>
+          <div class="cli-solve-bar">Resolves: {c_problem}</div>
+          <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:0.85rem;">{c_desc}</p>
 
-        <div class="cli-syntax-strip">
-          <span>{c_example}</span>
-          <button class="btn-copy-term" onclick="navigator.clipboard.writeText('{c_example}'); this.title='Copied!'; setTimeout(()=>this.title='Copy', 1500);">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-          </button>
+          <div class="cli-cmd-display">
+            <span>{c_example}</span>
+            <button class="btn-copy-code" onclick="navigator.clipboard.writeText('{c_example}'); this.title='Copied!'; setTimeout(()=>this.title='Copy', 1500);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+          </div>
+
+          <table class="table-spec-clean">
+            <thead><tr><th>Flag / Option</th><th>Description</th></tr></thead>
+            <tbody>{flags_rows}</tbody>
+          </table>
+
+          <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--text-dim); margin-top:0.85rem;">Terminal Output</div>
+          <pre class="code-box-pre">{c_output}</pre>
         </div>
-
-        <table class="custom-spec-table">
-          <thead><tr><th>Flag / Option</th><th>Description</th></tr></thead>
-          <tbody>{flags_rows}</tbody>
-        </table>
-
-        <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; color:var(--text-dim); margin-top:0.75rem;">Verifiable Terminal Output</div>
-        <pre class="code-block-dark">{c_output}</pre>
-      </div>
 ''')
 
     html_parts.append('''
-    </div>
-  </section>
-
-  <!-- Section: Benchmarks & Large-Scale Scaling -->
-  <section class="docs-container-block" id="benchmarks">
-    <div class="docs-sec-header">
-      <div class="docs-sec-tag">Empirical Verification</div>
-      <h2 class="docs-sec-h2">Large-Scale Scaling Benchmarks</h2>
-    </div>
-
-    <div class="benchmarks-table-wrap">
-      <table class="bench-table">
-        <thead>
-          <tr>
-            <th>Repository Scale</th>
-            <th>Cold Index Time</th>
-            <th>Warm Re-index</th>
-            <th>Query Latency</th>
-            <th>Database Size</th>
-            <th>Memory Footprint</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td class="strong">Small (10k LOC)</td><td>0.42 s</td><td>0.08 s</td><td>12 ms</td><td>2.4 MB</td><td>&lt; 35 MB</td></tr>
-          <tr><td class="strong">Medium (100k LOC)</td><td>2.85 s</td><td>0.31 s</td><td>24 ms</td><td>18.2 MB</td><td>&lt; 85 MB</td></tr>
-          <tr><td class="strong">Large (500k LOC)</td><td>11.40 s</td><td>1.15 s</td><td>42 ms</td><td>76.5 MB</td><td>&lt; 180 MB</td></tr>
-          <tr><td class="strong">Monorepo (1M+ LOC)</td><td>23.10 s</td><td>2.40 s</td><td>58 ms</td><td>152.0 MB</td><td>&lt; 320 MB</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(460px, 1fr)); gap:1.75rem;">
-      <div style="background:var(--bg-surface); border:1px solid var(--border); border-radius:14px; padding:1.5rem; text-align:center;">
-        <img src="assets/large_repo_scaling.svg" alt="Large Repository Scaling Benchmark" style="max-width:100%; height:auto; border-radius:6px;">
-        <div style="margin-top:0.75rem; font-size:0.82rem; color:var(--text-dim);">Throughput and memory bounds across codebase sizes</div>
-      </div>
-      <div style="background:var(--bg-surface); border:1px solid var(--border); border-radius:14px; padding:1.5rem; text-align:center;">
-        <img src="assets/performance_comparison.svg" alt="Performance Comparison Benchmark" style="max-width:100%; height:auto; border-radius:6px;">
-        <div style="margin-top:0.75rem; font-size:0.82rem; color:var(--text-dim);">Retrieval latency: SQLite WAL + FTS5 vs vector databases</div>
       </div>
     </div>
   </section>
 
-  <!-- Section: Client Integrations -->
-  <section class="docs-container-block" id="integrations">
-    <div class="docs-sec-header">
-      <div class="docs-sec-tag">Drop-In Configuration</div>
-      <h2 class="docs-sec-h2">AI Agent Integration Setup</h2>
-    </div>
-
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:1.5rem;">
-      <div style="background:var(--bg-surface); border:1px solid var(--border); border-radius:12px; padding:1.5rem;">
-        <div style="font-weight:700; color:#fff; font-size:1.1rem; margin-bottom:0.75rem;">Cursor (.cursor/mcp.json)</div>
-        <pre class="code-block-dark">{
-  "mcpServers": {
-    "codegraph": {
-      "command": "codegraph",
-      "args": ["mcp", "serve"]
-    }
-  }
-}</pre>
+  <!-- Scaling Benchmarks Section (Clean White) -->
+  <section class="docs-white-section" id="benchmarks" style="background:#f8fafc; border-top:1px solid var(--border);">
+    <div class="docs-inner-wrapper">
+      <div class="docs-section-heading">
+        <span class="docs-badge-sub">Empirical Verification</span>
+        <h2 class="docs-title-h2">Large-Scale Scaling Benchmarks</h2>
+        <p class="docs-desc-p">Measured benchmarks across codebases from 10,000 to over 1,000,000 lines of code.</p>
       </div>
 
-      <div style="background:var(--bg-surface); border:1px solid var(--border); border-radius:12px; padding:1.5rem;">
-        <div style="font-weight:700; color:#fff; font-size:1.1rem; margin-bottom:0.75rem;">Claude Desktop</div>
-        <pre class="code-block-dark">{
-  "mcpServers": {
-    "codegraph": {
-      "command": "codegraph",
-      "args": ["mcp", "serve", "--profile", "full"]
-    }
-  }
-}</pre>
+      <div class="table-scaling-box">
+        <table class="scaling-table-main">
+          <thead>
+            <tr>
+              <th>Repository Scale</th>
+              <th>Cold Index Time</th>
+              <th>Warm Re-index</th>
+              <th>Query Latency</th>
+              <th>Database Size</th>
+              <th>Memory Footprint</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="strong">Small (10k LOC)</td><td>0.42 s</td><td>0.08 s</td><td>12 ms</td><td>2.4 MB</td><td><span class="badge-green-mem">&lt; 35 MB</span></td></tr>
+            <tr><td class="strong">Medium (100k LOC)</td><td>2.85 s</td><td>0.31 s</td><td>24 ms</td><td>18.2 MB</td><td><span class="badge-green-mem">&lt; 85 MB</span></td></tr>
+            <tr><td class="strong">Large (500k LOC)</td><td>11.40 s</td><td>1.15 s</td><td>42 ms</td><td>76.5 MB</td><td><span class="badge-green-mem">&lt; 180 MB</span></td></tr>
+            <tr><td class="strong">Monorepo (1M+ LOC)</td><td>23.10 s</td><td>2.40 s</td><td>58 ms</td><td>152.0 MB</td><td><span class="badge-green-mem">&lt; 320 MB</span></td></tr>
+          </tbody>
+        </table>
       </div>
 
-      <div style="background:var(--bg-surface); border:1px solid var(--border); border-radius:12px; padding:1.5rem;">
-        <div style="font-weight:700; color:#fff; font-size:1.1rem; margin-bottom:0.75rem;">Antigravity / Zed / Windsurf</div>
-        <pre class="code-block-dark">codegraph mcp serve --db .codegraph/index.db</pre>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(460px, 1fr)); gap:1.75rem; margin-top:2rem;">
+        <div style="background:#ffffff; border:1px solid var(--border); border-radius:14px; padding:1.75rem; text-align:center; box-shadow:var(--shadow-sm);">
+          <img src="assets/large_repo_scaling.svg" alt="Large Repository Scaling Benchmark" style="max-width:100%; height:auto; border-radius:6px;">
+          <div style="margin-top:0.75rem; font-size:0.85rem; color:var(--text-dim);">Throughput and memory bounds across codebase sizes</div>
+        </div>
+        <div style="background:#ffffff; border:1px solid var(--border); border-radius:14px; padding:1.75rem; text-align:center; box-shadow:var(--shadow-sm);">
+          <img src="assets/performance_comparison.svg" alt="Performance Comparison Benchmark" style="max-width:100%; height:auto; border-radius:6px;">
+          <div style="margin-top:0.75rem; font-size:0.85rem; color:var(--text-dim);">Retrieval latency: SQLite WAL + FTS5 vs vector databases</div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- Universal Footer -->
-  <footer class="blueprint-footer">
-    <div class="footer-inner-box">
+  <!-- Clean Footer -->
+  <footer class="clean-footer">
+    <div class="footer-box-inner">
       <div class="brand-wrap">
-        <img src="assets/codegraph_logo.jpg" alt="CodeGraph Logo" class="brand-cube-icon">
+        <svg class="brand-logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M16 2L28 9V23L16 30L4 23V9L16 2Z" stroke="#2563eb" stroke-width="2.2" stroke-linejoin="round"/>
+          <path d="M16 2V16M28 9L16 16M4 9L16 16M16 16V30" stroke="#3b82f6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="16" cy="16" r="3" fill="#2563eb"/>
+        </svg>
         <span class="brand-text">CodeGraph</span>
       </div>
-      <div class="footer-copy">
-        &copy; 2026 CodeGraph MCP Engine &bull; Released under MIT License &bull; v2.2.1 Production
+      <div class="footer-copy-text">
+        &copy; 2026 CodeGraph Engine &bull; Released under MIT License &bull; v2.2.1 Production
       </div>
-      <ul class="footer-links-row">
+      <ul class="footer-links-group">
         <li><a href="https://pypi.org/project/codegraph-engine/2.2.1/" target="_blank">PyPI Package</a></li>
         <li><a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP" target="_blank">GitHub Repository</a></li>
         <li><a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP/issues" target="_blank">Issue Tracker</a></li>
@@ -989,7 +970,7 @@ def generate_docs():
 
     function setTerminalCmd(cmd, btn) {
       document.getElementById('terminalCmdText').textContent = '$ ' + cmd;
-      document.querySelectorAll('.term-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.term-tab-btn').forEach(t => t.classList.remove('active'));
       btn.classList.add('active');
     }
 
@@ -998,9 +979,9 @@ def generate_docs():
       navigator.clipboard.writeText(text);
     }
 
-    function filterToolsGrid() {
+    function filterToolsWhiteGrid() {
       const q = document.getElementById('toolSearchInput').value.toLowerCase().trim();
-      const cards = document.querySelectorAll('.tool-item-card');
+      const cards = document.querySelectorAll('.tool-white-card');
 
       cards.forEach(card => {
         const name = card.getAttribute('data-name') || '';
@@ -1021,9 +1002,9 @@ def generate_docs():
 
     function setCategoryFilter(cat, btn) {
       currentCategory = cat;
-      document.querySelectorAll('.tool-cat-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.btn-pill-filter').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      filterToolsGrid();
+      filterToolsWhiteGrid();
     }
 
     function toggleSchemaDrawer(btn) {
