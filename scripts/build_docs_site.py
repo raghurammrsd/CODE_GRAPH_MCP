@@ -2,11 +2,88 @@ import html
 import json
 from pathlib import Path
 
+import codegraph.agent_capabilities as ac
+from codegraph.mcp.server import create_server
+
+
+def sync_tools_data() -> list[dict]:
+    server = create_server(Path("."))
+    mcp_tools = server._tool_manager._tools
+
+    def get_category(name: str) -> str:
+        if name.startswith(("find_db_", "get_db_")):
+            return "database"
+        if "runtime" in name or name in ("trace_call", "trace_flow", "trace_path"):
+            return "runtime"
+        if "route" in name:
+            return "routes"
+        if "git" in name or "history" in name or "recent_changes" in name or "change_impact" in name:
+            return "git"
+        if "test" in name:
+            return "tests"
+        if "graph" in name or "impact" in name or "callees" in name or "callers" in name:
+            return "graph"
+        return "core"
+
+    tools_data = []
+    for spec in ac.TOOL_CAPABILITY_REGISTRY:
+        name = spec.tool_name
+        m_tool = mcp_tools[name]
+        cat = get_category(name)
+
+        ret_props = {}
+        if spec.result_fields:
+            for f in spec.result_fields:
+                field_type = "string"
+                if any(k in f for k in ("count", "tokens", "line", "depth", "limit", "status_code")):
+                    field_type = "integer"
+                elif any(k in f for k in ("items", "symbols", "files", "routes", "tests", "callers", "callees", "writers", "readers", "queries", "columns", "tables", "edges", "matches", "alternatives")):
+                    field_type = "array"
+                elif any(k in f for k in ("truncated", "fresh", "observed", "success", "has_more")):
+                    field_type = "boolean"
+                ret_props[f] = {"type": field_type, "title": f.replace("_", " ").title()}
+        else:
+            ret_props = {"result": {"type": "object", "title": "Result"}}
+
+        ret_schema = {
+            "title": spec.expected_output_type,
+            "type": "object",
+            "properties": ret_props,
+        }
+
+        prob = spec.useful_situations[0] if spec.useful_situations else spec.description
+
+        item = {
+            "name": name,
+            "category": cat,
+            "capability": spec.capability,
+            "description": spec.description,
+            "problem_solved": prob,
+            "profiles": list(spec.profiles),
+            "required_inputs": list(spec.required_inputs),
+            "optional_inputs": list(spec.optional_inputs),
+            "parameters_schema": m_tool.parameters,
+            "return_schema": ret_schema,
+            "returns": spec.expected_output_type,
+            "example_invocation": spec.example_call or spec.minimal_invocation,
+            "minimal_invocation": spec.minimal_invocation,
+            "advanced_invocation": spec.advanced_invocation,
+            "evidence": spec.evidence_guarantees,
+            "does_not_prove": spec.does_not_prove,
+        }
+        tools_data.append(item)
+
+    docs_dir = Path("docs")
+    docs_dir.mkdir(parents=True, exist_ok=True)
+    with open(docs_dir / "tools_data.json", "w", encoding="utf-8") as f:
+        json.dump(tools_data, f, indent=2)
+
+    return tools_data
+
 
 def generate_docs():
     docs_dir = Path("docs")
-    with open(docs_dir / "tools_data.json", encoding="utf-8") as f:
-        tools = json.load(f)
+    tools = sync_tools_data()
 
     with open(docs_dir / "cli_data.json", encoding="utf-8") as f:
         commands = json.load(f)
@@ -22,13 +99,13 @@ def generate_docs():
   
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/">
-  <meta property="og:title" content="CodeGraph — Runtime & Database Codebase Intelligence">
+  <meta property="og:title" content="CodeGraph - Runtime & Database Codebase Intelligence">
   <meta property="og:description" content="Local-first code-intelligence engine with runtime telemetry reconciliation, database lineage, and 56 verified MCP tools for AI coding agents.">
   <meta property="og:image" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/assets/codegraph_logo.jpg">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/">
-  <meta name="twitter:title" content="CodeGraph — Runtime & Database Codebase Intelligence">
+  <meta name="twitter:title" content="CodeGraph - Runtime & Database Codebase Intelligence">
   <meta name="twitter:description" content="Local-first code-intelligence engine with runtime telemetry reconciliation and database lineage.">
   <meta name="twitter:image" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/assets/codegraph_logo.jpg">
 
@@ -79,6 +156,7 @@ def generate_docs():
       --emerald: #10b981;
       --amber: #f59e0b;
       --rose: #e11d48;
+      --purple: #9333ea;
       --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
       --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
@@ -93,7 +171,7 @@ def generate_docs():
     /* Clean Universal Header */
     header.clean-nav {
       position: sticky; top: 0; z-index: 100;
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.94);
       backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
       padding: 0.85rem 2.5rem;
@@ -169,8 +247,9 @@ def generate_docs():
       display: inline-flex; align-items: center; gap: 0.4rem;
       background: #f8fafc; border: 1px solid var(--border);
       color: #334155; font-size: 0.82rem; font-weight: 700; padding: 0.35rem 0.75rem;
-      border-radius: 6px;
+      border-radius: 6px; cursor: pointer; text-decoration: none; transition: all 0.15s ease;
     }
+    .cap-pill:hover { border-color: var(--primary); }
     .cap-pill.highlight-db { background: #fef3c7; border-color: #fde68a; color: #92400e; }
     .cap-pill.highlight-runtime { background: #dcfce7; border-color: #bbf7d0; color: #166534; }
 
@@ -198,134 +277,141 @@ def generate_docs():
     .term-tab-strip { display: flex; gap: 1rem; margin-bottom: 0.65rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.5rem; }
     .term-tab-btn {
       background: none; border: none; font-size: 0.78rem; font-weight: 700;
-      color: #94a3b8; cursor: pointer; padding: 0.2rem 0.4rem; transition: color 0.15s ease;
+      color: #64748b; cursor: pointer; padding: 0.2rem 0; font-family: var(--font-mono);
+      transition: color 0.15s ease;
     }
-    .term-tab-btn.active { color: #ffffff; border-bottom: 2px solid #38bdf8; }
-    .term-code-display {
+    .term-tab-btn.active, .term-tab-btn:hover { color: #f8fafc; }
+    .term-line-exec {
       display: flex; align-items: center; justify-content: space-between;
       font-family: var(--font-mono); font-size: 0.85rem; color: #f8fafc;
     }
-    .btn-copy-code {
-      background: none; border: none; color: #94a3b8; cursor: pointer;
-      display: flex; align-items: center; padding: 0.2rem;
+    .btn-copy-term {
+      background: rgba(255, 255, 255, 0.08); border: none; border-radius: 4px;
+      padding: 0.3rem 0.5rem; cursor: pointer; color: #94a3b8; transition: all 0.15s ease;
     }
-    .btn-copy-code:hover { color: #ffffff; }
+    .btn-copy-term:hover { background: rgba(255, 255, 255, 0.18); color: #fff; }
 
-    /* Right Column: CodeGraph Studio IDE Window (Clean Matte Dark Frame) */
-    .ide-studio-window {
-      background: #0d121f; border: 1px solid #1e293b;
-      border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-card);
+    /* IDE Mockup (Right Column) */
+    .ide-mockup-window {
+      background: #090d16; border: 1px solid #1e293b; border-radius: 16px;
+      overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+      display: flex; flex-direction: column;
     }
-    .ide-header-bar {
-      background: #080c15; border-bottom: 1px solid #1e293b;
-      padding: 0.7rem 1rem; display: flex; align-items: center; justify-content: space-between;
-      flex-wrap: wrap; gap: 0.75rem;
+    .ide-window-topbar {
+      background: #0d121f; border-bottom: 1px solid #1e293b;
+      padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between;
     }
-    .ide-tabs-row { display: flex; gap: 0.4rem; }
-    .ide-tab-pill {
-      background: none; border: none; color: #94a3b8; font-size: 0.78rem;
-      font-weight: 600; padding: 0.25rem 0.65rem; border-radius: 6px; cursor: pointer;
+    .window-dots { display: flex; gap: 6px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #eab308; }
+    .dot-green { background: #22c55e; }
+    .window-title-tab {
+      font-family: var(--font-mono); font-size: 0.78rem; font-weight: 600;
+      color: #94a3b8; background: #090d16; padding: 0.25rem 0.75rem; border-radius: 6px;
+      border: 1px solid #1e293b;
     }
-    .ide-tab-pill.active { background: rgba(37, 99, 235, 0.25); color: #60a5fa; font-weight: 700; border: 1px solid rgba(59, 130, 246, 0.3); }
-    .ide-search-pill {
-      display: flex; align-items: center; gap: 0.4rem; background: rgba(255, 255, 255, 0.05);
-      border: 1px solid #1e293b; border-radius: 6px; padding: 0.25rem 0.6rem;
-      font-size: 0.75rem; color: #64748b; width: 150px;
-    }
-
-    .ide-split-body {
-      display: grid; grid-template-columns: 140px 1fr 160px; min-height: 290px;
-      border-bottom: 1px solid #1e293b;
-    }
-    @media (max-width: 680px) {
-      .ide-split-body { grid-template-columns: 1fr; }
+    .window-status-pill {
+      font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700;
+      color: #10b981; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25);
+      padding: 0.2rem 0.5rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 4px;
     }
 
-    /* Left: File Tree */
+    .ide-body-split {
+      display: grid; grid-template-columns: 190px 1fr 200px;
+      height: 380px; background: #090d16;
+    }
+    @media (max-width: 900px) {
+      .ide-body-split { grid-template-columns: 1fr; height: auto; }
+    }
+
     .tree-pane-wrap {
-      background: #090d16; border-right: 1px solid #1e293b;
-      padding: 0.85rem; font-family: var(--font-mono); font-size: 0.75rem; color: #94a3b8;
+      border-right: 1px solid #1e293b; padding: 0.75rem 0.5rem; font-family: var(--font-mono);
+      font-size: 0.78rem; color: #94a3b8;
     }
-    .tree-header-tag { font-weight: 700; font-size: 0.7rem; color: #64748b; text-transform: uppercase; margin-bottom: 0.5rem; }
-    .tree-node-line { padding: 0.2rem 0.4rem; border-radius: 4px; display: flex; align-items: center; gap: 0.35rem; }
-    .tree-node-line.selected { background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-weight: 600; }
-    .tree-node-line.indent { padding-left: 0.85rem; }
-    .tree-node-line.indent-2 { padding-left: 1.4rem; }
-
-    /* Center: Graph Canvas */
-    .graph-canvas-wrap {
-      padding: 1rem; display: flex; align-items: center; justify-content: center;
-      position: relative; background: radial-gradient(#1e293b 1px, transparent 1px);
-      background-size: 16px 16px;
+    .tree-pane-head {
+      font-size: 0.7rem; font-weight: 700; color: #475569; text-transform: uppercase;
+      letter-spacing: 0.05em; padding: 0.25rem 0.5rem; margin-bottom: 0.35rem;
     }
-    .graph-vector-svg { width: 100%; height: 260px; }
+    .tree-item-row {
+      padding: 0.3rem 0.5rem; border-radius: 4px; display: flex; align-items: center; gap: 0.45rem;
+      cursor: pointer; transition: background 0.15s ease;
+    }
+    .tree-item-row:hover { background: rgba(255, 255, 255, 0.04); color: #f8fafc; }
+    .tree-item-row.active { background: rgba(37, 99, 235, 0.15); color: #60a5fa; font-weight: 600; }
+    .tree-item-row.db-item { color: #f59e0b; }
+    .tree-item-row.runtime-item { color: #34d399; }
 
-    /* Right: Inspector Pane (Focus on Runtime & DB) */
+    .graph-visual-canvas {
+      position: relative; background: #090d16; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .graph-svg-elem { width: 100%; height: 100%; }
+
     .inspector-pane-wrap {
-      background: #090d16; border-left: 1px solid #1e293b;
-      padding: 0.85rem; font-size: 0.75rem; display: flex; flex-direction: column; justify-content: space-between;
+      border-left: 1px solid #1e293b; padding: 0.9rem; font-family: var(--font-mono);
+      font-size: 0.78rem; color: #94a3b8; display: flex; flex-direction: column; justify-content: space-between;
     }
-    .inspector-head-title { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem; font-weight: 700; color: #fff; }
-    .inspector-file-sub { color: #64748b; font-size: 0.68rem; font-family: var(--font-mono); margin-bottom: 0.75rem; }
-    .prop-row { display: flex; justify-content: space-between; padding: 0.2rem 0; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.03); }
-    .prop-val { color: #fff; font-family: var(--font-mono); font-weight: 600; }
-    .prop-val.green { color: #34d399; }
-    .prop-val.amber { color: #fbbf24; }
+    .inspector-head-title { font-weight: 700; color: #f8fafc; display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.25rem; }
+    .inspector-file-sub { font-size: 0.7rem; color: #64748b; margin-bottom: 0.85rem; }
+    .prop-row { display: flex; justify-content: space-between; margin-bottom: 0.45rem; }
+    .prop-val { color: #f8fafc; font-weight: 600; }
+    .prop-val.amber { color: #f59e0b; }
+    .prop-val.green { color: #10b981; }
+
     .btn-action-view {
-      background: rgba(255, 255, 255, 0.05); border: 1px solid #1e293b;
-      color: #fff; padding: 0.35rem; border-radius: 5px; font-size: 0.72rem; font-weight: 600;
-      cursor: pointer; text-align: center; margin-top: 0.5rem;
+      background: #1e293b; border: 1px solid #334155; color: #f8fafc;
+      padding: 0.45rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;
+      cursor: pointer; text-align: center; font-family: var(--font-sans);
     }
+    .btn-action-view:hover { background: #334155; }
 
-    /* Bottom 4 Stats Strip */
     .ide-stats-strip-bottom {
-      padding: 0.75rem 1rem; display: grid; grid-template-columns: repeat(4, 1fr);
-      gap: 0.75rem; background: #080c15;
+      background: #0d121f; border-top: 1px solid #1e293b;
+      padding: 0.75rem 1.25rem; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
     }
-    .stat-tile-card {
-      background: rgba(255, 255, 255, 0.03); border: 1px solid #1e293b;
-      border-radius: 8px; padding: 0.5rem 0.65rem; display: flex; align-items: center; gap: 0.5rem;
-    }
-    .stat-tile-num { font-size: 0.88rem; font-weight: 800; font-family: var(--font-mono); color: #fff; line-height: 1; }
-    .stat-tile-tag { font-size: 0.68rem; color: #64748b; }
+    .stat-tile-card { display: flex; align-items: center; gap: 0.65rem; }
+    .stat-tile-num { font-family: var(--font-mono); font-size: 1.15rem; font-weight: 800; color: #f8fafc; line-height: 1; }
+    .stat-tile-tag { font-size: 0.72rem; color: #64748b; font-weight: 600; }
 
-    /* 6 Feature Cards Grid (Clean White Enterprise Design) */
+    /* 6 Features Grid (Clean White) */
     .features-grid-section {
-      max-width: 1380px; margin: 0 auto; padding: 2rem 2.5rem 5rem;
+      background: #ffffff; border-top: 1px solid var(--border);
+      padding: 4rem 2.5rem;
     }
     .features-6-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.35rem;
-    }
-    @media (max-width: 960px) {
-      .features-6-grid { grid-template-columns: 1fr; }
+      max-width: 1380px; margin: 0 auto;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem;
     }
     .feature-clean-card {
-      background: #ffffff; border: 1px solid var(--border);
-      border-radius: 14px; padding: 1.65rem; display: flex; align-items: flex-start;
-      justify-content: space-between; gap: 1rem; transition: all 0.2s ease;
-      text-decoration: none; color: inherit; box-shadow: var(--shadow-sm);
+      background: #ffffff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.35rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+      text-decoration: none; color: inherit; transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm); cursor: pointer;
     }
     .feature-clean-card:hover {
-      border-color: #cbd5e1; transform: translateY(-3px); box-shadow: var(--shadow-hover);
+      border-color: var(--border-focus); transform: translateY(-2px);
+      box-shadow: var(--shadow-card);
     }
-    .card-left-part { display: flex; gap: 1rem; }
+    .card-left-part { display: flex; align-items: center; gap: 1.1rem; }
     .icon-square-box {
-      width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center;
-      justify-content: center; flex-shrink: 0;
+      width: 44px; height: 44px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .icon-emerald { background: #dcfce7; color: #15803d; }
-    .icon-amber { background: #fef3c7; color: #b45309; }
-    .icon-blue { background: #dbeafe; color: #1d4ed8; }
-    .icon-indigo { background: #e0e7ff; color: #4338ca; }
-    .icon-rose { background: #ffe4e6; color: #be123c; }
+    .icon-blue { background: #eff6ff; color: #2563eb; }
+    .icon-emerald { background: #dcfce7; color: #10b981; }
+    .icon-amber { background: #fef3c7; color: #f59e0b; }
+    .icon-indigo { background: #e0e7ff; color: #4f46e5; }
+    .icon-rose { background: #ffe4e6; color: #e11d48; }
 
-    .card-text-part h3 { font-size: 1.1rem; font-weight: 800; color: var(--text); margin-bottom: 0.35rem; }
-    .card-text-part p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.55; }
+    .card-text-part h3 { font-size: 1.05rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .card-text-part p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.45; }
     .arrow-circle-pill {
-      width: 26px; height: 26px; border-radius: 50%; background: #f8fafc;
-      display: flex; align-items: center; justify-content: center; color: var(--text-dim); flex-shrink: 0;
-      border: 1px solid var(--border);
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #f1f5f9; display: flex; align-items: center; justify-content: center;
+      color: var(--text-dim); font-size: 0.85rem; flex-shrink: 0; transition: all 0.15s ease;
     }
+    .feature-clean-card:hover .arrow-circle-pill { background: var(--text); color: #fff; }
 
     /* Documentation Section (Clean White) */
     .docs-white-section {
@@ -333,7 +419,7 @@ def generate_docs():
       padding: 5rem 2.5rem 6rem;
     }
     .docs-inner-wrapper { max-width: 1380px; margin: 0 auto; }
-    .docs-section-heading { text-align: center; max-width: 780px; margin: 0 auto 3.5rem; }
+    .docs-section-heading { text-align: center; max-width: 780px; margin: 0 auto 3rem; }
     .docs-badge-sub {
       font-family: var(--font-mono); font-size: 0.78rem; font-weight: 800;
       color: var(--primary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;
@@ -342,27 +428,53 @@ def generate_docs():
     .docs-title-h2 { font-size: 2.35rem; font-weight: 800; letter-spacing: -0.03em; color: var(--text); margin-bottom: 0.75rem; }
     .docs-desc-p { font-size: 1.05rem; color: var(--text-muted); line-height: 1.6; }
 
-    /* Tool Toolbar */
+    /* Tool Toolbar & Search */
     .tool-white-toolbar {
-      display: flex; gap: 0.75rem; margin-bottom: 2rem; flex-wrap: wrap; align-items: center;
-      background: #ffffff; padding: 1rem 1.35rem; border-radius: 14px; border: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;
+      background: #ffffff; padding: 1.25rem 1.5rem; border-radius: 14px; border: 1px solid var(--border);
       box-shadow: var(--shadow-sm);
     }
-    .tool-search-white-input {
-      flex: 1; min-width: 260px; background: #f8fafc; border: 1px solid var(--border);
-      border-radius: 8px; padding: 0.65rem 0.95rem; color: var(--text); font-family: var(--font-sans);
-      font-size: 0.92rem; outline: none; transition: border-color 0.15s ease;
+    .tool-search-input-wrap {
+      position: relative; display: flex; align-items: center; width: 100%;
     }
-    .tool-search-white-input:focus { border-color: var(--primary); }
+    .search-lens-icon {
+      position: absolute; left: 1rem; color: var(--text-dim); pointer-events: none;
+    }
+    .tool-search-white-input {
+      width: 100%; background: #f8fafc; border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.75rem 2.8rem 0.75rem 2.75rem; color: var(--text); font-family: var(--font-sans);
+      font-size: 0.95rem; outline: none; transition: border-color 0.15s ease;
+    }
+    .tool-search-white-input:focus { border-color: var(--primary); background: #ffffff; }
+    .clear-search-btn {
+      position: absolute; right: 0.85rem; background: #e2e8f0; border: none; border-radius: 50%;
+      width: 22px; height: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; color: #475569; transition: background 0.15s ease;
+    }
+    .clear-search-btn:hover { background: #cbd5e1; }
+
+    .filter-pills-row {
+      display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;
+    }
     .btn-pill-filter {
       background: #f8fafc; border: 1px solid var(--border); color: var(--text-muted);
-      padding: 0.45rem 0.95rem; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+      padding: 0.45rem 0.85rem; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer;
       transition: all 0.15s ease;
     }
     .btn-pill-filter.active, .btn-pill-filter:hover {
       background: var(--text); color: #fff; border-color: var(--text);
     }
+    .btn-pill-filter.cat-db.active { background: #d97706; border-color: #d97706; color: #fff; }
+    .btn-pill-filter.cat-runtime.active { background: #059669; border-color: #059669; color: #fff; }
+    .btn-pill-filter.cat-graph.active { background: #2563eb; border-color: #2563eb; color: #fff; }
 
+    .filter-results-status {
+      font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1.5rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .filter-results-status strong { color: var(--text); }
+
+    /* Tool Cards Grid */
     .tools-white-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.35rem; }
     .tool-white-card {
       background: #ffffff; border: 1px solid var(--border); border-radius: 14px;
@@ -372,41 +484,90 @@ def generate_docs():
     .tool-white-card:hover { border-color: #cbd5e1; box-shadow: var(--shadow-card); }
     .tool-card-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; }
     .tool-code-title { font-family: var(--font-mono); font-size: 1.05rem; font-weight: 700; color: #1d4ed8; }
+
     .prof-tag-pill {
-      font-size: 0.7rem; font-family: var(--font-mono); font-weight: 700;
-      padding: 0.18rem 0.5rem; border-radius: 4px; background: #f1f5f9; color: #475569;
+      font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700;
+      padding: 0.2rem 0.55rem; border-radius: 4px; border: 1px solid transparent;
     }
-    .prof-tag-pill.core { background: #dbeafe; color: #1e40af; }
-    .prof-tag-pill.trace { background: #e0e7ff; color: #4338ca; }
-    .prof-tag-pill.database { background: #fef3c7; color: #92400e; }
-    .prof-tag-pill.runtime { background: #dcfce7; color: #166534; }
+    .prof-tag-pill.core { background: #f1f5f9; color: #334155; border-color: #e2e8f0; }
+    .prof-tag-pill.database { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+    .prof-tag-pill.runtime { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+    .prof-tag-pill.graph { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .prof-tag-pill.routes { background: #ffe4e6; color: #9f1239; border-color: #fecdd3; }
+    .prof-tag-pill.git { background: #e0e7ff; color: #3730a3; border-color: #c7d2fe; }
+    .prof-tag-pill.tests { background: #f3e8ff; color: #6b21a8; border-color: #e9d5ff; }
 
     .tool-desc-body { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.85rem; line-height: 1.55; }
     .tool-problem-note {
-      background: #f8fafc; border-left: 3px solid #2563eb; padding: 0.45rem 0.75rem;
-      border-radius: 0 6px 6px 0; font-size: 0.82rem; color: #334155; margin-bottom: 1rem;
+      background: #f8fafc; border-left: 3px solid #2563eb; padding: 0.5rem 0.8rem;
+      border-radius: 0 6px 6px 0; font-size: 0.82rem; color: #334155; margin-bottom: 0.85rem;
     }
+    .tool-meta-tags-row {
+      display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;
+    }
+    .meta-tag-spec {
+      font-family: var(--font-mono); font-size: 0.72rem; color: #475569;
+      background: #f1f5f9; padding: 0.15rem 0.45rem; border-radius: 4px;
+    }
+    .meta-tag-spec.returns { color: #2563eb; background: #eff6ff; }
+
     .btn-drawer-expand {
       background: #f8fafc; border: 1px solid var(--border); color: var(--text-muted);
-      padding: 0.45rem; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+      padding: 0.55rem; border-radius: 6px; font-size: 0.82rem; font-weight: 700; cursor: pointer;
       width: 100%; text-align: center; transition: all 0.15s ease;
     }
-    .btn-drawer-expand:hover { color: var(--text); background: #f1f5f9; }
-    .drawer-content { display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .btn-drawer-expand:hover { color: var(--text); background: #f1f5f9; border-color: #cbd5e1; }
+    .drawer-content { display: none; margin-top: 1.15rem; padding-top: 1.15rem; border-top: 1px solid var(--border); }
     .drawer-content.open { display: block; }
+
+    .schema-block-heading {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase;
+      letter-spacing: 0.05em; margin-bottom: 0.35rem; margin-top: 0.85rem;
+    }
+    .schema-block-heading:first-child { margin-top: 0; }
+    .badge-tag-tiny {
+      font-family: var(--font-mono); font-size: 0.68rem; text-transform: none;
+      background: #e2e8f0; color: #475569; padding: 0.1rem 0.4rem; border-radius: 4px;
+    }
+    .btn-copy-mini {
+      background: #f1f5f9; border: 1px solid var(--border); font-size: 0.7rem;
+      padding: 0.15rem 0.45rem; border-radius: 4px; cursor: pointer; color: #475569;
+      font-family: var(--font-mono); transition: all 0.15s ease;
+    }
+    .btn-copy-mini:hover { background: #e2e8f0; color: #0f172a; }
+
     .code-box-pre {
       background: #090d16; border: 1px solid #1e293b; border-radius: 8px;
-      padding: 0.8rem; font-family: var(--font-mono); font-size: 0.8rem; color: #f8fafc;
-      overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 0.35rem 0 0.85rem;
+      padding: 0.85rem; font-family: var(--font-mono); font-size: 0.78rem; color: #f8fafc;
+      overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 0.25rem 0 0.85rem;
+      line-height: 1.45;
+    }
+
+    .verification-note-box {
+      background: #f8fafc; border: 1px solid var(--border); border-radius: 8px;
+      padding: 0.65rem 0.85rem; font-size: 0.76rem; color: #475569; margin-top: 0.85rem;
+    }
+    .verification-note-box strong { color: var(--text); }
+
+    .empty-state-notice {
+      grid-column: 1 / -1; text-align: center; padding: 4rem 2rem;
+      background: #ffffff; border: 1px dashed var(--border); border-radius: 14px;
+    }
+    .empty-state-title { font-size: 1.25rem; font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
+    .empty-state-desc { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.25rem; }
+    .btn-reset-filters {
+      background: var(--text); color: #fff; border: none; border-radius: 6px;
+      padding: 0.5rem 1.2rem; font-size: 0.85rem; font-weight: 700; cursor: pointer;
     }
 
     /* CLI Grid (Clean White) */
     .cli-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
     .cli-card-unit {
       background: #ffffff; border: 1px solid var(--border); border-radius: 14px;
-      padding: 1.65rem; box-shadow: var(--shadow-sm);
+      padding: 1.65rem; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: space-between;
     }
-    .cli-name-h3 { font-family: var(--font-mono); font-size: 1.15rem; font-weight: 800; color: var(--text); margin-bottom: 0.35rem; }
+    .cli-name-h3 { font-family: var(--font-mono); font-size: 1.12rem; font-weight: 800; color: var(--text); margin-bottom: 0.35rem; }
     .cli-solve-bar {
       background: #eff6ff; color: #1e40af; padding: 0.45rem 0.75rem; border-radius: 6px;
       font-size: 0.82rem; font-weight: 600; margin-bottom: 0.85rem;
@@ -416,6 +577,10 @@ def generate_docs():
       padding: 0.7rem 0.95rem; font-family: var(--font-mono); font-size: 0.85rem; color: #f8fafc;
       margin-bottom: 0.85rem; display: flex; justify-content: space-between; align-items: center;
     }
+    .btn-copy-code {
+      background: none; border: none; color: #94a3b8; cursor: pointer; display: flex; align-items: center;
+    }
+    .btn-copy-code:hover { color: #f8fafc; }
     .table-spec-clean { width: 100%; border-collapse: collapse; font-size: 0.84rem; margin: 0.5rem 0; }
     .table-spec-clean th { text-align: left; padding: 0.45rem 0.6rem; background: #f8fafc; color: var(--text-dim); }
     .table-spec-clean td { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); color: var(--text-muted); }
@@ -448,153 +613,153 @@ def generate_docs():
       display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 2rem;
     }
     .footer-copy-text { font-size: 0.88rem; color: var(--text-dim); }
-    .footer-links-group { display: flex; gap: 1.75rem; list-style: none; }
-    .footer-links-group a { color: var(--text-muted); text-decoration: none; font-size: 0.88rem; font-weight: 600; }
+    .footer-links-group { display: flex; gap: 1.5rem; list-style: none; font-size: 0.9rem; }
+    .footer-links-group a { color: var(--text-muted); text-decoration: none; font-weight: 600; }
     .footer-links-group a:hover { color: var(--text); }
   </style>
 </head>
 <body>
 
-  <!-- Top Universal Header -->
+  <!-- Universal Clean Header -->
   <header class="clean-nav">
     <a href="#" class="brand-wrap">
-      <!-- 3D Geometric Isometric Graph Logo (From Reference Blueprint) -->
+      <!-- 3D Isometric Graph Cube Logo from Reference -->
       <svg class="brand-logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M16 2L28 9V23L16 30L4 23V9L16 2Z" stroke="#2563eb" stroke-width="2.2" stroke-linejoin="round"/>
         <path d="M16 2V16M28 9L16 16M4 9L16 16M16 16V30" stroke="#3b82f6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
         <circle cx="16" cy="16" r="3" fill="#2563eb"/>
-        <circle cx="16" cy="2" r="2" fill="#3b82f6"/>
-        <circle cx="28" cy="9" r="2" fill="#3b82f6"/>
-        <circle cx="4" cy="9" r="2" fill="#3b82f6"/>
-        <circle cx="28" cy="23" r="2" fill="#3b82f6"/>
-        <circle cx="4" cy="23" r="2" fill="#3b82f6"/>
-        <circle cx="16" cy="30" r="2" fill="#3b82f6"/>
       </svg>
       <span class="brand-text">CodeGraph</span>
     </a>
 
-    <div class="header-search-bar" onclick="document.getElementById('toolSearchInput').focus(); window.location.hash='#tools';">
+    <!-- Top Search Bar Trigger (⌘ K) -->
+    <div class="header-search-bar" onclick="focusSearch()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-      <span>Search tools, concepts, or documentation...</span>
-      <span class="kbd-pill">&#8984; K</span>
+      <span>Search 56 tools, routes, tables (Press ⌘ K)</span>
+      <kbd class="kbd-pill">⌘ K</kbd>
     </div>
 
+    <!-- Navigation Menu -->
     <ul class="nav-links-menu">
-      <li><a href="#features">Docs</a></li>
-      <li><a href="#tools">Tools</a></li>
-      <li><a href="#cli">CLI</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#tools">MCP Tools (56)</a></li>
+      <li><a href="#cli">CLI (13)</a></li>
       <li><a href="#benchmarks">Benchmarks</a></li>
-      <li><a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP" target="_blank">GitHub &nearr;</a></li>
-      <li><a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP" class="badge-star-pill" target="_blank">&#9733; 861 tests</a></li>
+      <li>
+        <a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP" target="_blank" class="badge-star-pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          <span>Star</span>
+        </a>
+      </li>
     </ul>
   </header>
 
-  <!-- Hero Blueprint (Clean White Mode) -->
+  <!-- Split Hero Section -->
   <section class="hero-white-container">
     
-    <!-- Left Column: Highlighting Runtime & Database Intelligence -->
-    <div class="hero-left-column">
+    <!-- Left Column: Copy & Interactive Quickstart -->
+    <div>
       <div class="badge-highlight-row">
         <span class="badge-dot-green"></span>
-        <span>v2.2.1 &middot; Runtime Telemetry &amp; Database Lineage</span>
+        <span>v2.2.1 Production · Runtime &amp; Database Verified</span>
       </div>
 
       <h1 class="hero-main-title">
-        Understand any<br>
-        <span class="gradient-blue-text">codebase</span> with runtime &amp; DB intelligence
+        The deterministic<br>
+        <span class="gradient-blue-text">code-intelligence</span> engine.
       </h1>
 
       <p class="hero-lead-text">
-        A local-first code-intelligence engine that turns any codebase into a queryable knowledge graph &mdash; tracing ORM models to database writers and reconciling static AST graphs with live execution telemetry.
+        CodeGraph indexes repository relationships with <strong>runtime telemetry reconciliation</strong> and <strong>database lineage</strong>. AI agents resolve call hierarchies, mutating SQL queries, and API routes in <strong>&lt; 50ms</strong> without token waste.
       </p>
 
       <div class="pills-capability-row">
-        <span class="cap-pill highlight-runtime">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
-          Runtime Evidence
-        </span>
-        <span class="cap-pill highlight-db">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
-          Database Intelligence
-        </span>
-        <span class="cap-pill">Deterministic AST</span>
-        <span class="cap-pill">Local-First</span>
-        <span class="cap-pill">Multi-Language</span>
+        <span class="cap-pill highlight-runtime" onclick="filterByCategory('runtime')">&#10003; Runtime Reconciliation</span>
+        <span class="cap-pill highlight-db" onclick="filterByCategory('database')">&#9670; Database Lineage</span>
+        <span class="cap-pill" onclick="filterByCategory('routes')">Routes &amp; Handlers</span>
+        <span class="cap-pill" onclick="filterByCategory('core')">Deterministic AST</span>
+        <span class="cap-pill" onclick="filterByCategory('all')">56 Verified Tools</span>
       </div>
 
       <div class="hero-btn-actions">
-        <a href="#tools" class="btn-solid-black">&gt;_ Get started &rarr;</a>
-        <a href="#features" class="btn-outline-white">View documentation</a>
+        <a href="#tools" class="btn-solid-black">
+          <span>Explore 56 MCP Tools</span>
+          <span>&darr;</span>
+        </a>
+        <a href="#cli" class="btn-outline-white">CLI Documentation</a>
       </div>
 
       <!-- Tabbed Terminal Box -->
       <div class="terminal-tab-box">
         <div class="term-tab-strip">
           <button class="term-tab-btn active" onclick="setTerminalCmd('pip install codegraph-engine[mcp]', this)">Install</button>
-          <button class="term-tab-btn" onclick="setTerminalCmd('codegraph query \'find_db_writers(users)\'', this)">Database CLI</button>
-          <button class="term-tab-btn" onclick="setTerminalCmd('codegraph query \'get_runtime_trace(auth)\'', this)">Runtime Traces</button>
+          <button class="term-tab-btn" onclick="setTerminalCmd('codegraph search --database \'users table writes\'', this)">Database CLI</button>
+          <button class="term-tab-btn" onclick="setTerminalCmd('codegraph run --record pytest', this)">Runtime Traces</button>
           <button class="term-tab-btn" onclick="setTerminalCmd('from codegraph import get_context', this)">Python API</button>
         </div>
-        <div class="term-code-display">
+        <div class="term-line-exec">
           <span id="terminalCmdText">$ pip install codegraph-engine[mcp]</span>
-          <button class="btn-copy-code" title="Copy command" onclick="copyTerminalCode()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <button class="btn-copy-term" onclick="copyTerminalCode()" title="Copy command">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Right Column: CodeGraph Mockup IDE Window (Clean Matte Dark Frame) -->
-    <div class="hero-right-column">
-      <div class="ide-studio-window">
-        <div class="ide-header-bar">
-          <div class="ide-tabs-row">
-            <button class="ide-tab-pill active">Runtime Trace</button>
-            <button class="ide-tab-pill">Database Schema</button>
-            <button class="ide-tab-pill">Call Graph</button>
-            <button class="ide-tab-pill">Routes</button>
-            <button class="ide-tab-pill">Dependencies</button>
+    <!-- Right Column: Interactive IDE Visualizer -->
+    <div>
+      <div class="ide-mockup-window">
+        
+        <!-- IDE Topbar -->
+        <div class="ide-window-topbar">
+          <div class="window-dots">
+            <div class="dot dot-red"></div>
+            <div class="dot dot-yellow"></div>
+            <div class="dot dot-green"></div>
           </div>
-          <div class="ide-search-pill">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <span>Search symbols...</span>
-          </div>
+          <div class="window-title-tab">CodeGraph Graph Visualizer</div>
+          <div class="window-status-pill">&#10003; Synchronized</div>
         </div>
 
-        <div class="ide-split-body">
+        <!-- 3-Pane Visual Split -->
+        <div class="ide-body-split">
+          
           <!-- Left: File Tree -->
           <div class="tree-pane-wrap">
-            <div class="tree-header-tag">Repository</div>
-            <div class="tree-node-line">&blacktriangledown; app/</div>
-            <div class="tree-node-line indent">&blacktriangledown; routes/</div>
-            <div class="tree-node-line indent-2">auth.py</div>
-            <div class="tree-node-line indent-2 selected">&bull; router.py</div>
-            <div class="tree-node-line indent-2">users.py</div>
-            <div class="tree-node-line indent">&blacktriangledown; models/</div>
-            <div class="tree-node-line indent-2">user.py</div>
-            <div class="tree-node-line indent-2">orders.py</div>
-            <div class="tree-node-line indent">&blacktriangledown; services/</div>
-            <div class="tree-node-line indent-2">db_writer.py</div>
-            <div class="tree-node-line">&blacktriangledown; tests/</div>
-            <div class="tree-node-line">requirements.txt</div>
+            <div class="tree-pane-head">Repository Explorer</div>
+            <div class="tree-item-row">&bull; app/</div>
+            <div class="tree-item-row">&nbsp;&nbsp;&bull; api/</div>
+            <div class="tree-item-row active">&nbsp;&nbsp;&nbsp;&nbsp;router.py</div>
+            <div class="tree-item-row">&nbsp;&nbsp;&nbsp;&nbsp;auth.py</div>
+            <div class="tree-item-row db-item">&nbsp;&nbsp;&bull; db/users.sql</div>
+            <div class="tree-item-row runtime-item">&nbsp;&nbsp;&bull; traces/live.json</div>
+            <div class="tree-item-row">&bull; tests/test_api.py</div>
           </div>
 
-          <!-- Center: Graph Visualization (Featuring DB + Runtime Edges) -->
-          <div class="graph-canvas-wrap">
-            <svg class="graph-vector-svg" viewBox="0 0 400 240" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Edge Lines -->
-              <line x1="200" y1="120" x2="270" y2="40" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="3 3"/>
-              <line x1="200" y1="120" x2="90" y2="85" stroke="#475569" stroke-width="1.2"/>
-              <line x1="200" y1="120" x2="330" y2="90" stroke="#f59e0b" stroke-width="1.5"/>
-              <line x1="200" y1="120" x2="130" y2="185" stroke="#475569" stroke-width="1.2"/>
-              <line x1="200" y1="120" x2="270" y2="195" stroke="#10b981" stroke-width="1.5"/>
+          <!-- Center: Graph Canvas -->
+          <div class="graph-visual-canvas">
+            <svg class="graph-svg-elem" viewBox="0 0 420 280">
+              <defs>
+                <linearGradient id="edgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.6"/>
+                  <stop offset="100%" stop-color="#60a5fa" stop-opacity="0.2"/>
+                </linearGradient>
+                <linearGradient id="dbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.6"/>
+                  <stop offset="100%" stop-color="#fbbf24" stop-opacity="0.2"/>
+                </linearGradient>
+                <linearGradient id="rtGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#10b981" stop-opacity="0.6"/>
+                  <stop offset="100%" stop-color="#34d399" stop-opacity="0.2"/>
+                </linearGradient>
+              </defs>
 
-              <!-- Edge Labels -->
-              <text x="245" y="75" font-family="JetBrains Mono" font-size="8" fill="#94a3b8">imports</text>
-              <text x="135" y="95" font-family="JetBrains Mono" font-size="8" fill="#94a3b8">uses</text>
-              <text x="270" y="105" font-family="JetBrains Mono" font-size="8" fill="#fbbf24">writes DB</text>
-              <text x="155" y="160" font-family="JetBrains Mono" font-size="8" fill="#94a3b8">calls</text>
-              <text x="245" y="165" font-family="JetBrains Mono" font-size="8" fill="#34d399">runtime span</text>
+              <!-- Connection Edges -->
+              <path d="M200 120 L90 85" stroke="url(#edgeGrad)" stroke-width="1.8" stroke-dasharray="3 3"/>
+              <path d="M200 120 L330 90" stroke="url(#dbGrad)" stroke-width="2"/>
+              <path d="M200 120 L130 185" stroke="url(#edgeGrad)" stroke-width="1.8"/>
+              <path d="M200 120 L270 195" stroke="url(#rtGrad)" stroke-width="2"/>
+              <path d="M90 85 L270 40" stroke="url(#edgeGrad)" stroke-width="1.5" stroke-opacity="0.4"/>
 
               <!-- Node: index.py (Top) -->
               <circle cx="270" cy="40" r="14" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/>
@@ -655,8 +820,8 @@ def generate_docs():
             </div>
 
             <div>
-              <button class="btn-action-view" style="width:100%; margin-bottom:0.35rem;">View source &rarr;</button>
-              <button class="btn-action-view" style="width:100%; background:none;">Find DB queries</button>
+              <button class="btn-action-view" style="width:100%; margin-bottom:0.35rem;" onclick="filterByCategory('core')">View tools &rarr;</button>
+              <button class="btn-action-view" style="width:100%; background:none;" onclick="filterByCategory('database')">Find DB queries</button>
             </div>
           </div>
         </div>
@@ -697,7 +862,7 @@ def generate_docs():
     <div class="features-6-grid">
       
       <!-- Card 1: Runtime Evidence (Highlighted!) -->
-      <a href="#tools" class="feature-clean-card" style="border-top: 3px solid #10b981;">
+      <a href="#tools" class="feature-clean-card" style="border-top: 3px solid #10b981;" onclick="filterByCategory('runtime'); return true;">
         <div class="card-left-part">
           <div class="icon-square-box icon-emerald">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
@@ -711,7 +876,7 @@ def generate_docs():
       </a>
 
       <!-- Card 2: Database Intelligence (Highlighted!) -->
-      <a href="#tools" class="feature-clean-card" style="border-top: 3px solid #f59e0b;">
+      <a href="#tools" class="feature-clean-card" style="border-top: 3px solid #f59e0b;" onclick="filterByCategory('database'); return true;">
         <div class="card-left-part">
           <div class="icon-square-box icon-amber">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
@@ -725,7 +890,7 @@ def generate_docs():
       </a>
 
       <!-- Card 3: Tree-sitter & AST parsing -->
-      <a href="#tools" class="feature-clean-card">
+      <a href="#tools" class="feature-clean-card" onclick="filterByCategory('core'); return true;">
         <div class="card-left-part">
           <div class="icon-square-box icon-indigo">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
@@ -739,7 +904,7 @@ def generate_docs():
       </a>
 
       <!-- Card 4: 56 MCP tools server -->
-      <a href="#tools" class="feature-clean-card">
+      <a href="#tools" class="feature-clean-card" onclick="filterByCategory('all'); return true;">
         <div class="card-left-part">
           <div class="icon-square-box icon-blue">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
@@ -753,7 +918,7 @@ def generate_docs():
       </a>
 
       <!-- Card 5: Framework-aware routes -->
-      <a href="#tools" class="feature-clean-card">
+      <a href="#tools" class="feature-clean-card" onclick="filterByCategory('routes'); return true;">
         <div class="card-left-part">
           <div class="icon-square-box icon-rose">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
@@ -767,7 +932,7 @@ def generate_docs():
       </a>
 
       <!-- Card 6: Impact analysis -->
-      <a href="#tools" class="feature-clean-card">
+      <a href="#tools" class="feature-clean-card" onclick="filterByCategory('graph'); return true;">
         <div class="card-left-part">
           <div class="icon-square-box icon-amber">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
@@ -790,17 +955,33 @@ def generate_docs():
         <span class="docs-badge-sub">Full Technical Registry</span>
         <h2 class="docs-title-h2">56 Verified MCP Tools</h2>
         <p class="docs-desc-p">
-          Search and inspect every tool exposed by CodeGraph. Filter specifically by Database, Runtime, Core, or Trace capabilities.
+          Search and inspect every tool exposed by CodeGraph. Filter specifically by Database, Runtime, Graph, Routes, Git, Tests, or Core capabilities.
         </p>
       </div>
 
+      <!-- Functional Filter Toolbar -->
       <div class="tool-white-toolbar">
-        <input type="text" id="toolSearchInput" class="tool-search-white-input" placeholder="Search 56 tools (e.g. database, runtime, callers, trace, routes)..." oninput="filterToolsWhiteGrid()">
-        <button class="btn-pill-filter active" onclick="setCategoryFilter('all', this)">All (56)</button>
-        <button class="btn-pill-filter" onclick="setCategoryFilter('database', this)">Database (8)</button>
-        <button class="btn-pill-filter" onclick="setCategoryFilter('runtime', this)">Runtime (4)</button>
-        <button class="btn-pill-filter" onclick="setCategoryFilter('core', this)">Core Profile</button>
-        <button class="btn-pill-filter" onclick="setCategoryFilter('trace', this)">Trace &amp; Flow</button>
+        <div class="tool-search-input-wrap">
+          <svg class="search-lens-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="toolSearchInput" class="tool-search-white-input" placeholder="Search 56 tools by name, description, parameter, or capability (e.g. database, runtime, callers, trace, routes)..." oninput="filterToolsGrid()">
+          <button id="clearSearchBtn" class="clear-search-btn" onclick="clearToolSearch()" style="display:none;" title="Clear search">&times;</button>
+        </div>
+
+        <div class="filter-pills-row">
+          <button class="btn-pill-filter active" data-cat="all" onclick="setCategoryFilter('all', this)">All (56)</button>
+          <button class="btn-pill-filter cat-db" data-cat="database" onclick="setCategoryFilter('database', this)">Database (11)</button>
+          <button class="btn-pill-filter cat-runtime" data-cat="runtime" onclick="setCategoryFilter('runtime', this)">Runtime (6)</button>
+          <button class="btn-pill-filter cat-graph" data-cat="graph" onclick="setCategoryFilter('graph', this)">Graph &amp; Impact (8)</button>
+          <button class="btn-pill-filter" data-cat="core" onclick="setCategoryFilter('core', this)">Core Profile (23)</button>
+          <button class="btn-pill-filter" data-cat="routes" onclick="setCategoryFilter('routes', this)">Routes (2)</button>
+          <button class="btn-pill-filter" data-cat="git" onclick="setCategoryFilter('git', this)">Git &amp; History (4)</button>
+          <button class="btn-pill-filter" data-cat="tests" onclick="setCategoryFilter('tests', this)">Tests (2)</button>
+        </div>
+      </div>
+
+      <div class="filter-results-status">
+        <div>Showing <strong id="visibleCount">56</strong> of 56 tools</div>
+        <div style="font-family:var(--font-mono); font-size:0.75rem;">Status: <span style="color:#10b981; font-weight:700;">Deterministic AST &amp; Runtime Verified</span></div>
       </div>
 
       <div class="tools-white-grid" id="toolsContainer">
@@ -808,40 +989,87 @@ def generate_docs():
 
     for t in tools:
         t_name = html.escape(t.get("name", ""))
+        t_cat = html.escape(t.get("category", "core"))
+        t_capability = html.escape(t.get("capability", ""))
         t_desc = html.escape(t.get("description", ""))
         t_problem = html.escape(t.get("problem_solved", ""))
-        t_profile = html.escape(t.get("profile", "core"))
-        t_inputs = html.escape(json.dumps(t.get("inputs", {}), indent=2))
-        t_returns = html.escape(json.dumps(t.get("returns", {}), indent=2))
+        t_returns_type = html.escape(t.get("returns", "object"))
+
+        params_schema = t.get("parameters_schema", {})
+        returns_schema = t.get("return_schema", {})
+        t_inputs = html.escape(json.dumps(params_schema, indent=2))
+        t_returns = html.escape(json.dumps(returns_schema, indent=2))
         t_inv = html.escape(t.get("example_invocation", ""))
+        t_evidence = html.escape(t.get("evidence", "AST-verified deterministic relationship."))
+        t_does_not_prove = html.escape(t.get("does_not_prove", "Requires runtime observation to confirm execution."))
+
+        req_inputs = t.get("required_inputs", [])
+        opt_inputs = t.get("optional_inputs", [])
+        inputs_badge_text = f"{len(req_inputs)} req" + (f", {len(opt_inputs)} opt" if opt_inputs else "")
+
+        # Search index metadata
+        search_blob = f"{t_name} {t_desc} {t_problem} {t_cat} {t_capability} {' '.join(req_inputs)} {' '.join(opt_inputs)} {t_returns_type}".lower()
 
         html_parts.append(f'''
-        <div class="tool-white-card" data-name="{t_name.lower()}" data-desc="{t_desc.lower()}" data-prob="{t_problem.lower()}" data-prof="{t_profile.lower()}">
+        <div class="tool-white-card" 
+             data-name="{t_name.lower()}" 
+             data-desc="{t_desc.lower()}" 
+             data-prob="{t_problem.lower()}" 
+             data-cat="{t_cat.lower()}" 
+             data-capability="{t_capability.lower()}" 
+             data-blob="{html.escape(search_blob)}">
           <div>
             <div class="tool-card-head">
               <span class="tool-code-title">{t_name}</span>
-              <span class="prof-tag-pill {t_profile.lower()}">{t_profile.upper()}</span>
+              <span class="prof-tag-pill {t_cat.lower()}">{t_cat.upper()}</span>
             </div>
             <p class="tool-desc-body">{t_desc}</p>
             <div class="tool-problem-note">
               <strong>Resolves:</strong> {t_problem}
             </div>
+            <div class="tool-meta-tags-row">
+              <span class="meta-tag-spec">{inputs_badge_text}</span>
+              <span class="meta-tag-spec returns">&rarr; {t_returns_type}</span>
+            </div>
           </div>
           <div>
             <button class="btn-drawer-expand" onclick="toggleSchemaDrawer(this)">Inspect Schema &amp; Invocation &darr;</button>
             <div class="drawer-content">
-              <div style="font-size:0.75rem; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Input Parameters</div>
+              <div class="schema-block-heading">
+                <span>Input Parameters Schema</span>
+                <span class="badge-tag-tiny">{len(req_inputs)} required &bull; {len(opt_inputs)} optional</span>
+              </div>
               <pre class="code-box-pre">{t_inputs}</pre>
-              <div style="font-size:0.75rem; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Return Structure</div>
+              
+              <div class="schema-block-heading">
+                <span>Return Structure Schema</span>
+                <span class="badge-tag-tiny">{t_returns_type}</span>
+              </div>
               <pre class="code-box-pre">{t_returns}</pre>
-              <div style="font-size:0.75rem; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Client Invocation</div>
+              
+              <div class="schema-block-heading">
+                <span>Client Invocation</span>
+                <button class="btn-copy-mini" onclick="copyPreCode(this)">Copy Call</button>
+              </div>
               <pre class="code-box-pre">{t_inv}</pre>
+
+              <div class="verification-note-box">
+                <div><strong>Evidence:</strong> {t_evidence}</div>
+                <div style="margin-top:0.35rem;"><strong>Boundaries:</strong> {t_does_not_prove}</div>
+              </div>
             </div>
           </div>
         </div>
 ''')
 
     html_parts.append('''
+        <!-- Empty State Container -->
+        <div id="noResultsBox" class="empty-state-notice" style="display:none;">
+          <div class="empty-state-title">No matching tools found</div>
+          <div class="empty-state-desc">No tools matched your current search and filter criteria.</div>
+          <button class="btn-reset-filters" onclick="resetAllFilters()">Reset All Filters</button>
+        </div>
+
       </div>
     </div>
   </section>
@@ -859,38 +1087,50 @@ def generate_docs():
 ''')
 
     for cmd in commands:
-        c_name = html.escape(cmd.get("name", ""))
-        c_desc = html.escape(cmd.get("description", ""))
+        c_cmd = html.escape(cmd.get("command", ""))
+        c_cat = html.escape(cmd.get("category", "CLI"))
+        c_desc = html.escape(cmd.get("summary", ""))
         c_problem = html.escape(cmd.get("problem_solved", ""))
         c_example = html.escape(cmd.get("example", ""))
-        c_output = html.escape(cmd.get("verifiable_output", ""))
+        c_output = html.escape(cmd.get("output", ""))
 
         flags_rows = ""
-        for flag in cmd.get("options", []):
-            f_name = html.escape(flag.get("flag", ""))
-            f_desc = html.escape(flag.get("description", ""))
+        for flag in cmd.get("flags", []):
+            if ":" in flag:
+                f_name, f_desc = flag.split(":", 1)
+            else:
+                f_name, f_desc = flag, ""
+            f_name = html.escape(f_name.strip())
+            f_desc = html.escape(f_desc.strip())
             flags_rows += f'<tr><td class="flag-bold">{f_name}</td><td>{f_desc}</td></tr>'
 
         html_parts.append(f'''
         <div class="cli-card-unit">
-          <div class="cli-name-h3">codegraph {c_name}</div>
-          <div class="cli-solve-bar">Resolves: {c_problem}</div>
-          <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:0.85rem;">{c_desc}</p>
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.4rem;">
+              <div class="cli-name-h3">{c_cmd}</div>
+              <span class="prof-tag-pill core">{c_cat.upper()}</span>
+            </div>
+            <div class="cli-solve-bar">Resolves: {c_problem}</div>
+            <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:0.85rem;">{c_desc}</p>
 
-          <div class="cli-cmd-display">
-            <span>{c_example}</span>
-            <button class="btn-copy-code" onclick="navigator.clipboard.writeText('{c_example}'); this.title='Copied!'; setTimeout(()=>this.title='Copy', 1500);">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-            </button>
+            <div class="cli-cmd-display">
+              <span class="cli-cmd-text">{c_example}</span>
+              <button class="btn-copy-code" onclick="copyCliCmd(this)" title="Copy command">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
+            </div>
+
+            <table class="table-spec-clean">
+              <thead><tr><th>Flag / Option</th><th>Description</th></tr></thead>
+              <tbody>{flags_rows}</tbody>
+            </table>
           </div>
 
-          <table class="table-spec-clean">
-            <thead><tr><th>Flag / Option</th><th>Description</th></tr></thead>
-            <tbody>{flags_rows}</tbody>
-          </table>
-
-          <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--text-dim); margin-top:0.85rem;">Terminal Output</div>
-          <pre class="code-box-pre">{c_output}</pre>
+          <div>
+            <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--text-dim); margin-top:0.85rem;">Terminal Output</div>
+            <pre class="code-box-pre">{c_output}</pre>
+          </div>
         </div>
 ''')
 
@@ -979,32 +1219,95 @@ def generate_docs():
       navigator.clipboard.writeText(text);
     }
 
-    function filterToolsWhiteGrid() {
-      const q = document.getElementById('toolSearchInput').value.toLowerCase().trim();
+    function setCategoryFilter(cat, btn) {
+      currentCategory = cat;
+      document.querySelectorAll('.btn-pill-filter').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-cat') === cat);
+      });
+      filterToolsGrid();
+    }
+
+    function clearToolSearch() {
+      const input = document.getElementById('toolSearchInput');
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
+      document.getElementById('clearSearchBtn').style.display = 'none';
+      filterToolsGrid();
+    }
+
+    function resetAllFilters() {
+      currentCategory = 'all';
+      const input = document.getElementById('toolSearchInput');
+      if (input) input.value = '';
+      const clearBtn = document.getElementById('clearSearchBtn');
+      if (clearBtn) clearBtn.style.display = 'none';
+      document.querySelectorAll('.btn-pill-filter').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-cat') === 'all');
+      });
+      filterToolsGrid();
+    }
+
+    function filterToolsGrid() {
+      const input = document.getElementById('toolSearchInput');
+      const q = input ? input.value.toLowerCase().trim() : '';
+      const clearBtn = document.getElementById('clearSearchBtn');
+      if (clearBtn) clearBtn.style.display = q ? 'inline-flex' : 'none';
+
       const cards = document.querySelectorAll('.tool-white-card');
+      let visibleCount = 0;
 
       cards.forEach(card => {
-        const name = card.getAttribute('data-name') || '';
-        const desc = card.getAttribute('data-desc') || '';
-        const prob = card.getAttribute('data-prob') || '';
-        const prof = card.getAttribute('data-prof') || '';
+        const cat = card.getAttribute('data-cat') || '';
+        const blob = card.getAttribute('data-blob') || '';
 
-        const matchesQuery = !q || name.includes(q) || desc.includes(q) || prob.includes(q);
-        const matchesCat = currentCategory === 'all' || prof === currentCategory;
+        const matchesQuery = !q || blob.includes(q);
+        const matchesCat = currentCategory === 'all' || cat === currentCategory;
 
         if (matchesQuery && matchesCat) {
           card.style.display = 'flex';
+          visibleCount++;
         } else {
           card.style.display = 'none';
         }
       });
+
+      const countEl = document.getElementById('visibleCount');
+      if (countEl) countEl.textContent = visibleCount;
+
+      const noResultsEl = document.getElementById('noResultsBox');
+      if (noResultsEl) {
+        noResultsEl.style.display = visibleCount === 0 ? 'block' : 'none';
+      }
     }
 
-    function setCategoryFilter(cat, btn) {
-      currentCategory = cat;
-      document.querySelectorAll('.btn-pill-filter').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      filterToolsWhiteGrid();
+    function filterByCategory(cat) {
+      const btn = document.querySelector(`.btn-pill-filter[data-cat="${cat}"]`);
+      if (btn) {
+        setCategoryFilter(cat, btn);
+      } else {
+        currentCategory = cat;
+        filterToolsGrid();
+      }
+      const toolsSection = document.getElementById('tools');
+      if (toolsSection) {
+        toolsSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function focusSearch() {
+      const toolsSection = document.getElementById('tools');
+      if (toolsSection) {
+        toolsSection.scrollIntoView({ behavior: 'smooth' });
+      }
+      const search = document.getElementById('toolSearchInput');
+      if (search) {
+        setTimeout(() => {
+          search.focus();
+          search.select();
+        }, 200);
+      }
     }
 
     function toggleSchemaDrawer(btn) {
@@ -1018,14 +1321,34 @@ def generate_docs():
       }
     }
 
+    function copyPreCode(btn) {
+      const heading = btn.closest('.schema-block-heading');
+      if (heading && heading.nextElementSibling) {
+        const text = heading.nextElementSibling.textContent.trim();
+        navigator.clipboard.writeText(text);
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = orig; }, 1500);
+      }
+    }
+
+    function copyCliCmd(btn) {
+      const container = btn.closest('.cli-cmd-display');
+      if (container) {
+        const span = container.querySelector('.cli-cmd-text');
+        if (span) {
+          navigator.clipboard.writeText(span.textContent.trim());
+          const origTitle = btn.title;
+          btn.title = 'Copied!';
+          setTimeout(() => { btn.title = origTitle || 'Copy command'; }, 1500);
+        }
+      }
+    }
+
     window.addEventListener('keydown', (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        const search = document.getElementById('toolSearchInput');
-        if (search) {
-          search.focus();
-          window.location.hash = '#tools';
-        }
+        focusSearch();
       }
     });
   </script>
