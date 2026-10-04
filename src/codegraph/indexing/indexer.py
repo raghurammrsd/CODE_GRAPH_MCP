@@ -493,8 +493,11 @@ class Indexer:
         con = sqlite3.connect(self.db_path)
         con.row_factory = make_compat_row
         con.execute("PRAGMA journal_mode = WAL")
+        con.execute("PRAGMA synchronous = NORMAL")
         con.execute("PRAGMA foreign_keys = ON")
-        con.execute("PRAGMA busy_timeout = 5000")
+        con.execute("PRAGMA busy_timeout = 15000")
+        con.execute("PRAGMA cache_size = -64000")
+        con.execute("PRAGMA temp_store = MEMORY")
         self._ensure_schema(con)
         return con
 

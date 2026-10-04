@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "codegraph-engine"
-version = "2.1.8"
+version = "2.2.0"
 description = "Deep deterministic repository intelligence for AI coding agents (code, dependencies, databases, and runtime observations)"
 readme = "README.md"
 requires-python = ">=3.12"

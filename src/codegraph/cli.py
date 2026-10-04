@@ -434,6 +434,8 @@ def routes(
     framework: Annotated[str | None, typer.Option("--framework", "-f", help="Filter by framework (e.g. flask, fastapi)")] = None,
     method: Annotated[str | None, typer.Option("--method", "-m", help="Filter by HTTP method (e.g. GET, POST)")] = None,
     route_path: Annotated[str | None, typer.Option("--path", "-p", help="Filter by route path substring")] = None,
+    limit: Annotated[int | None, typer.Option("--limit", "-l", help="Maximum number of routes to return")] = None,
+    offset: Annotated[int, typer.Option("--offset", help="Number of routes to skip")] = 0,
     json_output: Annotated[bool, typer.Option("--json", help="Output raw JSON array")] = False,
 ) -> None:
     """List and inspect indexed framework routes."""
@@ -478,6 +480,11 @@ def routes(
             }
             for r in rows
         ]
+
+        if limit is not None:
+            safe_offset = max(0, offset)
+            safe_limit = max(0, limit)
+            route_list = route_list[safe_offset : safe_offset + safe_limit]
 
         if json_output:
             typer.echo(json.dumps(route_list, indent=2))
@@ -597,19 +604,60 @@ def debug(
         )
 
 
+@app.command(
+    "run",
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+)
+def run_cmd(
+    ctx: typer.Context,
+    command: Annotated[list[str] | None, typer.Argument(help="Development command and arguments to execute")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    sample_rate: Annotated[float, typer.Option("--sample-rate", help="Sampling rate for trace capture (0.0..1.0)")] = 1.0,
+) -> None:
+    """Execute a development command or server with transparent runtime trace capture."""
+    full_cmd = (command or []) + ctx.args
+    if not full_cmd:
+        cli_echo("Error: Command cannot be empty. Usage: codegraph run <command> [args...]")
+        raise typer.Exit(code=1)
+
+    repo = _resolve_repo(None, repository)
+    from codegraph.runtime.runner import run_with_telemetry
+
+    exit_code = run_with_telemetry(full_cmd, repository=repo, sample_rate=sample_rate)
+    raise typer.Exit(code=exit_code)
+
+
+def _run_server(
+    path: Path | None,
+    repository: Path | None,
+    profile: str,
+    transport: str = "stdio",
+    host: str = "127.0.0.1",
+    port: int = 8765,
+) -> None:
+    repo = _resolve_repo(path, repository)
+    from codegraph.mcp import create_server
+    from codegraph.process_lifecycle import run_mcp_stdio_server
+
+    if transport.lower() == "sse":
+        server = create_server(repo, profile=profile, host=host, port=port)
+        server.run(transport="sse")
+    else:
+        server = create_server(repo, profile=profile)
+        run_mcp_stdio_server(server, repo, profile=profile)
+
+
 @app.command()
 def serve(
     path: Annotated[Path | None, typer.Argument(help="Repository path (default: current directory)")] = None,
     repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
     profile: Annotated[str, typer.Option("--profile", help="Tool profile: core | minimal | developer | full")] = "full",
+    transport: Annotated[str, typer.Option("--transport", "-t", help="MCP transport: stdio | sse")] = "stdio",
+    host: Annotated[str, typer.Option("--host", help="Host for SSE server")] = "127.0.0.1",
+    port: Annotated[int, typer.Option("--port", "-p", help="Port for SSE server")] = 8765,
 ) -> None:
-    """Run the stdio MCP server (requires the optional mcp extra)."""
-    repo = _resolve_repo(path, repository)
-    from codegraph.mcp import create_server
-    from codegraph.process_lifecycle import run_mcp_stdio_server
-
-    server = create_server(repo, profile=profile)
-    run_mcp_stdio_server(server, repo, profile=profile)
+    """Run the CodeGraph MCP server via stdio or SSE transport."""
+    _run_server(path, repository, profile, transport=transport, host=host, port=port)
 
 
 mcp_app = typer.Typer(help="MCP server commands.")
@@ -621,14 +669,12 @@ def mcp_serve(
     path: Annotated[Path | None, typer.Argument(help="Repository path (default: current directory)")] = None,
     repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
     profile: Annotated[str, typer.Option("--profile", help="Tool profile: core | graph | minimal | developer | full")] = "full",
+    transport: Annotated[str, typer.Option("--transport", "-t", help="MCP transport: stdio | sse")] = "stdio",
+    host: Annotated[str, typer.Option("--host", help="Host for SSE server")] = "127.0.0.1",
+    port: Annotated[int, typer.Option("--port", "-p", help="Port for SSE server")] = 8765,
 ) -> None:
-    """Run the stdio MCP server (requires the optional mcp extra)."""
-    repo = _resolve_repo(path, repository)
-    from codegraph.mcp import create_server
-    from codegraph.process_lifecycle import run_mcp_stdio_server
-
-    server = create_server(repo, profile=profile)
-    run_mcp_stdio_server(server, repo, profile=profile)
+    """Run the CodeGraph MCP server via stdio or SSE transport."""
+    _run_server(path, repository, profile, transport=transport, host=host, port=port)
 
 
 def _execute_stop(

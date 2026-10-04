@@ -2,32 +2,32 @@
   "category_summary": {
     "UNDERSTAND": {
       "fn_count": 1,
-      "fp_count": 48,
+      "fp_count": 50,
       "violations": 0
     },
     "DEBUG": {
       "fn_count": 1,
-      "fp_count": 67,
+      "fp_count": 69,
       "violations": 0
     },
     "TRACE": {
       "fn_count": 1,
-      "fp_count": 66,
+      "fp_count": 72,
       "violations": 0
     },
     "CHANGE": {
       "fn_count": 1,
-      "fp_count": 65,
+      "fp_count": 64,
       "violations": 0
     },
     "IMPACT": {
       "fn_count": 2,
-      "fp_count": 47,
+      "fp_count": 49,
       "violations": 0
     },
     "REVIEW": {
       "fn_count": 6,
-      "fp_count": 23,
+      "fp_count": 19,
       "violations": 0
     },
     "REFACTOR": {
@@ -37,7 +37,7 @@
     },
     "TEST": {
       "fn_count": 5,
-      "fp_count": 34,
+      "fp_count": 36,
       "violations": 0
     },
     "ARCHITECTURE": {
@@ -47,7 +47,7 @@
     },
     "EXPLAIN": {
       "fn_count": 0,
-      "fp_count": 55,
+      "fp_count": 61,
       "violations": 0
     }
   },
@@ -58,7 +58,7 @@
     "FRAMEWORK_NOISE": 83,
     "GRAPH_POLLUTION": 75,
     "DUPLICATE_SYMBOL": 34,
-    "LEXICAL_NOISE": 270,
-    "TEST_NOISE": 89
+    "LEXICAL_NOISE": 269,
+    "TEST_NOISE": 105
   }
 }

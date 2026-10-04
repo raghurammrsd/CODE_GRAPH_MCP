@@ -235,30 +235,68 @@ def check_freshness(
     deleted: list[str] = []
     parse_failed: list[str] = []
 
-    try:
-        rows = con.execute("SELECT path, hash, status FROM files").fetchall()
-    except sqlite3.OperationalError:
-        rows = con.execute("SELECT path, hash, 'ok' AS status FROM files").fetchall()
+    # Fast path 1: Git commit diff (branch switch or commit advance)
+    git_diff_handled = False
+    if cur_commit and idx_commit and cur_commit != idx_commit:
+        diff_out = _run_git(repository, "diff", "--name-status", idx_commit, cur_commit)
+        if diff_out is not None:
+            git_diff_handled = True
+            for line in diff_out.splitlines():
+                parts = line.strip().split(maxsplit=1)
+                if len(parts) == 2:
+                    action, fpath = parts[0], parts[1]
+                    if action.startswith("D"):
+                        deleted.append(fpath)
+                    else:
+                        modified.append(fpath)
 
-    for row in rows:
-        rel = str(row["path"])
-        if row["status"] == "parse_failed":
-            parse_failed.append(rel)
-            if rel not in modified:
-                modified.append(rel)
-        abs_path = repository / rel
-        if not abs_path.exists():
-            deleted.append(rel)
-        else:
+    # Fast path 2: Git status when HEAD commit is unchanged
+    if not git_diff_handled and cur_commit and idx_commit and cur_commit == idx_commit:
+        status_out = _run_git(repository, "status", "--porcelain", "--untracked-files=no")
+        if status_out is not None and not status_out.strip():
+            # Working tree has zero tracked changes against HEAD
+            git_diff_handled = True
             try:
-                digest = hashlib.sha256(
-                    abs_path.read_text(encoding="utf-8", errors="replace").encode()
-                ).hexdigest()
-                if digest != row["hash"] and rel not in modified:
-                    modified.append(rel)
-            except OSError:
+                pf_rows = con.execute("SELECT path FROM files WHERE status='parse_failed'").fetchall()
+                for r in pf_rows:
+                    parse_failed.append(str(r[0]))
+                    modified.append(str(r[0]))
+            except sqlite3.OperationalError:
+                pass
+
+    if not git_diff_handled:
+        try:
+            rows = con.execute("SELECT path, hash, status, indexed_at FROM files").fetchall()
+        except sqlite3.OperationalError:
+            try:
+                rows = con.execute("SELECT path, hash, status, 0 AS indexed_at FROM files").fetchall()
+            except sqlite3.OperationalError:
+                rows = con.execute("SELECT path, hash, 'ok' AS status, 0 AS indexed_at FROM files").fetchall()
+
+        for row in rows:
+            rel = str(row["path"])
+            if row["status"] == "parse_failed":
+                parse_failed.append(rel)
                 if rel not in modified:
                     modified.append(rel)
+            abs_path = repository / rel
+            if not abs_path.exists():
+                deleted.append(rel)
+            else:
+                try:
+                    st = abs_path.stat()
+                    # Mtime check: skip reading & hashing files strictly older than indexing time
+                    idx_at = int(row["indexed_at"] or 0)
+                    if idx_at > 0 and int(st.st_mtime) < idx_at and row["status"] != "parse_failed":
+                        continue
+                    digest = hashlib.sha256(
+                        abs_path.read_text(encoding="utf-8", errors="replace").encode()
+                    ).hexdigest()
+                    if digest != row["hash"] and rel not in modified:
+                        modified.append(rel)
+                except OSError:
+                    if rel not in modified:
+                        modified.append(rel)
 
     changed = len(modified) + len(deleted)
     if changed == 0 and not parse_failed and (idx_commit == cur_commit or cur_commit is None):

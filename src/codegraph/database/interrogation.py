@@ -748,6 +748,8 @@ def get_db_schema(
     schema: str | None = None,
     *,
     dialect: str | None = None,
+    limit: int | None = None,
+    offset: int = 0,
 ) -> dict[str, Any]:
     """Return the complete repository database schema overview with safe credential redaction."""
     if isinstance(repo_or_dialect, str) and not dialect:
@@ -800,21 +802,42 @@ def get_db_schema(
 
     dialects = sorted({t["dialect"] for t in tables if t.get("dialect")}) or ["UNKNOWN"]
 
-    return redact_payload({
+    safe_tables = tables
+    safe_models = models
+    safe_migrations = migrations
+    safe_cols = columns
+    safe_rels = rels
+
+    if limit is not None:
+        safe_offset = max(0, offset)
+        safe_limit = max(0, limit)
+        safe_tables = tables[safe_offset : safe_offset + safe_limit]
+        safe_models = models[safe_offset : safe_offset + safe_limit]
+        safe_migrations = migrations[safe_offset : safe_offset + safe_limit]
+        safe_cols = columns[: max(safe_limit * 5, 20)]
+        safe_rels = rels[: max(safe_limit * 5, 20)]
+
+    result_dict: dict[str, Any] = {
         "status": "ok",
         "dialects": dialects,
         "table_count": len(tables),
         "column_count": len(columns),
         "model_count": len(models),
         "migration_count": len(migrations),
-        "tables": tables,
-        "columns": columns,
-        "models": models,
-        "relationships": rels,
-        "migrations": migrations,
+        "tables": safe_tables,
+        "columns": safe_cols,
+        "models": safe_models,
+        "relationships": safe_rels,
+        "migrations": safe_migrations,
         "env_variables": env_vars,
         "database_credentials": "REDACTED",
-    })
+    }
+    if limit is not None:
+        result_dict["limit"] = safe_limit
+        result_dict["offset"] = safe_offset
+        result_dict["has_more"] = (safe_offset + len(safe_tables)) < len(tables)
+
+    return redact_payload(result_dict)
 
 
 def get_db_impact(

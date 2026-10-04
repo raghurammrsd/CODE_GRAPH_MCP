@@ -594,6 +594,7 @@ def _get_context_impl(
             if path:
                 c = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
                 c.row_factory = sqlite3.Row
+                c.execute("PRAGMA busy_timeout = 15000")
                 try:
                     for query in queries:
                         for item in search(
@@ -629,6 +630,7 @@ def _get_context_impl(
                 if path:
                     c = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
                     c.row_factory = sqlite3.Row
+                    c.execute("PRAGMA busy_timeout = 15000")
                     try:
                         return c.execute(
                             "SELECT route_path, http_method, handler_name, file_path, line, endpoint_id FROM framework_routes"
@@ -665,6 +667,7 @@ def _get_context_impl(
                 if path:
                     c = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
                     c.row_factory = sqlite3.Row
+                    c.execute("PRAGMA busy_timeout = 15000")
                     try:
                         archs.append(get_architecture(c, repo))
                     finally:

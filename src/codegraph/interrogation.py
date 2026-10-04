@@ -1979,6 +1979,8 @@ def list_routes(
     framework: str | None = None,
     method: str | None = None,
     path: str | None = None,
+    limit: int | None = None,
+    offset: int = 0,
 ) -> dict[str, Any]:
     """Expose application routes discovered from the repository."""
     unindexed = check_index_available(con, repository)
@@ -2028,10 +2030,27 @@ def list_routes(
         for r in rows
     ]
 
+    total_count = len(routes)
+    if limit is not None:
+        safe_offset = max(0, offset)
+        safe_limit = max(0, limit)
+        paginated_routes = routes[safe_offset : safe_offset + safe_limit]
+        return {
+            "status": "ok",
+            **meta,
+            "count": len(paginated_routes),
+            "total_count": total_count,
+            "limit": safe_limit,
+            "offset": safe_offset,
+            "has_more": (safe_offset + len(paginated_routes)) < total_count,
+            "routes": paginated_routes,
+        }
+
     return {
         "status": "ok",
         **meta,
         "count": len(routes),
+        "total_count": total_count,
         "routes": routes,
     }
 

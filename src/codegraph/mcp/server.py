@@ -173,6 +173,8 @@ def create_server(
     repository: Path,
     settings: Settings | None = None,
     profile: str = "full",
+    host: str = "127.0.0.1",
+    port: int = 8765,
 ) -> Any:
     """Build an MCP FastMCP server lazily so normal CLI use needs no MCP dependency."""
     try:
@@ -184,7 +186,12 @@ def create_server(
 
     indexer = Indexer(repository, settings)
     memory = MemoryStore(indexer.db_path)
-    app = FastMCP("CodeGraph MCP", instructions=render_agent_rules("antigravity"))
+    app = FastMCP(
+        "CodeGraph MCP",
+        instructions=render_agent_rules("antigravity"),
+        host=host,
+        port=port,
+    )
     max_read_bytes = indexer.settings.max_read_bytes
 
     # -----------------------------------------------------------------------
