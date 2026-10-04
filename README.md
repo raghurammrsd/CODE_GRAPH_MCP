@@ -2,7 +2,7 @@
   <img src="docs/assets/codegraph_logo.jpg" alt="CodeGraph MCP — Deep Deterministic Repository Intelligence for AI Coding Agents" width="500" />
 </p>
 
-<h1 align="center">CodeGraph Engine (v2.1.7)</h1>
+<h1 align="center">CodeGraph-MCP Engine (v2.1.7)</h1>
 
 <p align="center">
   <strong>Deep deterministic repository intelligence for AI coding agents.</strong>
@@ -93,7 +93,7 @@ pip install "codegraph-engine[mcp]"
 
 ### Step 2: Configure Your AI Coding Agents (`codegraph install`)
 
-CodeGraph includes an interactive, idempotent onboarding installer ([`src/codegraph/installer.py`](src/codegraph/installer.py)) that detects installed AI coding agents (**Claude Code**, **Cursor**, **Antigravity**, **Codex CLI**, **Gemini CLI**, and **Cline**), configures `mcpServers.codegraph`, installs marker-bounded routing instructions (`<!-- CODEGRAPH:START -->` … `<!-- CODEGRAPH:END -->`), and verifies MCP server startup:
+CodeGraph-MCP includes an interactive, idempotent onboarding installer ([`src/codegraph/installer.py`](src/codegraph/installer.py)) that detects installed AI coding agents (**Claude Code**, **Cursor**, **Antigravity**, **Codex CLI**, **Gemini CLI**, and **Cline**), configures `mcpServers.codegraph`, installs marker-bounded routing instructions (`<!-- CODEGRAPH:START -->` … `<!-- CODEGRAPH:END -->`), and verifies MCP server startup:
 
 ```bash
 # Interactive setup (detects installed agents, previews planned changes, asks confirmation)
@@ -199,7 +199,7 @@ InferenceService.run_inference
                                    db:table:postgresql.public.prediction_logs
 ```
 
-**What CodeGraph structurally proves**:
+**What CodeGraph-MCP structurally proves**:
 - `find_routes(path="/v1/predict")` resolves composed router prefixes (`MOUNTS`) to `predict_endpoint`.
 - `trace_path(from_symbol="predict_endpoint", to_symbol="log_prediction")` proves the multi-hop execution chain across DI injection, preprocessing, model execution, and persistence.
 - `get_db_impact(symbol="InferenceService.run_inference")` identifies downstream writes to `prediction_logs`.
@@ -217,7 +217,7 @@ TrainingPipeline.run
       └──►CALLS (AST_VERIFIED) ──► Evaluator.compute_metrics
 ```
 
-**What CodeGraph structurally proves**:
+**What CodeGraph-MCP structurally proves**:
 - `find_callees(symbol="TrainingPipeline.run")` enumerates every stage of the pipeline with exact file and line ranges.
 - `find_tests(symbol="Evaluator.compute_metrics")` locates the unit and regression tests covering metric calculation.
 - When a transform or model class is dynamically instantiated from a YAML string (`getattr(models, cfg.arch)`), CodeGraph explicitly records `POSSIBLE_CALLS` (`POSSIBLE`) or `UNRESOLVED_REFERENCE` (`UNKNOWN`) rather than fabricating a false static call edge.
@@ -236,7 +236,7 @@ AgentRunner.execute_step
       └──►CALLS (AST_VERIFIED)           ──► ModelProviderClient.generate
 ```
 
-**What CodeGraph structurally proves**:
+**What CodeGraph-MCP structurally proves**:
 - Tracks decorator and call-based registrations (`@tool_registry.register("search_orders")`) via `REGISTERS` and `REGISTERED_HANDLER` edges.
 - Tracks environment variable dependencies (`os.getenv("OPENAI_API_KEY")`) as `READS_ENV` edges with the variable name only—never indexing or exposing secret values.
 
