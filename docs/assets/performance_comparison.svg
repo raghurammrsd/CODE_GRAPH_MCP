@@ -19,7 +19,7 @@
   <rect class="bg" x="0" y="0" width="920" height="440" />
 
   <!-- Header -->
-  <text class="title" x="28" y="38">CodeGraph — Measured Context &amp; Exploration Efficiency</text>
+  <text class="title" x="28" y="38">CodeGraph MCP — Measured Context &amp; Exploration Efficiency</text>
   <text class="subtitle" x="28" y="58">Methodology: 32-task internal evaluation suite across 13 categories, same repository &amp; environment (src/codegraph/tool_selection_eval.py)</text>
 
   <!-- Legend -->
@@ -77,7 +77,7 @@
   <text class="badge-good" x="830" y="272">(+90.62%)</text>
 
   <!-- Metric 6: 50-Task Production Benchmark -->
-  <text class="label" x="486" y="309">50-Task Production Context &amp; Recall (v2.2.0)</text>
+  <text class="label" x="486" y="309">50-Task Production Context &amp; Recall (v2.2.1)</text>
   <rect class="bar-base" x="486" y="318" width="240" height="18" />
   <text class="val" x="734" y="332">88.0% Task Coverage</text>
   <rect class="bar-cg-blue" x="486" y="340" width="79" height="18" />

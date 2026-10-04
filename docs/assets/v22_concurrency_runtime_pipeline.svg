@@ -32,7 +32,7 @@
   <rect class="bg" x="0" y="0" width="960" height="480" />
 
   <!-- Top Title -->
-  <text class="title" x="28" y="36">CodeGraph v2.2.0 — Zero-Friction Runtime Tracing &amp; Low-Latency Concurrency Engine</text>
+  <text class="title" x="28" y="36">CodeGraph MCP v2.2.1 — Zero-Friction Runtime Tracing &amp; Low-Latency Concurrency Engine</text>
   <text class="subtitle" x="28" y="56">Deterministic AST analysis, transparent dev server request interception, lock-free SQLite WAL, and bounded monorepo context scaling</text>
 
   <!-- Box 1: Zero-Friction Telemetry Capture (codegraph run) -->
