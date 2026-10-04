@@ -2,11 +2,11 @@
   <img src="docs/assets/codegraph_logo.jpg" alt="CodeGraph MCP — Deep Deterministic Repository Intelligence for AI Coding Agents" width="500" />
 </p>
 
-<h1 align="center">⚡ CodeGraph MCP Engine (v2.2.1)</h1>
+<h1 align="center">CodeGraph MCP Engine (v2.2.1)</h1>
 
 <p align="center">
-  <strong>Stop AI Hallucinations. Supercharge Your AI Coding Agent with Deterministic Codebase Intelligence.</strong><br>
-  <em>The high-performance Model Context Protocol (MCP) server for Claude, Cursor, Antigravity, Cline & Codex.</em>
+  <strong>Deterministic Codebase Intelligence for AI Coding Agents.</strong><br>
+  <em>High-performance Model Context Protocol (MCP) server for Claude Code, Cursor, Antigravity, Cline, and Codex.</em>
 </p>
 
 <p align="center">
@@ -20,54 +20,60 @@
 </p>
 
 <p align="center">
-  <a href="https://pypi.org/project/codegraph-engine/2.2.1/"><strong>📦 Install via PyPI</strong></a> •
-  <a href="#-why-ai-agents-need-codegraph-mcp"><strong>💡 Why CodeGraph?</strong></a> •
-  <a href="#1-whats-new-in-v221"><strong>🚀 What's New in v2.2.1</strong></a> •
-  <a href="#2-quickstart-30-second-setup"><strong>⚡ 30s Quickstart</strong></a> •
-  <a href="#4-real-world-cli-outputs"><strong>📊 Real Outputs</strong></a> •
-  <a href="#9-measured-performance-and-scaling-benchmarks"><strong>📈 Benchmarks</strong></a> •
-  <a href="docs/agent-brain.md"><strong>📖 56-Tool Docs</strong></a>
+  <a href="https://pypi.org/project/codegraph-engine/2.2.1/"><strong>PyPI Package</strong></a> •
+  <a href="#overview"><strong>Overview</strong></a> •
+  <a href="#1-whats-new-in-v221"><strong>What's New in v2.2.1</strong></a> •
+  <a href="#2-quickstart-30-second-setup"><strong>Quickstart</strong></a> •
+  <a href="#4-real-world-cli-outputs"><strong>CLI Outputs</strong></a> •
+  <a href="#6-database-intelligence"><strong>Database Intelligence</strong></a> •
+  <a href="#7-zero-friction-runtime-intelligence--static-reconciliation"><strong>Runtime Evidence</strong></a> •
+  <a href="#9-measured-performance-and-scaling-benchmarks"><strong>Benchmarks</strong></a> •
+  <a href="docs/agent-brain.md"><strong>56-Tool Reference</strong></a> •
+  <a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP"><strong>GitHub</strong></a>
 </p>
 
 ---
 
-### 🧠 The Problem Every AI Coding Agent Faces
+## Overview
 
-When you ask Cursor, Claude Code, or Antigravity to debug or refactor a production repository, they **grep blindly**, read entire 2,000-line files, miss deep dependency injection trees, hallucinate database table schemas, and burn **80% of their context window** just trying to orient themselves.
+### The Problem
 
-### 🚀 What CodeGraph MCP Does
+When AI coding agents (such as Claude Code, Cursor, or Antigravity) explore complex enterprise repositories, text-based search (grep/ripgrep) forces them to parse large, multi-thousand-line files to reconstruct call chains, router mounts, dependency injection graphs, and ORM schemas. This consumes 60% to 80% of the LLM context window with irrelevant code and frequently leads to hallucinations regarding entity relationships and database structures.
 
-**CodeGraph MCP gives AI agents deterministic architectural vision.** Instead of guessing from messy regex matches, your agent queries CodeGraph for compiler-grade AST relationships, live route mounts, database table lineages, and real runtime traces—all computed locally in `< 5ms`.
+### The Solution: CodeGraph MCP
+
+**CodeGraph MCP provides deterministic, compiler-grade repository intelligence through the Model Context Protocol.** Instead of guessing based on lexical approximations, the AI agent queries a local, persistent SQLite index for verified AST relationships, framework router trees, database lineages, and live runtime observations—resolved in sub-5ms latency.
 
 ```text
        ┌─────────────────────────────────────────────────────────────┐
-       │                      YOUR AI CODING AGENT                   │
+       │                      AI CODING AGENT                        │
        │           (Claude Code  •  Cursor  •  Antigravity)          │
        └──────────────────────────────┬──────────────────────────────┘
-                                      │  MCP Protocol (stdio / SSE)
+                                      │  Model Context Protocol (stdio / SSE)
                                       ▼
        ┌─────────────────────────────────────────────────────────────┐
-       │                   ⚡ CODEGRAPH MCP ENGINE                   │
+       │                   CODEGRAPH MCP ENGINE                      │
        ├──────────────────────────────┬──────────────────────────────┤
-       │  🔍 AST Code Relationships   │  🛣️  Framework Route Maps   │
-       │     (Callers, Callees, D.I.) │     (FastAPI, Django, Flask) │
+       │  AST Code Relationships      │  Framework Route Hierarchy   │
+       │  (Callers, Callees, DI)      │  (FastAPI, Django, Express)  │
        ├──────────────────────────────┼──────────────────────────────┤
-       │  🗄️ Database Table Lineage   │  ⚡ Zero-Friction Telemetry  │
-       │     (SQLAlchemy, Prisma, ORM)│     (HTTP hits, exceptions)  │
+       │  Database Lineage & Schemas  │  Non-Invasive Dev Tracing    │
+       │  (SQLAlchemy, Prisma, ORM)   │  (HTTP metrics, exceptions)  │
        └──────────────────────────────┴──────────────────────────────┘
                                       │
                                       ▼
-                   100% Local • Sub-5ms • Zero Hallucination
+             Deterministic • Local-First • Verified Evidence
 ```
 
-#### 🔥 Why Developers & AI Agents Love It:
-* 🎯 **0.0% Hallucinations**: Every relation is backed by strict static AST proof or explicit `UNKNOWN` flags.
-* ⚡ **Lightning Fast (`< 5ms` freshness)**: Instant Git commit fast-path verifies repo freshness in single-digit milliseconds.
-* 📉 **65% to 85% Token Reduction**: Agents inspect bounded 50-line semantic slices instead of dumping entire files into the prompt.
-* 🛠️ **Zero Configuration Dev Tracing (`codegraph run`)**: Just prefix your dev server (`codegraph run npm run dev`) and watch live HTTP requests and errors link right into the static graph.
-* 🔌 **1-Click Agent Setup (`codegraph install`)**: Automatically installs and configures Claude Code, Cursor, Antigravity, and Cline in seconds.
+### Core Architecture Capabilities
 
-> **Supported Languages & Frameworks:** First-class **Python** (`FastAPI`, `Flask`, `Django`, `SQLAlchemy`, `Celery`, `pytest`) + **TypeScript / JavaScript** (`.ts`, `.tsx`, `.js`, `.jsx`) & **Express.js**.
+- **Zero Hallucination Guarantee**: Every returned entity and relationship is statically verified via Abstract Syntax Trees or explicitly flagged as `UNKNOWN` / `POSSIBLE`.
+- **Sub-5ms Freshness Verification**: Monotonic commit tracking validates `git rev-parse HEAD` and porcelain status instantly, avoiding full-tree re-indexing on unchanged codebases.
+- **Context Window Optimization**: Yields 65% to 85% token reduction by returning structured, bounded source slices rather than entire file dumps.
+- **Zero-Friction Dev Interception (`codegraph run`)**: Wraps local development servers (e.g., `codegraph run npm run dev`, `codegraph run uvicorn main:app`) to capture real HTTP routes, latencies, and stack traces without application code changes.
+- **Multi-Agent Setup (`codegraph install`)**: Automatically detects, configures, and verifies integrations for Claude Code, Cursor, Antigravity, and Cline.
+
+> **Supported Languages & Frameworks:** Python (`FastAPI`, `Flask`, `Django`, `SQLAlchemy`, `Celery`, `pytest`) and TypeScript / JavaScript (`.ts`, `.tsx`, `.js`, `.jsx`, `Express.js`).
 
 ![CodeGraph MCP v2.2.1 Architecture & Concurrency Pipeline](docs/assets/v22_concurrency_runtime_pipeline.svg)
 
