@@ -1,0 +1,2648 @@
+[
+  {
+    "task_id": "understand_01_auth_flow",
+    "category": "UNDERSTAND",
+    "intent": "UNDERSTAND",
+    "prompt": "How does authentication work from login route to database verification?",
+    "task_spec": {
+      "ambiguities": [],
+      "assumptions": [],
+      "confidence": "HIGH",
+      "conflicts": [],
+      "constraints": [],
+      "entities": [],
+      "exclusions": [
+        "AdminDashboardView",
+        "charge_payment_route",
+        "src/admin_panel/views.py",
+        "frontend/api/server.ts"
+      ],
+      "frameworks": [],
+      "goal": "How does authentication work from login route to database verification?",
+      "intent": "UNDERSTAND",
+      "operations": [],
+      "priority_targets": [],
+      "raw_prompt": "How does authentication work from login route to database verification?",
+      "schema_version": "1.0",
+      "scope_modules": [],
+      "scope_paths": [],
+      "targets": [],
+      "time_scope": null,
+      "unknowns": []
+    },
+    "target_resolution": {
+      "AuthService": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "login": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "find_user": {
+        "method": "not_found",
+        "confidence": "UNKNOWN"
+      },
+      "verify_password": {
+        "method": "not_found",
+        "confidence": "UNKNOWN"
+      }
+    },
+    "expected_symbols": [
+      "AuthService",
+      "login",
+      "find_user",
+      "verify_password"
+    ],
+    "retrieved_symbols": [
+      "AuthService.login",
+      "AuthService",
+      "test_auth_login_failure",
+      "tests.test_auth_service.test_auth_login_success",
+      "test_auth_login_success",
+      "login",
+      "login_route",
+      "get_current_user_route",
+      "legacy_notify"
+    ],
+    "true_positives": [
+      "AuthService",
+      "login"
+    ],
+    "false_positives": [
+      "test_auth_login_failure",
+      "tests.test_auth_service.test_auth_login_success",
+      "test_auth_login_success",
+      "login_route",
+      "get_current_user_route",
+      "legacy_notify"
+    ],
+    "false_negatives": [
+      "find_user",
+      "verify_password"
+    ],
+    "expected_relationships": [
+      "login_route->AuthService",
+      "AuthService->find_user"
+    ],
+    "retrieved_relationships": [
+      "src/api/fastapi_app.py->login",
+      "tests/test_auth_service.py->login"
+    ],
+    "relationship_true_positives": [],
+    "relationship_false_positives": [
+      "src/api/fastapi_app.py->login",
+      "tests/test_auth_service.py->login"
+    ],
+    "relationship_false_negatives": [
+      "AuthService->find_user",
+      "login_route->AuthService"
+    ],
+    "excluded_symbols": [
+      "AdminDashboardView",
+      "charge_payment_route"
+    ],
+    "excluded_files": [
+      "src/admin_panel/views.py",
+      "frontend/api/server.ts"
+    ],
+    "exclusion_violations": [],
+    "expected_routes": [
+      "/api/v1/auth/login",
+      "login_route"
+    ],
+    "retrieved_routes": [],
+    "expected_tests": [
+      "tests/test_auth_service.py",
+      "test_auth_login_success"
+    ],
+    "retrieved_tests": [
+      "test_auth_login_success",
+      "tests.test_auth_service.test_auth_login_success"
+    ],
+    "candidate_count": 657,
+    "selected_count": 422,
+    "candidate_tokens": 657,
+    "selected_tokens": 422,
+    "reduction_ratio": 0.3577,
+    "latency_ms": 0.4895000020042062,
+    "retrieval_reasons": {
+      "AuthService.login": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH"
+      ],
+      "AuthService": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "test_auth_login_failure": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION"
+      ],
+      "tests.test_auth_service.test_auth_login_success": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "test_auth_login_success": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "login": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH"
+      ],
+      "login_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ],
+      "get_current_user_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ],
+      "legacy_notify": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH"
+      ]
+    },
+    "fn_classifications": [
+      "TARGET_RESOLUTION",
+      "TARGET_RESOLUTION"
+    ],
+    "fp_classifications": [
+      "DUPLICATE_SYMBOL",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "FRAMEWORK_NOISE",
+      "FRAMEWORK_NOISE",
+      "LEXICAL_NOISE"
+    ],
+    "stage_of_entry": {
+      "AuthService.login": "RETRIEVAL_CANDIDATE",
+      "AuthService": "RETRIEVAL_CANDIDATE",
+      "test_auth_login_failure": "RETRIEVAL_CANDIDATE",
+      "tests.test_auth_service.test_auth_login_success": "RETRIEVAL_CANDIDATE",
+      "test_auth_login_success": "RETRIEVAL_CANDIDATE",
+      "login": "RETRIEVAL_CANDIDATE",
+      "login_route": "RETRIEVAL_CANDIDATE",
+      "get_current_user_route": "RETRIEVAL_CANDIDATE",
+      "legacy_notify": "RETRIEVAL_CANDIDATE"
+    },
+    "stage_of_exit": {
+      "src.api.fastapi_app.charge_payment_route": "BUDGET_OPTIMIZER",
+      "c_3_frontend/api/server.ts_1": "BUDGET_OPTIMIZER",
+      "src.admin.login.login": "BUDGET_OPTIMIZER",
+      "tests.test_auth_service.test_auth_login_success": "BUDGET_OPTIMIZER",
+      "src.services.auth_service.AuthService.get_user_by_token": "BUDGET_OPTIMIZER"
+    },
+    "first_seen_reason": {
+      "AuthService.login": "EXACT_QUALIFIED",
+      "AuthService": "EXACT_SYMBOL",
+      "test_auth_login_failure": "EXACT_SYMBOL",
+      "tests.test_auth_service.test_auth_login_success": "EXACT_SYMBOL",
+      "test_auth_login_success": "EXACT_SYMBOL",
+      "login": "EXACT_SYMBOL",
+      "login_route": "EXACT_SYMBOL",
+      "get_current_user_route": "EXACT_SYMBOL",
+      "legacy_notify": "EXACT_SYMBOL"
+    },
+    "rejection_reason": {
+      "src.api.fastapi_app.charge_payment_route": "Lower utility/relevance (0.55) compared to selected candidates",
+      "c_3_frontend/api/server.ts_1": "Lower utility/relevance (0.50) compared to selected candidates",
+      "src.admin.login.login": "Duplicate of selected symbol/chunk in src/oauth/login.py",
+      "tests.test_auth_service.test_auth_login_success": "Duplicate of selected symbol/chunk in tests/test_auth_service.py",
+      "src.services.auth_service.AuthService.get_user_by_token": "Lower utility/relevance (0.25) compared to selected candidates"
+    },
+    "final_selection_reason": {
+      "AuthService.login": "Score=0.5",
+      "AuthService": "Score=0.35",
+      "test_auth_login_failure": "Score=0.55",
+      "tests.test_auth_service.test_auth_login_success": "Score=0.45",
+      "test_auth_login_success": "Score=0.45",
+      "login": "Score=0.45",
+      "login_route": "Score=0.45",
+      "get_current_user_route": "Score=0.45",
+      "legacy_notify": "Score=0.45"
+    }
+  },
+  {
+    "task_id": "debug_01_login_failure",
+    "category": "DEBUG",
+    "intent": "DEBUG",
+    "prompt": "Why does login fail after the recent auth change in AuthService?",
+    "task_spec": {
+      "ambiguities": [],
+      "assumptions": [],
+      "confidence": "HIGH",
+      "conflicts": [],
+      "constraints": [],
+      "entities": [],
+      "exclusions": [
+        "StripeGateway",
+        "src/gateways/stripe_gateway.py"
+      ],
+      "frameworks": [],
+      "goal": "Why does login fail after the recent auth change in AuthService?",
+      "intent": "DEBUG",
+      "operations": [],
+      "priority_targets": [],
+      "raw_prompt": "Why does login fail after the recent auth change in AuthService?",
+      "schema_version": "1.0",
+      "scope_modules": [],
+      "scope_paths": [],
+      "targets": [],
+      "time_scope": null,
+      "unknowns": []
+    },
+    "target_resolution": {
+      "AuthService": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "login": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "verify_password": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      }
+    },
+    "expected_symbols": [
+      "AuthService",
+      "login",
+      "verify_password"
+    ],
+    "retrieved_symbols": [
+      "get_user_by_id",
+      "AuthService.login",
+      "PaymentService",
+      "AuthService",
+      "find_user",
+      "self.db.get_user_by_id",
+      "user.verify_password",
+      "DatabaseSession",
+      "tests.test_auth_service.test_auth_login_failure",
+      "tests.test_auth_service.test_auth_login_success",
+      "test_auth_login_success",
+      "tests.test_payment_service.test_payment_charge_valid",
+      "src.api.fastapi_app.get_current_user_route",
+      "src.api.fastapi_app.login_route",
+      "login",
+      "login_route",
+      "get_current_user_route"
+    ],
+    "true_positives": [
+      "AuthService",
+      "login",
+      "verify_password"
+    ],
+    "false_positives": [
+      "get_user_by_id",
+      "PaymentService",
+      "find_user",
+      "self.db.get_user_by_id",
+      "DatabaseSession",
+      "tests.test_auth_service.test_auth_login_failure",
+      "tests.test_auth_service.test_auth_login_success",
+      "test_auth_login_success",
+      "tests.test_payment_service.test_payment_charge_valid",
+      "src.api.fastapi_app.get_current_user_route",
+      "src.api.fastapi_app.login_route",
+      "login_route",
+      "get_current_user_route"
+    ],
+    "false_negatives": [],
+    "expected_relationships": [
+      "login_route->AuthService"
+    ],
+    "retrieved_relationships": [
+      "src/services/auth_service.py->DatabaseSession.get_user_by_id",
+      "src/db/session.py->DatabaseSession",
+      "tests/test_auth_service.py->DatabaseSession",
+      "tests/test_payment_service.py->DatabaseSession",
+      "src/api/fastapi_app.py->login",
+      "tests/test_auth_service.py->login"
+    ],
+    "relationship_true_positives": [],
+    "relationship_false_positives": [
+      "src/api/fastapi_app.py->login",
+      "src/db/session.py->DatabaseSession",
+      "src/services/auth_service.py->DatabaseSession.get_user_by_id",
+      "tests/test_auth_service.py->DatabaseSession",
+      "tests/test_auth_service.py->login",
+      "tests/test_payment_service.py->DatabaseSession"
+    ],
+    "relationship_false_negatives": [
+      "login_route->AuthService"
+    ],
+    "excluded_symbols": [
+      "StripeGateway"
+    ],
+    "excluded_files": [
+      "src/gateways/stripe_gateway.py"
+    ],
+    "exclusion_violations": [],
+    "expected_routes": [
+      "/api/v1/auth/login",
+      "login_route"
+    ],
+    "retrieved_routes": [],
+    "expected_tests": [
+      "tests/test_auth_service.py",
+      "test_auth_login_failure"
+    ],
+    "retrieved_tests": [
+      "test_auth_login_success",
+      "tests.test_auth_service.test_auth_login_success",
+      "tests.test_payment_service.test_payment_charge_valid"
+    ],
+    "candidate_count": 961,
+    "selected_count": 779,
+    "candidate_tokens": 961,
+    "selected_tokens": 779,
+    "reduction_ratio": 0.1894,
+    "latency_ms": 0.3600409982027486,
+    "retrieval_reasons": {
+      "get_user_by_id": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLER",
+        "EVIDENCE_HIGH"
+      ],
+      "AuthService.login": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "PaymentService": [
+        "TEXT_MATCH",
+        "EVIDENCE_HIGH"
+      ],
+      "AuthService": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "find_user": [
+        "NAME_MATCH",
+        "DIRECT_CALLER",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "self.db.get_user_by_id": [
+        "EXACT_CANONICAL",
+        "EVIDENCE_HIGH"
+      ],
+      "user.verify_password": [
+        "TEXT_MATCH",
+        "EVIDENCE_HIGH"
+      ],
+      "DatabaseSession": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "tests.test_auth_service.test_auth_login_failure": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION"
+      ],
+      "tests.test_auth_service.test_auth_login_success": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "test_auth_login_success": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "tests.test_payment_service.test_payment_charge_valid": [
+        "TEXT_MATCH",
+        "EVIDENCE_HIGH"
+      ],
+      "src.api.fastapi_app.get_current_user_route": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT"
+      ],
+      "src.api.fastapi_app.login_route": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ],
+      "login": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH"
+      ],
+      "login_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ],
+      "get_current_user_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ]
+    },
+    "fn_classifications": [
+      "TARGET_RESOLUTION"
+    ],
+    "fp_classifications": [
+      "LEXICAL_NOISE",
+      "DUPLICATE_SYMBOL",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "DUPLICATE_SYMBOL",
+      "LEXICAL_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "GRAPH_POLLUTION",
+      "GRAPH_POLLUTION",
+      "FRAMEWORK_NOISE",
+      "FRAMEWORK_NOISE"
+    ],
+    "stage_of_entry": {
+      "get_user_by_id": "RETRIEVAL_CANDIDATE",
+      "AuthService.login": "RETRIEVAL_CANDIDATE",
+      "PaymentService": "RETRIEVAL_CANDIDATE",
+      "AuthService": "RETRIEVAL_CANDIDATE",
+      "find_user": "RETRIEVAL_CANDIDATE",
+      "self.db.get_user_by_id": "RETRIEVAL_CANDIDATE",
+      "user.verify_password": "RETRIEVAL_CANDIDATE",
+      "DatabaseSession": "RETRIEVAL_CANDIDATE",
+      "tests.test_auth_service.test_auth_login_failure": "RETRIEVAL_CANDIDATE",
+      "tests.test_auth_service.test_auth_login_success": "RETRIEVAL_CANDIDATE",
+      "test_auth_login_success": "RETRIEVAL_CANDIDATE",
+      "tests.test_payment_service.test_payment_charge_valid": "RETRIEVAL_CANDIDATE",
+      "src.api.fastapi_app.get_current_user_route": "RETRIEVAL_CANDIDATE",
+      "src.api.fastapi_app.login_route": "RETRIEVAL_CANDIDATE",
+      "login": "RETRIEVAL_CANDIDATE",
+      "login_route": "RETRIEVAL_CANDIDATE",
+      "get_current_user_route": "RETRIEVAL_CANDIDATE"
+    },
+    "stage_of_exit": {
+      "tests.test_auth_service.test_auth_login_failure": "BUDGET_OPTIMIZER",
+      "src.db.session.DatabaseSession.get_user_by_id": "BUDGET_OPTIMIZER",
+      "replace": "BUDGET_OPTIMIZER",
+      "src.db.models.User.verify_password": "BUDGET_OPTIMIZER",
+      "self.db.get_user_by_id": "BUDGET_OPTIMIZER",
+      "src.admin.login.login": "BUDGET_OPTIMIZER",
+      "tests.test_auth_service.test_auth_login_success": "BUDGET_OPTIMIZER",
+      "self.db.find_user": "BUDGET_OPTIMIZER",
+      "user.verify_password": "BUDGET_OPTIMIZER"
+    },
+    "first_seen_reason": {
+      "get_user_by_id": "EXACT_SYMBOL",
+      "AuthService.login": "EXACT_QUALIFIED",
+      "PaymentService": "TEXT_MATCH",
+      "AuthService": "EXACT_SYMBOL",
+      "find_user": "NAME_MATCH",
+      "self.db.get_user_by_id": "EXACT_CANONICAL",
+      "user.verify_password": "TEXT_MATCH",
+      "DatabaseSession": "EXACT_SYMBOL",
+      "tests.test_auth_service.test_auth_login_failure": "EXACT_SYMBOL",
+      "tests.test_auth_service.test_auth_login_success": "EXACT_SYMBOL",
+      "test_auth_login_success": "EXACT_SYMBOL",
+      "tests.test_payment_service.test_payment_charge_valid": "TEXT_MATCH",
+      "src.api.fastapi_app.get_current_user_route": "EXACT_SYMBOL",
+      "src.api.fastapi_app.login_route": "EXACT_SYMBOL",
+      "login": "EXACT_SYMBOL",
+      "login_route": "EXACT_SYMBOL",
+      "get_current_user_route": "EXACT_SYMBOL"
+    },
+    "rejection_reason": {
+      "tests.test_auth_service.test_auth_login_failure": "Duplicate of selected symbol/chunk in tests/test_auth_service.py",
+      "src.db.session.DatabaseSession.get_user_by_id": "Duplicate of selected symbol/chunk in src/db/session.py",
+      "replace": "Lower utility/relevance (0.30) compared to selected candidates",
+      "src.db.models.User.verify_password": "Lower utility/relevance (0.30) compared to selected candidates",
+      "self.db.get_user_by_id": "Duplicate of selected symbol/chunk in src/db/session.py",
+      "src.admin.login.login": "Duplicate of selected symbol/chunk in src/oauth/login.py",
+      "tests.test_auth_service.test_auth_login_success": "Duplicate of selected symbol/chunk in tests/test_auth_service.py",
+      "self.db.find_user": "Lower utility/relevance (0.05) compared to selected candidates",
+      "user.verify_password": "Duplicate of selected symbol/chunk in src/db/models.py"
+    },
+    "final_selection_reason": {
+      "get_user_by_id": "Score=0.55",
+      "AuthService.login": "Score=0.4",
+      "PaymentService": "Score=0.4",
+      "AuthService": "Score=0.35",
+      "find_user": "Score=0.35",
+      "self.db.get_user_by_id": "Score=0.55",
+      "user.verify_password": "Score=0.4",
+      "DatabaseSession": "Score=0.35",
+      "tests.test_auth_service.test_auth_login_failure": "Score=0.65",
+      "tests.test_auth_service.test_auth_login_success": "Score=0.55",
+      "test_auth_login_success": "Score=0.45",
+      "tests.test_payment_service.test_payment_charge_valid": "Score=0.4",
+      "src.api.fastapi_app.get_current_user_route": "Score=0.65",
+      "src.api.fastapi_app.login_route": "Score=0.55",
+      "login": "Score=0.45",
+      "login_route": "Score=0.45",
+      "get_current_user_route": "Score=0.45"
+    }
+  },
+  {
+    "task_id": "trace_01_login_to_database",
+    "category": "TRACE",
+    "intent": "TRACE",
+    "prompt": "Trace POST /api/v1/auth/login through handler, service, to user lookup.",
+    "task_spec": {
+      "ambiguities": [],
+      "assumptions": [],
+      "confidence": "HIGH",
+      "conflicts": [],
+      "constraints": [],
+      "entities": [],
+      "exclusions": [
+        "StripeGateway",
+        "src/gateways/stripe_gateway.py"
+      ],
+      "frameworks": [],
+      "goal": "Trace POST /api/v1/auth/login through handler, service, to user lookup.",
+      "intent": "TRACE",
+      "operations": [],
+      "priority_targets": [],
+      "raw_prompt": "Trace POST /api/v1/auth/login through handler, service, to user lookup.",
+      "schema_version": "1.0",
+      "scope_modules": [],
+      "scope_paths": [],
+      "targets": [],
+      "time_scope": null,
+      "unknowns": []
+    },
+    "target_resolution": {
+      "login_route": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "AuthService": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "login": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "find_user": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "User": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      }
+    },
+    "expected_symbols": [
+      "login_route",
+      "AuthService",
+      "login",
+      "find_user",
+      "User"
+    ],
+    "retrieved_symbols": [
+      "AuthService",
+      "login",
+      "src.api.fastapi_app.login_route",
+      "login_route",
+      "get_current_user_route",
+      "AuthService.get_user_by_token",
+      "PaymentService.process_charge",
+      "AuthService.login",
+      "find_user",
+      "get_user_by_id",
+      "PaymentService",
+      "User",
+      "DatabaseSession",
+      "tests.test_auth_service.test_auth_login_failure",
+      "tests.test_auth_service.test_auth_login_success",
+      "test_auth_login_success",
+      "tests.test_payment_service.test_payment_charge_valid",
+      "AdminDashboardView.post",
+      "handler"
+    ],
+    "true_positives": [
+      "login_route",
+      "AuthService",
+      "login",
+      "find_user",
+      "User"
+    ],
+    "false_positives": [
+      "get_current_user_route",
+      "AuthService.get_user_by_token",
+      "PaymentService.process_charge",
+      "get_user_by_id",
+      "PaymentService",
+      "DatabaseSession",
+      "tests.test_auth_service.test_auth_login_failure",
+      "tests.test_auth_service.test_auth_login_success",
+      "test_auth_login_success",
+      "tests.test_payment_service.test_payment_charge_valid",
+      "AdminDashboardView.post",
+      "handler"
+    ],
+    "false_negatives": [],
+    "expected_relationships": [
+      "login_route->AuthService",
+      "AuthService->find_user"
+    ],
+    "retrieved_relationships": [
+      "API_ENDPOINT:fastapi:src/api/fastapi_app.py:8:POST /api/v1/auth/login#login_route->login_route",
+      "src/api/fastapi_app.py->process_charge",
+      "tests/test_payment_service.py->process_charge",
+      "src/db/session.py->User",
+      "src/api/fastapi_app.py->PaymentService",
+      "tests/test_payment_service.py->PaymentService",
+      "src/api/fastapi_app.py->PaymentService.process_charge",
+      "tests/test_payment_service.py->PaymentService.process_charge"
+    ],
+    "relationship_true_positives": [],
+    "relationship_false_positives": [
+      "API_ENDPOINT:fastapi:src/api/fastapi_app.py:8:POST /api/v1/auth/login#login_route->login_route",
+      "src/api/fastapi_app.py->PaymentService",
+      "src/api/fastapi_app.py->PaymentService.process_charge",
+      "src/api/fastapi_app.py->process_charge",
+      "src/db/session.py->User",
+      "tests/test_payment_service.py->PaymentService",
+      "tests/test_payment_service.py->PaymentService.process_charge",
+      "tests/test_payment_service.py->process_charge"
+    ],
+    "relationship_false_negatives": [
+      "AuthService->find_user",
+      "login_route->AuthService"
+    ],
+    "excluded_symbols": [
+      "StripeGateway"
+    ],
+    "excluded_files": [
+      "src/gateways/stripe_gateway.py"
+    ],
+    "exclusion_violations": [],
+    "expected_routes": [
+      "/api/v1/auth/login",
+      "login_route"
+    ],
+    "retrieved_routes": [
+      "/api/v1/auth/login"
+    ],
+    "expected_tests": [
+      "tests/test_auth_service.py"
+    ],
+    "retrieved_tests": [
+      "tests.test_payment_service.test_payment_charge_valid",
+      "test_auth_login_success",
+      "tests.test_payment_service.test_payment_charge_valid"
+    ],
+    "candidate_count": 1321,
+    "selected_count": 965,
+    "candidate_tokens": 1321,
+    "selected_tokens": 965,
+    "reduction_ratio": 0.2695,
+    "latency_ms": 0.34816699917428195,
+    "retrieval_reasons": {
+      "AuthService": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT"
+      ],
+      "login": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ],
+      "src.api.fastapi_app.login_route": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ],
+      "login_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ],
+      "get_current_user_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ],
+      "AuthService.get_user_by_token": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH"
+      ],
+      "PaymentService.process_charge": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH"
+      ],
+      "AuthService.login": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "find_user": [
+        "NAME_MATCH",
+        "DIRECT_CALLER",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "get_user_by_id": [
+        "NAME_MATCH",
+        "DIRECT_CALLER",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "PaymentService": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "User": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH"
+      ],
+      "DatabaseSession": [
+        "TEXT_MATCH",
+        "EVIDENCE_HIGH"
+      ],
+      "tests.test_auth_service.test_auth_login_failure": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION"
+      ],
+      "tests.test_auth_service.test_auth_login_success": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "test_auth_login_success": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "tests.test_payment_service.test_payment_charge_valid": [
+        "NAME_MATCH",
+        "EVIDENCE_HIGH"
+      ],
+      "AdminDashboardView.post": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH"
+      ],
+      "handler": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH"
+      ]
+    },
+    "fn_classifications": [],
+    "fp_classifications": [
+      "DUPLICATE_SYMBOL",
+      "FRAMEWORK_NOISE",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "DUPLICATE_SYMBOL",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE"
+    ],
+    "stage_of_entry": {
+      "AuthService": "RETRIEVAL_CANDIDATE",
+      "login": "RETRIEVAL_CANDIDATE",
+      "src.api.fastapi_app.login_route": "RETRIEVAL_CANDIDATE",
+      "login_route": "RETRIEVAL_CANDIDATE",
+      "get_current_user_route": "RETRIEVAL_CANDIDATE",
+      "AuthService.get_user_by_token": "RETRIEVAL_CANDIDATE",
+      "PaymentService.process_charge": "RETRIEVAL_CANDIDATE",
+      "AuthService.login": "RETRIEVAL_CANDIDATE",
+      "find_user": "RETRIEVAL_CANDIDATE",
+      "get_user_by_id": "RETRIEVAL_CANDIDATE",
+      "PaymentService": "RETRIEVAL_CANDIDATE",
+      "User": "RETRIEVAL_CANDIDATE",
+      "DatabaseSession": "RETRIEVAL_CANDIDATE",
+      "tests.test_auth_service.test_auth_login_failure": "RETRIEVAL_CANDIDATE",
+      "tests.test_auth_service.test_auth_login_success": "RETRIEVAL_CANDIDATE",
+      "test_auth_login_success": "RETRIEVAL_CANDIDATE",
+      "tests.test_payment_service.test_payment_charge_valid": "RETRIEVAL_CANDIDATE",
+      "AdminDashboardView.post": "RETRIEVAL_CANDIDATE",
+      "handler": "RETRIEVAL_CANDIDATE"
+    },
+    "stage_of_exit": {
+      "tests.test_auth_service.test_auth_login_failure": "BUDGET_OPTIMIZER",
+      "src.api.fastapi_app.charge_payment_route": "BUDGET_OPTIMIZER",
+      "replace": "BUDGET_OPTIMIZER",
+      "src.db.models.User.verify_password": "BUDGET_OPTIMIZER",
+      "src.admin.login.login": "BUDGET_OPTIMIZER",
+      "src.api.fastapi_app.login_route": "BUDGET_OPTIMIZER",
+      "tests.test_auth_service.test_auth_login_success": "BUDGET_OPTIMIZER",
+      "src.services.auth_service.AuthService": "BUDGET_OPTIMIZER",
+      "tests.test_payment_service.test_payment_charge_valid": "BUDGET_OPTIMIZER"
+    },
+    "first_seen_reason": {
+      "AuthService": "EXACT_SYMBOL",
+      "login": "EXACT_SYMBOL",
+      "src.api.fastapi_app.login_route": "EXACT_SYMBOL",
+      "login_route": "EXACT_SYMBOL",
+      "get_current_user_route": "EXACT_SYMBOL",
+      "AuthService.get_user_by_token": "EXACT_QUALIFIED",
+      "PaymentService.process_charge": "EXACT_QUALIFIED",
+      "AuthService.login": "EXACT_QUALIFIED",
+      "find_user": "NAME_MATCH",
+      "get_user_by_id": "NAME_MATCH",
+      "PaymentService": "EXACT_SYMBOL",
+      "User": "EXACT_SYMBOL",
+      "DatabaseSession": "TEXT_MATCH",
+      "tests.test_auth_service.test_auth_login_failure": "EXACT_SYMBOL",
+      "tests.test_auth_service.test_auth_login_success": "EXACT_SYMBOL",
+      "test_auth_login_success": "EXACT_SYMBOL",
+      "tests.test_payment_service.test_payment_charge_valid": "NAME_MATCH",
+      "AdminDashboardView.post": "EXACT_QUALIFIED",
+      "handler": "EXACT_SYMBOL"
+    },
+    "rejection_reason": {
+      "tests.test_auth_service.test_auth_login_failure": "Duplicate of selected symbol/chunk in tests/test_auth_service.py",
+      "src.api.fastapi_app.charge_payment_route": "Lower utility/relevance (0.30) compared to selected candidates",
+      "replace": "Lower utility/relevance (0.30) compared to selected candidates",
+      "src.db.models.User.verify_password": "Lower utility/relevance (0.30) compared to selected candidates",
+      "src.admin.login.login": "Duplicate of selected symbol/chunk in src/oauth/login.py",
+      "src.api.fastapi_app.login_route": "Duplicate of selected symbol/chunk in src/api/fastapi_app.py",
+      "tests.test_auth_service.test_auth_login_success": "Duplicate of selected symbol/chunk in tests/test_auth_service.py",
+      "src.services.auth_service.AuthService": "Duplicate of selected symbol/chunk in src/services/auth_service.py",
+      "tests.test_payment_service.test_payment_charge_valid": "Duplicate of selected symbol/chunk in tests/test_payment_service.py"
+    },
+    "final_selection_reason": {
+      "AuthService": "Score=0.65",
+      "login": "Score=0.55",
+      "src.api.fastapi_app.login_route": "Score=0.55",
+      "login_route": "Score=0.45",
+      "get_current_user_route": "Score=0.45",
+      "AuthService.get_user_by_token": "Score=0.5",
+      "PaymentService.process_charge": "Score=0.5",
+      "AuthService.login": "Score=0.4",
+      "find_user": "Score=0.35",
+      "get_user_by_id": "Score=0.35",
+      "PaymentService": "Score=0.35",
+      "User": "Score=0.45",
+      "DatabaseSession": "Score=0.4",
+      "tests.test_auth_service.test_auth_login_failure": "Score=0.65",
+      "tests.test_auth_service.test_auth_login_success": "Score=0.55",
+      "test_auth_login_success": "Score=0.45",
+      "tests.test_payment_service.test_payment_charge_valid": "Score=0.35",
+      "AdminDashboardView.post": "Score=0.5",
+      "handler": "Score=0.45"
+    }
+  },
+  {
+    "task_id": "change_01_rate_limiting",
+    "category": "CHANGE",
+    "intent": "CHANGE",
+    "prompt": "Add rate limiting to AuthService.login without changing return signature.",
+    "task_spec": {
+      "ambiguities": [],
+      "assumptions": [],
+      "confidence": "HIGH",
+      "conflicts": [],
+      "constraints": [],
+      "entities": [],
+      "exclusions": [
+        "StripeGateway",
+        "src/gateways/stripe_gateway.py"
+      ],
+      "frameworks": [],
+      "goal": "Add rate limiting to AuthService.login without changing return signature.",
+      "intent": "CHANGE",
+      "operations": [],
+      "priority_targets": [],
+      "raw_prompt": "Add rate limiting to AuthService.login without changing return signature.",
+      "schema_version": "1.0",
+      "scope_modules": [],
+      "scope_paths": [],
+      "targets": [],
+      "time_scope": null,
+      "unknowns": []
+    },
+    "target_resolution": {
+      "AuthService": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "login": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "login_route": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      }
+    },
+    "expected_symbols": [
+      "AuthService",
+      "login",
+      "login_route"
+    ],
+    "retrieved_symbols": [
+      "AuthService.get_user_by_token",
+      "AuthService.login",
+      "AuthService",
+      "get_db",
+      "tests.test_auth_service.test_auth_login_failure",
+      "tests.test_auth_service.test_auth_login_success",
+      "test_auth_login_success",
+      "src.api.fastapi_app.login_route",
+      "DynamicService.execute_action",
+      "login",
+      "AdminDashboardView",
+      "login_route",
+      "get_current_user_route",
+      "legacy_notify",
+      "DynamicService"
+    ],
+    "true_positives": [
+      "AuthService",
+      "login",
+      "login_route"
+    ],
+    "false_positives": [
+      "AuthService.get_user_by_token",
+      "get_db",
+      "tests.test_auth_service.test_auth_login_failure",
+      "tests.test_auth_service.test_auth_login_success",
+      "test_auth_login_success",
+      "DynamicService.execute_action",
+      "AdminDashboardView",
+      "get_current_user_route",
+      "legacy_notify",
+      "DynamicService"
+    ],
+    "false_negatives": [],
+    "expected_relationships": [
+      "login_route->AuthService"
+    ],
+    "retrieved_relationships": [
+      "src/api/fastapi_app.py->login",
+      "tests/test_auth_service.py->login"
+    ],
+    "relationship_true_positives": [],
+    "relationship_false_positives": [
+      "src/api/fastapi_app.py->login",
+      "tests/test_auth_service.py->login"
+    ],
+    "relationship_false_negatives": [
+      "login_route->AuthService"
+    ],
+    "excluded_symbols": [
+      "StripeGateway"
+    ],
+    "excluded_files": [
+      "src/gateways/stripe_gateway.py"
+    ],
+    "exclusion_violations": [],
+    "expected_routes": [
+      "/api/v1/auth/login",
+      "login_route"
+    ],
+    "retrieved_routes": [],
+    "expected_tests": [
+      "tests/test_auth_service.py"
+    ],
+    "retrieved_tests": [
+      "test_auth_login_success",
+      "tests.test_auth_service.test_auth_login_success"
+    ],
+    "candidate_count": 794,
+    "selected_count": 625,
+    "candidate_tokens": 794,
+    "selected_tokens": 625,
+    "reduction_ratio": 0.2128,
+    "latency_ms": 0.27683300140779465,
+    "retrieval_reasons": {
+      "AuthService.get_user_by_token": [
+        "EXACT_CANONICAL",
+        "EVIDENCE_HIGH"
+      ],
+      "AuthService.login": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "AuthService": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "get_db": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH"
+      ],
+      "tests.test_auth_service.test_auth_login_failure": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION"
+      ],
+      "tests.test_auth_service.test_auth_login_success": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "test_auth_login_success": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "src.api.fastapi_app.login_route": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT"
+      ],
+      "DynamicService.execute_action": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH"
+      ],
+      "login": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH"
+      ],
+      "AdminDashboardView": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH"
+      ],
+      "login_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ],
+      "get_current_user_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ],
+      "legacy_notify": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH"
+      ],
+      "DynamicService": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ]
+    },
+    "fn_classifications": [],
+    "fp_classifications": [
+      "LEXICAL_NOISE",
+      "DUPLICATE_SYMBOL",
+      "LEXICAL_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "DUPLICATE_SYMBOL",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "FRAMEWORK_NOISE",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE"
+    ],
+    "stage_of_entry": {
+      "AuthService.get_user_by_token": "RETRIEVAL_CANDIDATE",
+      "AuthService.login": "RETRIEVAL_CANDIDATE",
+      "AuthService": "RETRIEVAL_CANDIDATE",
+      "get_db": "RETRIEVAL_CANDIDATE",
+      "tests.test_auth_service.test_auth_login_failure": "RETRIEVAL_CANDIDATE",
+      "tests.test_auth_service.test_auth_login_success": "RETRIEVAL_CANDIDATE",
+      "test_auth_login_success": "RETRIEVAL_CANDIDATE",
+      "src.api.fastapi_app.login_route": "RETRIEVAL_CANDIDATE",
+      "DynamicService.execute_action": "RETRIEVAL_CANDIDATE",
+      "login": "RETRIEVAL_CANDIDATE",
+      "AdminDashboardView": "RETRIEVAL_CANDIDATE",
+      "login_route": "RETRIEVAL_CANDIDATE",
+      "get_current_user_route": "RETRIEVAL_CANDIDATE",
+      "legacy_notify": "RETRIEVAL_CANDIDATE",
+      "DynamicService": "RETRIEVAL_CANDIDATE"
+    },
+    "stage_of_exit": {
+      "tests.test_auth_service.test_auth_login_failure": "BUDGET_OPTIMIZER",
+      "src.services.auth_service.AuthService.get_user_by_token": "BUDGET_OPTIMIZER",
+      "res.get": "BUDGET_OPTIMIZER",
+      "src.admin.login.login": "BUDGET_OPTIMIZER",
+      "tests.test_auth_service.test_auth_login_success": "BUDGET_OPTIMIZER"
+    },
+    "first_seen_reason": {
+      "AuthService.get_user_by_token": "EXACT_CANONICAL",
+      "AuthService.login": "EXACT_QUALIFIED",
+      "AuthService": "EXACT_SYMBOL",
+      "get_db": "EXACT_SYMBOL",
+      "tests.test_auth_service.test_auth_login_failure": "EXACT_SYMBOL",
+      "tests.test_auth_service.test_auth_login_success": "EXACT_SYMBOL",
+      "test_auth_login_success": "EXACT_SYMBOL",
+      "src.api.fastapi_app.login_route": "EXACT_SYMBOL",
+      "DynamicService.execute_action": "EXACT_QUALIFIED",
+      "login": "EXACT_SYMBOL",
+      "AdminDashboardView": "EXACT_SYMBOL",
+      "login_route": "EXACT_SYMBOL",
+      "get_current_user_route": "EXACT_SYMBOL",
+      "legacy_notify": "EXACT_SYMBOL",
+      "DynamicService": "EXACT_SYMBOL"
+    },
+    "rejection_reason": {
+      "tests.test_auth_service.test_auth_login_failure": "Duplicate of selected symbol/chunk in tests/test_auth_service.py",
+      "src.services.auth_service.AuthService.get_user_by_token": "Duplicate of selected symbol/chunk in src/services/auth_service.py",
+      "res.get": "Lower utility/relevance (0.30) compared to selected candidates",
+      "src.admin.login.login": "Duplicate of selected symbol/chunk in src/oauth/login.py",
+      "tests.test_auth_service.test_auth_login_success": "Duplicate of selected symbol/chunk in tests/test_auth_service.py"
+    },
+    "final_selection_reason": {
+      "AuthService.get_user_by_token": "Score=0.55",
+      "AuthService.login": "Score=0.4",
+      "AuthService": "Score=0.35",
+      "get_db": "Score=0.45",
+      "tests.test_auth_service.test_auth_login_failure": "Score=0.65",
+      "tests.test_auth_service.test_auth_login_success": "Score=0.55",
+      "test_auth_login_success": "Score=0.45",
+      "src.api.fastapi_app.login_route": "Score=0.65",
+      "DynamicService.execute_action": "Score=0.5",
+      "login": "Score=0.45",
+      "AdminDashboardView": "Score=0.45",
+      "login_route": "Score=0.45",
+      "get_current_user_route": "Score=0.45",
+      "legacy_notify": "Score=0.45",
+      "DynamicService": "Score=0.35"
+    }
+  },
+  {
+    "task_id": "impact_01_auth_login",
+    "category": "IMPACT",
+    "intent": "IMPACT",
+    "prompt": "What breaks downstream if AuthService.login is renamed or changes signature?",
+    "task_spec": {
+      "ambiguities": [],
+      "assumptions": [],
+      "confidence": "HIGH",
+      "conflicts": [],
+      "constraints": [],
+      "entities": [],
+      "exclusions": [
+        "StripeGateway",
+        "src/gateways/stripe_gateway.py"
+      ],
+      "frameworks": [],
+      "goal": "What breaks downstream if AuthService.login is renamed or changes signature?",
+      "intent": "IMPACT",
+      "operations": [],
+      "priority_targets": [],
+      "raw_prompt": "What breaks downstream if AuthService.login is renamed or changes signature?",
+      "schema_version": "1.0",
+      "scope_modules": [],
+      "scope_paths": [],
+      "targets": [],
+      "time_scope": null,
+      "unknowns": []
+    },
+    "target_resolution": {
+      "AuthService": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "login": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "login_route": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      }
+    },
+    "expected_symbols": [
+      "AuthService",
+      "login",
+      "login_route"
+    ],
+    "retrieved_symbols": [
+      "AuthService.login",
+      "PaymentService.process_charge",
+      "AuthService",
+      "PaymentService",
+      "DatabaseSession.get_user_by_id",
+      "tests.test_auth_service.test_auth_login_failure",
+      "tests.test_auth_service.test_auth_login_success",
+      "test_payment_charge_invalid",
+      "test_auth_login_success",
+      "tests.test_payment_service.test_payment_charge_valid",
+      "test_payment_charge_valid",
+      "src.api.fastapi_app.login_route",
+      "handler",
+      "login",
+      "login_route",
+      "get_current_user_route"
+    ],
+    "true_positives": [
+      "AuthService",
+      "login",
+      "login_route"
+    ],
+    "false_positives": [
+      "PaymentService.process_charge",
+      "PaymentService",
+      "DatabaseSession.get_user_by_id",
+      "tests.test_auth_service.test_auth_login_failure",
+      "tests.test_auth_service.test_auth_login_success",
+      "test_payment_charge_invalid",
+      "test_auth_login_success",
+      "tests.test_payment_service.test_payment_charge_valid",
+      "test_payment_charge_valid",
+      "handler",
+      "get_current_user_route"
+    ],
+    "false_negatives": [],
+    "expected_relationships": [
+      "login_route->AuthService"
+    ],
+    "retrieved_relationships": [
+      "src/api/fastapi_app.py->process_charge",
+      "tests/test_payment_service.py->process_charge",
+      "src/services/auth_service.py->DatabaseSession.get_user_by_id",
+      "src/api/fastapi_app.py->PaymentService",
+      "tests/test_payment_service.py->PaymentService",
+      "src/api/fastapi_app.py->PaymentService.process_charge",
+      "tests/test_payment_service.py->PaymentService.process_charge"
+    ],
+    "relationship_true_positives": [],
+    "relationship_false_positives": [
+      "src/api/fastapi_app.py->PaymentService",
+      "src/api/fastapi_app.py->PaymentService.process_charge",
+      "src/api/fastapi_app.py->process_charge",
+      "src/services/auth_service.py->DatabaseSession.get_user_by_id",
+      "tests/test_payment_service.py->PaymentService",
+      "tests/test_payment_service.py->PaymentService.process_charge",
+      "tests/test_payment_service.py->process_charge"
+    ],
+    "relationship_false_negatives": [
+      "login_route->AuthService"
+    ],
+    "excluded_symbols": [
+      "StripeGateway"
+    ],
+    "excluded_files": [
+      "src/gateways/stripe_gateway.py"
+    ],
+    "exclusion_violations": [],
+    "expected_routes": [
+      "/api/v1/auth/login",
+      "login_route"
+    ],
+    "retrieved_routes": [],
+    "expected_tests": [
+      "tests/test_auth_service.py",
+      "test_auth_login_success",
+      "test_auth_login_failure"
+    ],
+    "retrieved_tests": [
+      "tests.test_payment_service.test_payment_charge_valid",
+      "test_auth_login_success",
+      "tests.test_payment_service.test_payment_charge_valid"
+    ],
+    "candidate_count": 813,
+    "selected_count": 682,
+    "candidate_tokens": 813,
+    "selected_tokens": 682,
+    "reduction_ratio": 0.1611,
+    "latency_ms": 0.3219170030206442,
+    "retrieval_reasons": {
+      "AuthService.login": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH"
+      ],
+      "PaymentService.process_charge": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH"
+      ],
+      "AuthService": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "PaymentService": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "DatabaseSession.get_user_by_id": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH"
+      ],
+      "tests.test_auth_service.test_auth_login_failure": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION"
+      ],
+      "tests.test_auth_service.test_auth_login_success": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "test_payment_charge_invalid": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION"
+      ],
+      "test_auth_login_success": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "tests.test_payment_service.test_payment_charge_valid": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "test_payment_charge_valid": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "src.api.fastapi_app.login_route": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT"
+      ],
+      "handler": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH"
+      ],
+      "login": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH"
+      ],
+      "login_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ],
+      "get_current_user_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ]
+    },
+    "fn_classifications": [],
+    "fp_classifications": [
+      "DUPLICATE_SYMBOL",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "DUPLICATE_SYMBOL",
+      "LEXICAL_NOISE",
+      "FRAMEWORK_NOISE"
+    ],
+    "stage_of_entry": {
+      "AuthService.login": "RETRIEVAL_CANDIDATE",
+      "PaymentService.process_charge": "RETRIEVAL_CANDIDATE",
+      "AuthService": "RETRIEVAL_CANDIDATE",
+      "PaymentService": "RETRIEVAL_CANDIDATE",
+      "DatabaseSession.get_user_by_id": "RETRIEVAL_CANDIDATE",
+      "tests.test_auth_service.test_auth_login_failure": "RETRIEVAL_CANDIDATE",
+      "tests.test_auth_service.test_auth_login_success": "RETRIEVAL_CANDIDATE",
+      "test_payment_charge_invalid": "RETRIEVAL_CANDIDATE",
+      "test_auth_login_success": "RETRIEVAL_CANDIDATE",
+      "tests.test_payment_service.test_payment_charge_valid": "RETRIEVAL_CANDIDATE",
+      "test_payment_charge_valid": "RETRIEVAL_CANDIDATE",
+      "src.api.fastapi_app.login_route": "RETRIEVAL_CANDIDATE",
+      "handler": "RETRIEVAL_CANDIDATE",
+      "login": "RETRIEVAL_CANDIDATE",
+      "login_route": "RETRIEVAL_CANDIDATE",
+      "get_current_user_route": "RETRIEVAL_CANDIDATE"
+    },
+    "stage_of_exit": {
+      "tests.test_auth_service.test_auth_login_failure": "BUDGET_OPTIMIZER",
+      "src.admin.login.login": "BUDGET_OPTIMIZER",
+      "tests.test_auth_service.test_auth_login_success": "BUDGET_OPTIMIZER",
+      "tests.test_payment_service.test_payment_charge_valid": "BUDGET_OPTIMIZER"
+    },
+    "first_seen_reason": {
+      "AuthService.login": "EXACT_QUALIFIED",
+      "PaymentService.process_charge": "EXACT_QUALIFIED",
+      "AuthService": "EXACT_SYMBOL",
+      "PaymentService": "EXACT_SYMBOL",
+      "DatabaseSession.get_user_by_id": "EXACT_QUALIFIED",
+      "tests.test_auth_service.test_auth_login_failure": "EXACT_SYMBOL",
+      "tests.test_auth_service.test_auth_login_success": "EXACT_SYMBOL",
+      "test_payment_charge_invalid": "EXACT_SYMBOL",
+      "test_auth_login_success": "EXACT_SYMBOL",
+      "tests.test_payment_service.test_payment_charge_valid": "EXACT_SYMBOL",
+      "test_payment_charge_valid": "EXACT_SYMBOL",
+      "src.api.fastapi_app.login_route": "EXACT_SYMBOL",
+      "handler": "EXACT_SYMBOL",
+      "login": "EXACT_SYMBOL",
+      "login_route": "EXACT_SYMBOL",
+      "get_current_user_route": "EXACT_SYMBOL"
+    },
+    "rejection_reason": {
+      "tests.test_auth_service.test_auth_login_failure": "Duplicate of selected symbol/chunk in tests/test_auth_service.py",
+      "src.admin.login.login": "Duplicate of selected symbol/chunk in src/oauth/login.py",
+      "tests.test_auth_service.test_auth_login_success": "Duplicate of selected symbol/chunk in tests/test_auth_service.py",
+      "tests.test_payment_service.test_payment_charge_valid": "Duplicate of selected symbol/chunk in tests/test_payment_service.py"
+    },
+    "final_selection_reason": {
+      "AuthService.login": "Score=0.5",
+      "PaymentService.process_charge": "Score=0.5",
+      "AuthService": "Score=0.35",
+      "PaymentService": "Score=0.35",
+      "DatabaseSession.get_user_by_id": "Score=0.5",
+      "tests.test_auth_service.test_auth_login_failure": "Score=0.65",
+      "tests.test_auth_service.test_auth_login_success": "Score=0.55",
+      "test_payment_charge_invalid": "Score=0.55",
+      "test_auth_login_success": "Score=0.45",
+      "tests.test_payment_service.test_payment_charge_valid": "Score=0.45",
+      "test_payment_charge_valid": "Score=0.45",
+      "src.api.fastapi_app.login_route": "Score=0.65",
+      "handler": "Score=0.45",
+      "login": "Score=0.45",
+      "login_route": "Score=0.45",
+      "get_current_user_route": "Score=0.45"
+    }
+  },
+  {
+    "task_id": "review_01_auth_rate_limiting",
+    "category": "REVIEW",
+    "intent": "REVIEW",
+    "prompt": "Review recent Git commit modifying AuthService and identify affected tests.",
+    "task_spec": {
+      "ambiguities": [],
+      "assumptions": [],
+      "confidence": "HIGH",
+      "conflicts": [],
+      "constraints": [],
+      "entities": [],
+      "exclusions": [
+        "StripeGateway",
+        "src/gateways/stripe_gateway.py"
+      ],
+      "frameworks": [],
+      "goal": "Review recent Git commit modifying AuthService and identify affected tests.",
+      "intent": "REVIEW",
+      "operations": [],
+      "priority_targets": [],
+      "raw_prompt": "Review recent Git commit modifying AuthService and identify affected tests.",
+      "schema_version": "1.0",
+      "scope_modules": [],
+      "scope_paths": [],
+      "targets": [],
+      "time_scope": null,
+      "unknowns": []
+    },
+    "target_resolution": {
+      "AuthService": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "login": {
+        "method": "not_found",
+        "confidence": "UNKNOWN"
+      }
+    },
+    "expected_symbols": [
+      "AuthService",
+      "login"
+    ],
+    "retrieved_symbols": [
+      "AuthService",
+      "tests.test_auth_service.test_auth_login_failure",
+      "tests.test_auth_service.test_auth_login_success",
+      "test_auth_login_success",
+      "src.api.fastapi_app.get_current_user_route",
+      "src.api.fastapi_app.login_route",
+      "login_route",
+      "get_current_user_route"
+    ],
+    "true_positives": [
+      "AuthService"
+    ],
+    "false_positives": [
+      "tests.test_auth_service.test_auth_login_failure",
+      "tests.test_auth_service.test_auth_login_success",
+      "test_auth_login_success",
+      "src.api.fastapi_app.get_current_user_route",
+      "src.api.fastapi_app.login_route",
+      "login_route",
+      "get_current_user_route"
+    ],
+    "false_negatives": [
+      "login"
+    ],
+    "expected_relationships": [
+      "login_route->AuthService"
+    ],
+    "retrieved_relationships": [
+      "src/api/fastapi_app.py->AuthService",
+      "tests/test_auth_service.py->AuthService"
+    ],
+    "relationship_true_positives": [],
+    "relationship_false_positives": [
+      "src/api/fastapi_app.py->AuthService",
+      "tests/test_auth_service.py->AuthService"
+    ],
+    "relationship_false_negatives": [
+      "login_route->AuthService"
+    ],
+    "excluded_symbols": [
+      "StripeGateway"
+    ],
+    "excluded_files": [
+      "src/gateways/stripe_gateway.py"
+    ],
+    "exclusion_violations": [],
+    "expected_routes": [
+      "/api/v1/auth/login",
+      "login_route"
+    ],
+    "retrieved_routes": [],
+    "expected_tests": [
+      "tests/test_auth_service.py"
+    ],
+    "retrieved_tests": [
+      "test_auth_login_success",
+      "test_auth_login_failure"
+    ],
+    "candidate_count": 378,
+    "selected_count": 244,
+    "candidate_tokens": 378,
+    "selected_tokens": 244,
+    "reduction_ratio": 0.3545,
+    "latency_ms": 0.2072909992421046,
+    "retrieval_reasons": {
+      "AuthService": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH"
+      ],
+      "tests.test_auth_service.test_auth_login_failure": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION"
+      ],
+      "tests.test_auth_service.test_auth_login_success": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "test_auth_login_success": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "src.api.fastapi_app.get_current_user_route": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT"
+      ],
+      "src.api.fastapi_app.login_route": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLEE",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ],
+      "login_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ],
+      "get_current_user_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ]
+    },
+    "fn_classifications": [
+      "TARGET_RESOLUTION"
+    ],
+    "fp_classifications": [
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "GRAPH_POLLUTION",
+      "GRAPH_POLLUTION",
+      "FRAMEWORK_NOISE",
+      "FRAMEWORK_NOISE"
+    ],
+    "stage_of_entry": {
+      "AuthService": "RETRIEVAL_CANDIDATE",
+      "tests.test_auth_service.test_auth_login_failure": "RETRIEVAL_CANDIDATE",
+      "tests.test_auth_service.test_auth_login_success": "RETRIEVAL_CANDIDATE",
+      "test_auth_login_success": "RETRIEVAL_CANDIDATE",
+      "src.api.fastapi_app.get_current_user_route": "RETRIEVAL_CANDIDATE",
+      "src.api.fastapi_app.login_route": "RETRIEVAL_CANDIDATE",
+      "login_route": "RETRIEVAL_CANDIDATE",
+      "get_current_user_route": "RETRIEVAL_CANDIDATE"
+    },
+    "stage_of_exit": {
+      "tests.test_auth_service.test_auth_login_failure": "BUDGET_OPTIMIZER",
+      "tests.test_auth_service.test_auth_login_success": "BUDGET_OPTIMIZER"
+    },
+    "first_seen_reason": {
+      "AuthService": "EXACT_SYMBOL",
+      "tests.test_auth_service.test_auth_login_failure": "EXACT_SYMBOL",
+      "tests.test_auth_service.test_auth_login_success": "EXACT_SYMBOL",
+      "test_auth_login_success": "EXACT_SYMBOL",
+      "src.api.fastapi_app.get_current_user_route": "EXACT_SYMBOL",
+      "src.api.fastapi_app.login_route": "EXACT_SYMBOL",
+      "login_route": "EXACT_SYMBOL",
+      "get_current_user_route": "EXACT_SYMBOL"
+    },
+    "rejection_reason": {
+      "tests.test_auth_service.test_auth_login_failure": "Duplicate of selected symbol/chunk in tests/test_auth_service.py",
+      "tests.test_auth_service.test_auth_login_success": "Duplicate of selected symbol/chunk in tests/test_auth_service.py"
+    },
+    "final_selection_reason": {
+      "AuthService": "Score=0.45",
+      "tests.test_auth_service.test_auth_login_failure": "Score=0.65",
+      "tests.test_auth_service.test_auth_login_success": "Score=0.55",
+      "test_auth_login_success": "Score=0.45",
+      "src.api.fastapi_app.get_current_user_route": "Score=0.65",
+      "src.api.fastapi_app.login_route": "Score=0.55",
+      "login_route": "Score=0.45",
+      "get_current_user_route": "Score=0.45"
+    }
+  },
+  {
+    "task_id": "refactor_01_extract_token_helper",
+    "category": "REFACTOR",
+    "intent": "REFACTOR",
+    "prompt": "Refactor AuthService to extract JWT token creation into a helper.",
+    "task_spec": {
+      "ambiguities": [],
+      "assumptions": [],
+      "confidence": "HIGH",
+      "conflicts": [],
+      "constraints": [],
+      "entities": [],
+      "exclusions": [
+        "StripeGateway",
+        "src/gateways/stripe_gateway.py"
+      ],
+      "frameworks": [],
+      "goal": "Refactor AuthService to extract JWT token creation into a helper.",
+      "intent": "REFACTOR",
+      "operations": [],
+      "priority_targets": [],
+      "raw_prompt": "Refactor AuthService to extract JWT token creation into a helper.",
+      "schema_version": "1.0",
+      "scope_modules": [],
+      "scope_paths": [],
+      "targets": [],
+      "time_scope": null,
+      "unknowns": []
+    },
+    "target_resolution": {
+      "AuthService": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "login": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "get_user_by_token": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      }
+    },
+    "expected_symbols": [
+      "AuthService",
+      "login",
+      "get_user_by_token"
+    ],
+    "retrieved_symbols": [
+      "AuthService.login",
+      "find_user",
+      "verify_password",
+      "AuthService.get_user_by_token",
+      "replace",
+      "get_user_by_id",
+      "PaymentService",
+      "AuthService",
+      "user.verify_password",
+      "DatabaseSession",
+      "test_auth_login_failure",
+      "tests.test_auth_service.test_auth_login_success",
+      "test_auth_login_success",
+      "get_current_user_route",
+      "login_route",
+      "legacy_notify"
+    ],
+    "true_positives": [
+      "AuthService",
+      "login",
+      "get_user_by_token"
+    ],
+    "false_positives": [
+      "find_user",
+      "verify_password",
+      "replace",
+      "get_user_by_id",
+      "PaymentService",
+      "user.verify_password",
+      "DatabaseSession",
+      "test_auth_login_failure",
+      "tests.test_auth_service.test_auth_login_success",
+      "test_auth_login_success",
+      "get_current_user_route",
+      "login_route",
+      "legacy_notify"
+    ],
+    "false_negatives": [],
+    "expected_relationships": [],
+    "retrieved_relationships": [
+      "src/api/fastapi_app.py->login",
+      "tests/test_auth_service.py->login"
+    ],
+    "relationship_true_positives": [],
+    "relationship_false_positives": [
+      "src/api/fastapi_app.py->login",
+      "tests/test_auth_service.py->login"
+    ],
+    "relationship_false_negatives": [],
+    "excluded_symbols": [
+      "StripeGateway"
+    ],
+    "excluded_files": [
+      "src/gateways/stripe_gateway.py"
+    ],
+    "exclusion_violations": [],
+    "expected_routes": [
+      "/api/v1/auth/login",
+      "login_route"
+    ],
+    "retrieved_routes": [],
+    "expected_tests": [
+      "tests/test_auth_service.py"
+    ],
+    "retrieved_tests": [
+      "test_auth_login_success",
+      "tests.test_auth_service.test_auth_login_success"
+    ],
+    "candidate_count": 919,
+    "selected_count": 717,
+    "candidate_tokens": 919,
+    "selected_tokens": 717,
+    "reduction_ratio": 0.2198,
+    "latency_ms": 0.2546659961808473,
+    "retrieval_reasons": {
+      "AuthService.login": [
+        "EXACT_CANONICAL",
+        "EVIDENCE_HIGH"
+      ],
+      "find_user": [
+        "TEXT_MATCH",
+        "DIRECT_CALLER",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "verify_password": [
+        "TEXT_MATCH",
+        "DIRECT_CALLER",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "AuthService.get_user_by_token": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "replace": [
+        "TEXT_MATCH",
+        "DIRECT_CALLER",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "get_user_by_id": [
+        "TEXT_MATCH",
+        "DIRECT_CALLER",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "PaymentService": [
+        "TEXT_MATCH",
+        "EVIDENCE_HIGH"
+      ],
+      "AuthService": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "user.verify_password": [
+        "TEXT_MATCH",
+        "EVIDENCE_HIGH"
+      ],
+      "DatabaseSession": [
+        "TEXT_MATCH",
+        "EVIDENCE_HIGH"
+      ],
+      "test_auth_login_failure": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION"
+      ],
+      "tests.test_auth_service.test_auth_login_success": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "test_auth_login_success": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "get_current_user_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT"
+      ],
+      "login_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ],
+      "legacy_notify": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH"
+      ]
+    },
+    "fn_classifications": [
+      "TARGET_RESOLUTION",
+      "TARGET_RESOLUTION"
+    ],
+    "fp_classifications": [
+      "DUPLICATE_SYMBOL",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "DUPLICATE_SYMBOL",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "FRAMEWORK_NOISE",
+      "FRAMEWORK_NOISE",
+      "LEXICAL_NOISE"
+    ],
+    "stage_of_entry": {
+      "AuthService.login": "RETRIEVAL_CANDIDATE",
+      "find_user": "RETRIEVAL_CANDIDATE",
+      "verify_password": "RETRIEVAL_CANDIDATE",
+      "AuthService.get_user_by_token": "RETRIEVAL_CANDIDATE",
+      "replace": "RETRIEVAL_CANDIDATE",
+      "get_user_by_id": "RETRIEVAL_CANDIDATE",
+      "PaymentService": "RETRIEVAL_CANDIDATE",
+      "AuthService": "RETRIEVAL_CANDIDATE",
+      "user.verify_password": "RETRIEVAL_CANDIDATE",
+      "DatabaseSession": "RETRIEVAL_CANDIDATE",
+      "test_auth_login_failure": "RETRIEVAL_CANDIDATE",
+      "tests.test_auth_service.test_auth_login_success": "RETRIEVAL_CANDIDATE",
+      "test_auth_login_success": "RETRIEVAL_CANDIDATE",
+      "get_current_user_route": "RETRIEVAL_CANDIDATE",
+      "login_route": "RETRIEVAL_CANDIDATE",
+      "legacy_notify": "RETRIEVAL_CANDIDATE"
+    },
+    "stage_of_exit": {
+      "src.services.auth_service.AuthService.login": "BUDGET_OPTIMIZER",
+      "self.db.find_user": "BUDGET_OPTIMIZER",
+      "self.db.get_user_by_id": "BUDGET_OPTIMIZER",
+      "src.services.payment_service.PaymentService.process_charge": "BUDGET_OPTIMIZER",
+      "tests.test_auth_service.test_auth_login_success": "BUDGET_OPTIMIZER",
+      "src.services.auth_service.AuthService.__init__": "BUDGET_OPTIMIZER",
+      "user.verify_password": "BUDGET_OPTIMIZER"
+    },
+    "first_seen_reason": {
+      "AuthService.login": "EXACT_CANONICAL",
+      "find_user": "TEXT_MATCH",
+      "verify_password": "TEXT_MATCH",
+      "AuthService.get_user_by_token": "EXACT_QUALIFIED",
+      "replace": "TEXT_MATCH",
+      "get_user_by_id": "TEXT_MATCH",
+      "PaymentService": "TEXT_MATCH",
+      "AuthService": "EXACT_SYMBOL",
+      "user.verify_password": "TEXT_MATCH",
+      "DatabaseSession": "TEXT_MATCH",
+      "test_auth_login_failure": "EXACT_SYMBOL",
+      "tests.test_auth_service.test_auth_login_success": "EXACT_SYMBOL",
+      "test_auth_login_success": "EXACT_SYMBOL",
+      "get_current_user_route": "EXACT_SYMBOL",
+      "login_route": "EXACT_SYMBOL",
+      "legacy_notify": "EXACT_SYMBOL"
+    },
+    "rejection_reason": {
+      "src.services.auth_service.AuthService.login": "Duplicate of selected symbol/chunk in src/services/auth_service.py",
+      "self.db.find_user": "Lower utility/relevance (0.10) compared to selected candidates",
+      "self.db.get_user_by_id": "Lower utility/relevance (0.10) compared to selected candidates",
+      "src.services.payment_service.PaymentService.process_charge": "Lower utility/relevance (0.30) compared to selected candidates",
+      "tests.test_auth_service.test_auth_login_success": "Duplicate of selected symbol/chunk in tests/test_auth_service.py",
+      "src.services.auth_service.AuthService.__init__": "Lower utility/relevance (0.25) compared to selected candidates",
+      "user.verify_password": "Duplicate of selected symbol/chunk in src/db/models.py"
+    },
+    "final_selection_reason": {
+      "AuthService.login": "Score=0.55",
+      "find_user": "Score=0.4",
+      "verify_password": "Score=0.4",
+      "AuthService.get_user_by_token": "Score=0.4",
+      "replace": "Score=0.4",
+      "get_user_by_id": "Score=0.4",
+      "PaymentService": "Score=0.4",
+      "AuthService": "Score=0.35",
+      "user.verify_password": "Score=0.4",
+      "DatabaseSession": "Score=0.4",
+      "test_auth_login_failure": "Score=0.55",
+      "tests.test_auth_service.test_auth_login_success": "Score=0.45",
+      "test_auth_login_success": "Score=0.45",
+      "get_current_user_route": "Score=0.55",
+      "login_route": "Score=0.45",
+      "legacy_notify": "Score=0.45"
+    }
+  },
+  {
+    "task_id": "test_01_find_auth_tests",
+    "category": "TEST",
+    "intent": "TEST",
+    "prompt": "Find all test cases covering AuthService and user login.",
+    "task_spec": {
+      "ambiguities": [],
+      "assumptions": [],
+      "confidence": "HIGH",
+      "conflicts": [],
+      "constraints": [],
+      "entities": [],
+      "exclusions": [
+        "test_payment_charge_valid",
+        "tests/test_payment_service.py"
+      ],
+      "frameworks": [],
+      "goal": "Find all test cases covering AuthService and user login.",
+      "intent": "TEST",
+      "operations": [],
+      "priority_targets": [],
+      "raw_prompt": "Find all test cases covering AuthService and user login.",
+      "schema_version": "1.0",
+      "scope_modules": [],
+      "scope_paths": [],
+      "targets": [],
+      "time_scope": null,
+      "unknowns": []
+    },
+    "target_resolution": {
+      "AuthService": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "login": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      }
+    },
+    "expected_symbols": [
+      "AuthService",
+      "login"
+    ],
+    "retrieved_symbols": [
+      "AuthService.get_user_by_token",
+      "AuthService.login",
+      "AuthService",
+      "DatabaseSession.find_user",
+      "User",
+      "DatabaseSession.get_user_by_id",
+      "test_auth_login_failure",
+      "test_auth_login_success",
+      "get_current_user_route",
+      "login",
+      "login_route"
+    ],
+    "true_positives": [
+      "AuthService",
+      "login"
+    ],
+    "false_positives": [
+      "AuthService.get_user_by_token",
+      "DatabaseSession.find_user",
+      "User",
+      "DatabaseSession.get_user_by_id",
+      "test_auth_login_failure",
+      "test_auth_login_success",
+      "get_current_user_route",
+      "login_route"
+    ],
+    "false_negatives": [],
+    "expected_relationships": [],
+    "retrieved_relationships": [],
+    "relationship_true_positives": [],
+    "relationship_false_positives": [],
+    "relationship_false_negatives": [],
+    "excluded_symbols": [
+      "test_payment_charge_valid"
+    ],
+    "excluded_files": [
+      "tests/test_payment_service.py"
+    ],
+    "exclusion_violations": [],
+    "expected_routes": [],
+    "retrieved_routes": [],
+    "expected_tests": [
+      "tests/test_auth_service.py",
+      "test_auth_login_success",
+      "test_auth_login_failure"
+    ],
+    "retrieved_tests": [
+      "test_auth_login_success"
+    ],
+    "candidate_count": 710,
+    "selected_count": 553,
+    "candidate_tokens": 710,
+    "selected_tokens": 553,
+    "reduction_ratio": 0.2211,
+    "latency_ms": 0.22362500021699816,
+    "retrieval_reasons": {
+      "AuthService.get_user_by_token": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH"
+      ],
+      "AuthService.login": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "AuthService": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "DatabaseSession.find_user": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH"
+      ],
+      "User": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH"
+      ],
+      "DatabaseSession.get_user_by_id": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "test_auth_login_failure": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION"
+      ],
+      "test_auth_login_success": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "get_current_user_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT"
+      ],
+      "login": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH"
+      ],
+      "login_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ]
+    },
+    "fn_classifications": [],
+    "fp_classifications": [
+      "LEXICAL_NOISE",
+      "DUPLICATE_SYMBOL",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "FRAMEWORK_NOISE",
+      "FRAMEWORK_NOISE"
+    ],
+    "stage_of_entry": {
+      "AuthService.get_user_by_token": "RETRIEVAL_CANDIDATE",
+      "AuthService.login": "RETRIEVAL_CANDIDATE",
+      "AuthService": "RETRIEVAL_CANDIDATE",
+      "DatabaseSession.find_user": "RETRIEVAL_CANDIDATE",
+      "User": "RETRIEVAL_CANDIDATE",
+      "DatabaseSession.get_user_by_id": "RETRIEVAL_CANDIDATE",
+      "test_auth_login_failure": "RETRIEVAL_CANDIDATE",
+      "test_auth_login_success": "RETRIEVAL_CANDIDATE",
+      "get_current_user_route": "RETRIEVAL_CANDIDATE",
+      "login": "RETRIEVAL_CANDIDATE",
+      "login_route": "RETRIEVAL_CANDIDATE"
+    },
+    "stage_of_exit": {
+      "tests.test_payment_service.test_payment_charge_invalid": "BUDGET_OPTIMIZER",
+      "tests.test_payment_service.test_payment_charge_valid": "BUDGET_OPTIMIZER",
+      "src.admin.login.login": "BUDGET_OPTIMIZER",
+      "tests.test_auth_service.test_auth_login_success": "BUDGET_OPTIMIZER"
+    },
+    "first_seen_reason": {
+      "AuthService.get_user_by_token": "EXACT_QUALIFIED",
+      "AuthService.login": "EXACT_QUALIFIED",
+      "AuthService": "EXACT_SYMBOL",
+      "DatabaseSession.find_user": "EXACT_QUALIFIED",
+      "User": "EXACT_SYMBOL",
+      "DatabaseSession.get_user_by_id": "EXACT_QUALIFIED",
+      "test_auth_login_failure": "EXACT_SYMBOL",
+      "test_auth_login_success": "EXACT_SYMBOL",
+      "get_current_user_route": "EXACT_SYMBOL",
+      "login": "EXACT_SYMBOL",
+      "login_route": "EXACT_SYMBOL"
+    },
+    "rejection_reason": {
+      "tests.test_payment_service.test_payment_charge_invalid": "Lower utility/relevance (0.55) compared to selected candidates",
+      "tests.test_payment_service.test_payment_charge_valid": "Lower utility/relevance (0.45) compared to selected candidates",
+      "src.admin.login.login": "Duplicate of selected symbol/chunk in src/oauth/login.py",
+      "tests.test_auth_service.test_auth_login_success": "Duplicate of selected symbol/chunk in tests/test_auth_service.py"
+    },
+    "final_selection_reason": {
+      "AuthService.get_user_by_token": "Score=0.5",
+      "AuthService.login": "Score=0.4",
+      "AuthService": "Score=0.35",
+      "DatabaseSession.find_user": "Score=0.5",
+      "User": "Score=0.45",
+      "DatabaseSession.get_user_by_id": "Score=0.4",
+      "test_auth_login_failure": "Score=0.55",
+      "test_auth_login_success": "Score=0.45",
+      "get_current_user_route": "Score=0.55",
+      "login": "Score=0.45",
+      "login_route": "Score=0.45"
+    }
+  },
+  {
+    "task_id": "arch_01_high_level_boundaries",
+    "category": "ARCHITECTURE",
+    "intent": "ARCHITECTURE",
+    "prompt": "Identify high-level subsystem boundaries, frameworks, and entry points.",
+    "task_spec": {
+      "ambiguities": [],
+      "assumptions": [],
+      "confidence": "HIGH",
+      "conflicts": [],
+      "constraints": [],
+      "entities": [],
+      "exclusions": [],
+      "frameworks": [],
+      "goal": "Identify high-level subsystem boundaries, frameworks, and entry points.",
+      "intent": "ARCHITECTURE",
+      "operations": [],
+      "priority_targets": [],
+      "raw_prompt": "Identify high-level subsystem boundaries, frameworks, and entry points.",
+      "schema_version": "1.0",
+      "scope_modules": [],
+      "scope_paths": [],
+      "targets": [],
+      "time_scope": null,
+      "unknowns": []
+    },
+    "target_resolution": {
+      "AuthService": {
+        "method": "not_found",
+        "confidence": "UNKNOWN"
+      },
+      "PaymentService": {
+        "method": "not_found",
+        "confidence": "UNKNOWN"
+      },
+      "NotificationService": {
+        "method": "not_found",
+        "confidence": "UNKNOWN"
+      },
+      "AdminDashboardView": {
+        "method": "not_found",
+        "confidence": "UNKNOWN"
+      }
+    },
+    "expected_symbols": [
+      "AuthService",
+      "PaymentService",
+      "NotificationService",
+      "AdminDashboardView"
+    ],
+    "retrieved_symbols": [],
+    "true_positives": [],
+    "false_positives": [],
+    "false_negatives": [
+      "AuthService",
+      "PaymentService",
+      "NotificationService",
+      "AdminDashboardView"
+    ],
+    "expected_relationships": [],
+    "retrieved_relationships": [],
+    "relationship_true_positives": [],
+    "relationship_false_positives": [],
+    "relationship_false_negatives": [],
+    "excluded_symbols": [],
+    "excluded_files": [],
+    "exclusion_violations": [],
+    "expected_routes": [
+      "/api/v1/auth/login",
+      "/api/v1/payments/charge",
+      "/legacy/notify"
+    ],
+    "retrieved_routes": [],
+    "expected_tests": [],
+    "retrieved_tests": [],
+    "candidate_count": 0,
+    "selected_count": 0,
+    "candidate_tokens": 0,
+    "selected_tokens": 0,
+    "reduction_ratio": 0.0,
+    "latency_ms": 0.1830830005928874,
+    "retrieval_reasons": {},
+    "fn_classifications": [
+      "TARGET_RESOLUTION",
+      "TARGET_RESOLUTION",
+      "TARGET_RESOLUTION",
+      "TARGET_RESOLUTION"
+    ],
+    "fp_classifications": [],
+    "stage_of_entry": {},
+    "stage_of_exit": {},
+    "first_seen_reason": {},
+    "rejection_reason": {},
+    "final_selection_reason": {}
+  },
+  {
+    "task_id": "explain_01_auth_login",
+    "category": "EXPLAIN",
+    "intent": "EXPLAIN",
+    "prompt": "Explain AuthService credential lookup and password hash verification.",
+    "task_spec": {
+      "ambiguities": [],
+      "assumptions": [],
+      "confidence": "HIGH",
+      "conflicts": [],
+      "constraints": [],
+      "entities": [],
+      "exclusions": [
+        "StripeGateway",
+        "src/gateways/stripe_gateway.py"
+      ],
+      "frameworks": [],
+      "goal": "Explain AuthService credential lookup and password hash verification.",
+      "intent": "EXPLAIN",
+      "operations": [],
+      "priority_targets": [],
+      "raw_prompt": "Explain AuthService credential lookup and password hash verification.",
+      "schema_version": "1.0",
+      "scope_modules": [],
+      "scope_paths": [],
+      "targets": [],
+      "time_scope": null,
+      "unknowns": []
+    },
+    "target_resolution": {
+      "AuthService": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "login": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "find_user": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      },
+      "verify_password": {
+        "method": "retrieval_match",
+        "confidence": "MEDIUM"
+      }
+    },
+    "expected_symbols": [
+      "AuthService",
+      "login",
+      "find_user",
+      "verify_password"
+    ],
+    "retrieved_symbols": [
+      "verify_password",
+      "AuthService.login",
+      "replace",
+      "PaymentService",
+      "AuthService",
+      "find_user",
+      "get_user_by_id",
+      "user.verify_password",
+      "DatabaseSession.__init__",
+      "User.__init__",
+      "User",
+      "DatabaseSession",
+      "test_auth_login_failure",
+      "test_auth_login_success",
+      "get_current_user_route",
+      "login_route"
+    ],
+    "true_positives": [
+      "AuthService",
+      "login",
+      "find_user",
+      "verify_password"
+    ],
+    "false_positives": [
+      "replace",
+      "PaymentService",
+      "get_user_by_id",
+      "DatabaseSession.__init__",
+      "User.__init__",
+      "User",
+      "DatabaseSession",
+      "test_auth_login_failure",
+      "test_auth_login_success",
+      "get_current_user_route",
+      "login_route"
+    ],
+    "false_negatives": [],
+    "expected_relationships": [
+      "AuthService->find_user"
+    ],
+    "retrieved_relationships": [
+      "src/db/session.py->User",
+      "src/services/auth_service.py->verify_password",
+      "src/api/fastapi_app.py->login",
+      "tests/test_auth_service.py->login"
+    ],
+    "relationship_true_positives": [],
+    "relationship_false_positives": [
+      "src/api/fastapi_app.py->login",
+      "src/db/session.py->User",
+      "src/services/auth_service.py->verify_password",
+      "tests/test_auth_service.py->login"
+    ],
+    "relationship_false_negatives": [
+      "AuthService->find_user"
+    ],
+    "excluded_symbols": [
+      "StripeGateway"
+    ],
+    "excluded_files": [
+      "src/gateways/stripe_gateway.py"
+    ],
+    "exclusion_violations": [],
+    "expected_routes": [],
+    "retrieved_routes": [],
+    "expected_tests": [
+      "tests/test_auth_service.py"
+    ],
+    "retrieved_tests": [
+      "test_auth_login_success"
+    ],
+    "candidate_count": 1179,
+    "selected_count": 946,
+    "candidate_tokens": 1179,
+    "selected_tokens": 946,
+    "reduction_ratio": 0.1976,
+    "latency_ms": 0.3434999962337315,
+    "retrieval_reasons": {
+      "verify_password": [
+        "EXACT_SYMBOL",
+        "DIRECT_CALLER",
+        "EVIDENCE_HIGH"
+      ],
+      "AuthService.login": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "replace": [
+        "TEXT_MATCH",
+        "DIRECT_CALLER",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "PaymentService": [
+        "TEXT_MATCH",
+        "EVIDENCE_HIGH"
+      ],
+      "AuthService": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "find_user": [
+        "NAME_MATCH",
+        "DIRECT_CALLER",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "get_user_by_id": [
+        "NAME_MATCH",
+        "DIRECT_CALLER",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "user.verify_password": [
+        "EXACT_CANONICAL",
+        "EVIDENCE_HIGH"
+      ],
+      "DatabaseSession.__init__": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH"
+      ],
+      "User.__init__": [
+        "EXACT_QUALIFIED",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "User": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "DatabaseSession": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "DUPLICATE_PENALTY"
+      ],
+      "test_auth_login_failure": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION"
+      ],
+      "test_auth_login_success": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "TEST_RELATION",
+        "DUPLICATE_PENALTY"
+      ],
+      "get_current_user_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT"
+      ],
+      "login_route": [
+        "EXACT_SYMBOL",
+        "EVIDENCE_HIGH",
+        "ENTRY_POINT",
+        "DUPLICATE_PENALTY"
+      ]
+    },
+    "fn_classifications": [
+      "TARGET_RESOLUTION"
+    ],
+    "fp_classifications": [
+      "DUPLICATE_SYMBOL",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "DUPLICATE_SYMBOL",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "LEXICAL_NOISE",
+      "TEST_NOISE",
+      "TEST_NOISE",
+      "FRAMEWORK_NOISE",
+      "FRAMEWORK_NOISE"
+    ],
+    "stage_of_entry": {
+      "verify_password": "RETRIEVAL_CANDIDATE",
+      "AuthService.login": "RETRIEVAL_CANDIDATE",
+      "replace": "RETRIEVAL_CANDIDATE",
+      "PaymentService": "RETRIEVAL_CANDIDATE",
+      "AuthService": "RETRIEVAL_CANDIDATE",
+      "find_user": "RETRIEVAL_CANDIDATE",
+      "get_user_by_id": "RETRIEVAL_CANDIDATE",
+      "user.verify_password": "RETRIEVAL_CANDIDATE",
+      "DatabaseSession.__init__": "RETRIEVAL_CANDIDATE",
+      "User.__init__": "RETRIEVAL_CANDIDATE",
+      "User": "RETRIEVAL_CANDIDATE",
+      "DatabaseSession": "RETRIEVAL_CANDIDATE",
+      "test_auth_login_failure": "RETRIEVAL_CANDIDATE",
+      "test_auth_login_success": "RETRIEVAL_CANDIDATE",
+      "get_current_user_route": "RETRIEVAL_CANDIDATE",
+      "login_route": "RETRIEVAL_CANDIDATE"
+    },
+    "stage_of_exit": {
+      "src.db.models.User.verify_password": "BUDGET_OPTIMIZER",
+      "user.verify_password": "BUDGET_OPTIMIZER",
+      "tests.test_auth_service.test_auth_login_success": "BUDGET_OPTIMIZER",
+      "self.db.find_user": "BUDGET_OPTIMIZER",
+      "self.db.get_user_by_id": "BUDGET_OPTIMIZER",
+      "src.db.session.DatabaseSession": "BUDGET_OPTIMIZER"
+    },
+    "first_seen_reason": {
+      "verify_password": "EXACT_SYMBOL",
+      "AuthService.login": "EXACT_QUALIFIED",
+      "replace": "TEXT_MATCH",
+      "PaymentService": "TEXT_MATCH",
+      "AuthService": "EXACT_SYMBOL",
+      "find_user": "NAME_MATCH",
+      "get_user_by_id": "NAME_MATCH",
+      "user.verify_password": "EXACT_CANONICAL",
+      "DatabaseSession.__init__": "EXACT_QUALIFIED",
+      "User.__init__": "EXACT_QUALIFIED",
+      "User": "EXACT_SYMBOL",
+      "DatabaseSession": "EXACT_SYMBOL",
+      "test_auth_login_failure": "EXACT_SYMBOL",
+      "test_auth_login_success": "EXACT_SYMBOL",
+      "get_current_user_route": "EXACT_SYMBOL",
+      "login_route": "EXACT_SYMBOL"
+    },
+    "rejection_reason": {
+      "src.db.models.User.verify_password": "Duplicate of selected symbol/chunk in src/db/models.py",
+      "user.verify_password": "Duplicate of selected symbol/chunk in src/db/models.py",
+      "tests.test_auth_service.test_auth_login_success": "Duplicate of selected symbol/chunk in tests/test_auth_service.py",
+      "self.db.find_user": "Lower utility/relevance (0.05) compared to selected candidates",
+      "self.db.get_user_by_id": "Lower utility/relevance (0.05) compared to selected candidates",
+      "src.db.session.DatabaseSession": "Duplicate of selected symbol/chunk in src/db/session.py"
+    },
+    "final_selection_reason": {
+      "verify_password": "Score=0.55",
+      "AuthService.login": "Score=0.4",
+      "replace": "Score=0.4",
+      "PaymentService": "Score=0.4",
+      "AuthService": "Score=0.35",
+      "find_user": "Score=0.35",
+      "get_user_by_id": "Score=0.35",
+      "user.verify_password": "Score=0.55",
+      "DatabaseSession.__init__": "Score=0.5",
+      "User.__init__": "Score=0.4",
+      "User": "Score=0.35",
+      "DatabaseSession": "Score=0.35",
+      "test_auth_login_failure": "Score=0.55",
+      "test_auth_login_success": "Score=0.45",
+      "get_current_user_route": "Score=0.55",
+      "login_route": "Score=0.45"
+    }
+  }
+]

@@ -9,6 +9,7 @@ import typer
 
 from codegraph import __version__
 from codegraph.architecture import get_architecture
+from codegraph.cli_output import cli_echo
 from codegraph.config import Settings
 from codegraph.context import get_context
 from codegraph.errors import ErrorCode, SecurityError
@@ -142,12 +143,77 @@ def _indexer(repository: Path, db_path: Path | None = None) -> Indexer:
 def index(
     path: Annotated[Path | None, typer.Argument(help="Repository path to index (default: current directory)")] = None,
     repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
-    json_output: Annotated[bool, typer.Option("--json")] = False,
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Suppress progress and summary output")] = False,
+    verbose: Annotated[bool, typer.Option("--verbose", "-v", help="Show phase progress, timings, memory, and WAL stats")] = False,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON summary and phase telemetry")] = False,
 ) -> None:
     """Securely index supported source files, skipping unchanged content."""
+    from codegraph.indexing.telemetry import IndexingTelemetry, format_progress_block
+
     repo = _resolve_repo(path, repository)
-    result = _indexer(repo).index()
-    typer.echo(json.dumps(result) if json_output else " ".join(f"{k}={v}" for k, v in result.items()))
+    idx_inst = _indexer(repo)
+
+    _PHASE_LABELS = {
+        "repository_scan": "Repository Scan",
+        "ast_parsing": "AST Parsing & Extraction",
+        "post_processing": "Post-Processing",
+        "symbol_resolution": "Symbol Resolution",
+        "relationship_resolution": "Relationship Resolution",
+        "database_analysis": "Database Analysis",
+        "final_commit_checkpoint": "Final Commit & Checkpoint",
+    }
+
+    def _on_progress(phase_key: str, current: int, total: int, tel: IndexingTelemetry) -> None:
+        if not verbose or quiet or json_output:
+            return
+        label = _PHASE_LABELS.get(phase_key, phase_key)
+        block = format_progress_block(
+            label,
+            current,
+            total,
+            tel.total_elapsed_seconds or (time.perf_counter() - tel.started_at),
+            memory_mb=tel.peak_rss_mb,
+        )
+        typer.echo(block)
+
+    import time
+
+    result = idx_inst.index(progress_callback=_on_progress if verbose else None, catch_interrupt=True)
+    tel = idx_inst.last_telemetry
+
+    if json_output:
+        payload: dict[str, object] = dict(result)
+        if tel is not None:
+            payload["telemetry"] = tel.as_dict()
+        typer.echo(json.dumps(payload))
+        if result.get("interrupted"):
+            raise typer.Exit(code=130)
+        return
+
+    if quiet:
+        if result.get("interrupted"):
+            raise typer.Exit(code=130)
+        return
+
+    if verbose and tel is not None:
+        typer.echo(
+            f"Summary: elapsed={tel.total_elapsed_seconds:.3f}s "
+            f"peak_rss={tel.peak_rss_mb:.1f}MB "
+            f"max_wal={tel.max_wal_size_mb:.2f}MB "
+            f"final_wal={tel.final_wal_size_mb:.2f}MB "
+            f"commits={tel.batch_commits} checkpoints={tel.wal_checkpoints}"
+        )
+        for p_name, p_metrics in tel.phases.items():
+            if p_metrics.elapsed_seconds > 0 or p_metrics.items_processed > 0 or p_metrics.files_processed > 0:
+                typer.echo(
+                    f"  [{p_name}] {p_metrics.elapsed_seconds * 1000:.1f}ms "
+                    f"files={p_metrics.files_processed} items={p_metrics.items_processed} "
+                    f"writes={p_metrics.db_writes}"
+                )
+
+    typer.echo(" ".join(f"{k}={v}" for k, v in result.items()))
+    if result.get("interrupted"):
+        raise typer.Exit(code=130)
 
 
 @app.command()
@@ -162,7 +228,8 @@ def init(
     if json_output:
         typer.echo(json.dumps({"status": "initialized", "repository": str(target_repo.resolve()), "indexing": result}, indent=2))
     else:
-        typer.echo(f"Initialized CodeGraph repository at {target_repo.resolve()} (indexed {result.get('indexed_files', 0)} files)")
+        indexed_cnt = result.get("indexed", result.get("indexed_files", 0))
+        typer.echo(f"Initialized CodeGraph repository at {target_repo.resolve()} (indexed {indexed_cnt} files)")
 
 
 @app.command()
@@ -539,8 +606,10 @@ def serve(
     """Run the stdio MCP server (requires the optional mcp extra)."""
     repo = _resolve_repo(path, repository)
     from codegraph.mcp import create_server
+    from codegraph.process_lifecycle import run_mcp_stdio_server
 
-    create_server(repo, profile=profile).run()
+    server = create_server(repo, profile=profile)
+    run_mcp_stdio_server(server, repo, profile=profile)
 
 
 mcp_app = typer.Typer(help="MCP server commands.")
@@ -551,13 +620,128 @@ app.add_typer(mcp_app, name="mcp")
 def mcp_serve(
     path: Annotated[Path | None, typer.Argument(help="Repository path (default: current directory)")] = None,
     repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
-    profile: Annotated[str, typer.Option("--profile", help="Tool profile: core | minimal | developer | full")] = "full",
+    profile: Annotated[str, typer.Option("--profile", help="Tool profile: core | graph | minimal | developer | full")] = "full",
 ) -> None:
     """Run the stdio MCP server (requires the optional mcp extra)."""
     repo = _resolve_repo(path, repository)
     from codegraph.mcp import create_server
+    from codegraph.process_lifecycle import run_mcp_stdio_server
 
-    create_server(repo, profile=profile).run()
+    server = create_server(repo, profile=profile)
+    run_mcp_stdio_server(server, repo, profile=profile)
+
+
+def _execute_stop(
+    path: Path | None,
+    repository: Path | None,
+    all_processes: bool,
+    timeout: float,
+    json_output: bool,
+) -> None:
+    from codegraph.process_lifecycle import stop_codegraph_processes
+
+    target_repo: Path | None = None
+    if not all_processes:
+        target_repo = _resolve_repo(path, repository)
+
+    res = stop_codegraph_processes(
+        repository=target_repo,
+        stop_all=all_processes,
+        timeout_sec=timeout,
+    )
+    if json_output:
+        cli_echo(json.dumps(res.as_dict(), indent=2), json_mode=True)
+    else:
+        cli_echo(res.format_human())
+
+
+@app.command("stop")
+def stop_cmd(
+    path: Annotated[Path | None, typer.Argument(help="Repository path (default: current directory)")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    all_processes: Annotated[bool, typer.Option("--all", "-a", help="Stop all CodeGraph-owned MCP processes across all repositories")] = False,
+    timeout: Annotated[float, typer.Option("--timeout", help="Graceful shutdown timeout in seconds before force-kill")] = 3.0,
+    json_output: Annotated[bool, typer.Option("--json", help="Output deterministic machine-readable JSON")] = False,
+) -> None:
+    """Safely stop running CodeGraph MCP background processes and release file locks."""
+    _execute_stop(path, repository, all_processes, timeout, json_output)
+
+
+@mcp_app.command("stop")
+def mcp_stop_cmd(
+    path: Annotated[Path | None, typer.Argument(help="Repository path (default: current directory)")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    all_processes: Annotated[bool, typer.Option("--all", "-a", help="Stop all CodeGraph-owned MCP processes across all repositories")] = False,
+    timeout: Annotated[float, typer.Option("--timeout", help="Graceful shutdown timeout in seconds before force-kill")] = 3.0,
+    json_output: Annotated[bool, typer.Option("--json", help="Output deterministic machine-readable JSON")] = False,
+) -> None:
+    """Safely stop running CodeGraph MCP background processes and release file locks."""
+    _execute_stop(path, repository, all_processes, timeout, json_output)
+
+
+@mcp_app.command("kill")
+def mcp_kill_cmd(
+    path: Annotated[Path | None, typer.Argument(help="Repository path (default: current directory)")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    all_processes: Annotated[bool, typer.Option("--all", "-a", help="Stop all CodeGraph-owned MCP processes across all repositories")] = False,
+    timeout: Annotated[float, typer.Option("--timeout", help="Graceful shutdown timeout in seconds before force-kill")] = 1.0,
+    json_output: Annotated[bool, typer.Option("--json", help="Output deterministic machine-readable JSON")] = False,
+) -> None:
+    """Alias for `codegraph stop` to terminate CodeGraph MCP processes and release locks."""
+    _execute_stop(path, repository, all_processes, timeout, json_output)
+
+
+@mcp_app.command("doctor")
+def mcp_doctor(
+    profile: Annotated[str, typer.Option("--profile", help="Tool profile to validate")] = "full",
+    json_output: Annotated[bool, typer.Option("--json", help="Output deterministic JSON report")] = False,
+) -> None:
+    """Run end-to-end MCP server startup, handshake, tool discovery, and fixture query diagnostics."""
+    from codegraph.mcp_diagnostics import run_mcp_doctor
+
+    report = run_mcp_doctor(profile=profile)
+    if json_output:
+        cli_echo(json.dumps(report.as_dict(), indent=2), json_mode=True)
+    else:
+        cli_echo(report.format_human())
+    if not report.healthy:
+        raise typer.Exit(code=1)
+
+
+@mcp_app.command("config-check")
+def mcp_config_check(
+    path: Annotated[Path | None, typer.Argument(help="Workspace path (default: current directory)")] = None,
+    config_file: Annotated[Path | None, typer.Option("--config", "-c", help="Explicit MCP config JSON path")] = None,
+    include_example: Annotated[bool, typer.Option("--include-example", help="Include .agents/mcp_config.json.example")] = False,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON report")] = True,
+) -> None:
+    """Validate MCP configuration read-only without mutating files or exposing secrets."""
+    from codegraph.mcp_diagnostics import check_mcp_configuration
+
+    ws = (path or Path.cwd()).resolve()
+    rep = check_mcp_configuration(workspace_dir=ws, config_file=config_file, include_example=include_example)
+    if json_output:
+        cli_echo(json.dumps(rep.as_dict(), indent=2), json_mode=True)
+    else:
+        cli_echo(f"{rep.status.value}: {rep.message}")
+
+
+@mcp_app.command("capabilities")
+def mcp_capabilities() -> None:
+    """Output the deterministic machine-readable CodeGraph capability manifest."""
+    from codegraph.agent_capabilities import get_capability_manifest
+
+    cli_echo(json.dumps(get_capability_manifest(), indent=2), json_mode=True)
+
+
+@mcp_app.command("rules")
+def mcp_rules(
+    agent: Annotated[str, typer.Option("--agent", "-a", help="Target agent (antigravity, claude, cursor, gemini, codex, cline, agents)")] = "antigravity",
+) -> None:
+    """Render deterministic CodeGraph agent rules for the specified agent."""
+    from codegraph.agent_rules import render_agent_rules
+
+    cli_echo(render_agent_rules(agent=agent), nl=False)
 
 
 @app.command()
@@ -566,9 +750,20 @@ def doctor(
     repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
     resources: Annotated[bool, typer.Option("--resources")] = False,
     database: Annotated[bool, typer.Option("--database", help="Run comprehensive database integrity and schema checks")] = False,
+    processes: Annotated[bool, typer.Option("--processes", help="Inspect active CodeGraph processes, parent state, and stale PID files")] = False,
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
-    """Check repository and index readiness, database integrity, and freshness."""
+    """Check repository and index readiness, database integrity, process lifecycle, and freshness."""
+    if processes:
+        from codegraph.process_lifecycle import discover_codegraph_processes
+
+        discovery = discover_codegraph_processes(clean_stale=True)
+        if json_output:
+            cli_echo(json.dumps(discovery.as_dict(), indent=2), json_mode=True)
+        else:
+            cli_echo(discovery.format_human())
+        return
+
     repo = _resolve_repo(path, repository)
     indexer_inst = _indexer(repo)
     db = repo / ".codegraph.sqlite3"
@@ -848,6 +1043,228 @@ def memory_clear(
 @app.command()
 def version() -> None:
     typer.echo(__version__)
+
+
+@app.command()
+def install(
+    path: Annotated[Path | None, typer.Argument(help="Project path (default: current directory)")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Project path")] = None,
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Confirm installation without interactive prompt")] = False,
+    target: Annotated[
+        str,
+        typer.Option("--target", "-t", help="Target agents: auto | all | claude,cursor,antigravity,codex,gemini,cline"),
+    ] = "auto",
+    location: Annotated[
+        str,
+        typer.Option("--location", "-l", help="Installation scope: local | global"),
+    ] = "local",
+    print_config: Annotated[
+        str | None,
+        typer.Option("--print-config", help="Print MCP configuration and rules for a specific agent without modifying files"),
+    ] = None,
+    dry_run: Annotated[bool, typer.Option("--dry-run", help="Show what would change without modifying any files")] = False,
+    repair: Annotated[bool, typer.Option("--repair", help="Back up and repair malformed JSON configuration files")] = False,
+    json_output: Annotated[bool, typer.Option("--json", help="Output deterministic machine-readable JSON")] = False,
+) -> None:
+    """Detect supported AI agents, configure CodeGraph MCP, install rules/skills, and verify health."""
+    from codegraph.errors import CodeGraphError
+    from codegraph.installer import (
+        AGENT_ALIASES,
+        format_marker_block,
+        render_agent_mcp_config_snippet,
+        run_install,
+    )
+
+    if print_config is not None:
+        try:
+            canon = AGENT_ALIASES.get(print_config.strip().lower(), print_config.strip().lower())
+            snippet = render_agent_mcp_config_snippet(canon)
+            from codegraph.agent_rules import render_agent_rules
+
+            rules_txt = render_agent_rules(canon)
+            if json_output:
+                cli_echo(
+                    json.dumps(
+                        {
+                            "status": "ok",
+                            "agent": canon,
+                            "mcp_config": snippet,
+                            "instructions_block": format_marker_block(rules_txt),
+                        },
+                        indent=2,
+                    ),
+                    json_mode=True,
+                )
+            else:
+                cli_echo(f"# MCP Configuration ({canon})\n")
+                cli_echo(json.dumps(snippet, indent=2), json_mode=True)
+                cli_echo(f"\n# Instructions Block ({canon})\n")
+                cli_echo(format_marker_block(rules_txt), nl=False)
+            return
+        except CodeGraphError as exc:
+            if json_output:
+                cli_echo(json.dumps(exc.to_response(), indent=2), json_mode=True)
+            else:
+                cli_echo(f"Error [{exc.code}]: {exc.message}")
+                if exc.next_action and exc.next_action.get("command"):
+                    cli_echo(f"\nTry:\n  {exc.next_action['command']}")
+            raise typer.Exit(code=1) from exc
+
+    ws = _resolve_repo(path, repository)
+
+    def _confirm(preview_rep: object) -> bool:
+        from codegraph.installer import InstallerReport
+
+        assert isinstance(preview_rep, InstallerReport)
+        if not json_output:
+            cli_echo(preview_rep.format_preview_human())
+            cli_echo("")
+            cli_echo("Continue? [y/N] ", nl=False)
+        try:
+            ans = input().strip().lower()
+        except EOFError:
+            ans = ""
+        if not json_output:
+            cli_echo("")
+        return ans in ("y", "yes")
+
+    try:
+        report = run_install(
+            workspace=ws,
+            target=target,
+            location=location,
+            dry_run=dry_run,
+            allow_malformed_repair=repair,
+            confirm_fn=None if (yes or dry_run) else _confirm,
+        )
+    except CodeGraphError as exc:
+        if json_output:
+            cli_echo(json.dumps(exc.to_response(), indent=2), json_mode=True)
+        else:
+            cli_echo(f"Error [{exc.code}]: {exc.message}")
+            if exc.next_action and exc.next_action.get("reason"):
+                cli_echo(f"\nExpected:\n  {exc.next_action['reason']}")
+            if exc.next_action and exc.next_action.get("command"):
+                cli_echo(f"\nTry:\n  {exc.next_action['command']}")
+        raise typer.Exit(code=1) from exc
+
+    if json_output:
+        cli_echo(json.dumps(report.as_dict(), indent=2), json_mode=True)
+    else:
+        if yes and not dry_run:
+            cli_echo(report.format_preview_human())
+            cli_echo("")
+        cli_echo(report.format_human())
+
+    if report.status == "error":
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def uninstall(
+    path: Annotated[Path | None, typer.Argument(help="Project path (default: current directory)")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Project path")] = None,
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Confirm uninstall without interactive prompt")] = False,
+    target: Annotated[
+        str,
+        typer.Option("--target", "-t", help="Target agents: all | auto | claude,cursor,antigravity,codex,gemini,cline"),
+    ] = "all",
+    location: Annotated[
+        str,
+        typer.Option("--location", "-l", help="Installation scope: local | global"),
+    ] = "local",
+    dry_run: Annotated[bool, typer.Option("--dry-run", help="Show what would be removed without changing any files")] = False,
+    json_output: Annotated[bool, typer.Option("--json", help="Output deterministic machine-readable JSON")] = False,
+) -> None:
+    """Remove CodeGraph-managed agent integrations while preserving user config and project index."""
+    from codegraph.errors import CodeGraphError
+    from codegraph.installer import InstallerReport, run_uninstall
+
+    ws = _resolve_repo(path, repository)
+
+    def _confirm_uninstall(preview_rep: InstallerReport) -> bool:
+        if not json_output:
+            cli_echo("CodeGraph Uninstaller\n")
+            for c in preview_rep.changes:
+                if c.action in ("remove", "modify"):
+                    cli_echo(f"  - {c.display_path} ({c.action})")
+            cli_echo("\nContinue? [y/N] ", nl=False)
+        try:
+            ans = input().strip().lower()
+        except EOFError:
+            ans = ""
+        if not json_output:
+            cli_echo("")
+        return ans in ("y", "yes")
+
+    try:
+        report = run_uninstall(
+            workspace=ws,
+            target=target,
+            location=location,
+            dry_run=dry_run,
+            confirm_fn=None if (yes or dry_run) else _confirm_uninstall,
+        )
+    except CodeGraphError as exc:
+        if json_output:
+            cli_echo(json.dumps(exc.to_response(), indent=2), json_mode=True)
+        else:
+            cli_echo(f"Error [{exc.code}]: {exc.message}")
+            if exc.next_action and exc.next_action.get("command"):
+                cli_echo(f"\nTry:\n  {exc.next_action['command']}")
+        raise typer.Exit(code=1) from exc
+
+    if json_output:
+        cli_echo(json.dumps(report.as_dict(), indent=2), json_mode=True)
+    else:
+        cli_echo(report.format_human())
+
+
+@app.command()
+def uninit(
+    path: Annotated[Path | None, typer.Argument(help="Repository path (default: current directory)")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Confirm removal without interactive prompt")] = False,
+    dry_run: Annotated[bool, typer.Option("--dry-run", help="Preview index files that would be removed")] = False,
+    json_output: Annotated[bool, typer.Option("--json", help="Output deterministic machine-readable JSON")] = False,
+) -> None:
+    """Remove the current project's CodeGraph index (.codegraph.sqlite3 and .codegraph/) without touching source or git."""
+    from codegraph.errors import CodeGraphError
+    from codegraph.installer import InstallerReport, run_uninit
+
+    ws = _resolve_repo(path, repository)
+
+    def _confirm_uninit(preview_rep: InstallerReport) -> bool:
+        if not json_output:
+            cli_echo("Remove CodeGraph project index files?\n")
+            for c in preview_rep.changes:
+                cli_echo(f"  - {c.display_path}")
+            cli_echo("\nContinue? [y/N] ", nl=False)
+        try:
+            ans = input().strip().lower()
+        except EOFError:
+            ans = ""
+        if not json_output:
+            cli_echo("")
+        return ans in ("y", "yes")
+
+    try:
+        report = run_uninit(
+            workspace=ws,
+            dry_run=dry_run,
+            confirm_fn=None if (yes or dry_run) else _confirm_uninit,
+        )
+    except CodeGraphError as exc:
+        if json_output:
+            cli_echo(json.dumps(exc.to_response(), indent=2), json_mode=True)
+        else:
+            cli_echo(f"Error [{exc.code}]: {exc.message}")
+        raise typer.Exit(code=1) from exc
+
+    if json_output:
+        cli_echo(json.dumps(report.as_dict(), indent=2), json_mode=True)
+    else:
+        cli_echo(report.format_human())
 
 
 if __name__ == "__main__":

@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 590" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #0d1117; rx: 14px; }
+      .header-bg { fill: #161b22; stroke: #30363d; stroke-width: 1; rx: 8px; }
+      .row-even { fill: #12171e; }
+      .row-odd { fill: #161b22; }
+      .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 18.5px; font-weight: 700; fill: #f0f6fc; }
+      .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 12px; fill: #8b949e; }
+      .col-hdr { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 12px; font-weight: 700; fill: #e6edf3; text-anchor: middle; }
+      .col-hdr-cg { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 12.5px; font-weight: 700; fill: #58a6ff; text-anchor: middle; }
+      .row-lbl { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 12.5px; font-weight: 500; fill: #e6edf3; }
+      .cell-yes { fill: #193c28; stroke: #2ea043; stroke-width: 1.2; rx: 5px; }
+      .cell-part { fill: #3b2e13; stroke: #d29922; stroke-width: 1.2; rx: 5px; }
+      .cell-no { fill: #21262d; stroke: #30363d; stroke-width: 1; rx: 5px; }
+      .txt-yes { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; font-weight: 700; fill: #3fb950; text-anchor: middle; }
+      .txt-part { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; font-weight: 700; fill: #e3b341; text-anchor: middle; }
+      .txt-no { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; font-weight: 600; fill: #8b949e; text-anchor: middle; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="590" />
+
+  <text class="title" x="28" y="38">Repository Retrieval Approaches — Capability Comparison</text>
+  <text class="subtitle" x="28" y="58">How deterministic repository intelligence complements editor language servers, structural AST search, and lexical search</text>
+
+  <!-- Column Headers -->
+  <rect class="header-bg" x="24" y="72" width="912" height="44" />
+  <text class="row-lbl" x="40" y="99" style="font-weight:700;">Architectural Capability</text>
+  <text class="col-hdr-cg" x="395" y="99">CodeGraph MCP</text>
+  <text class="col-hdr" x="530" y="99">Vector / Chunk Retrieval</text>
+  <text class="col-hdr" x="665" y="99">Editor LSP</text>
+  <text class="col-hdr" x="795" y="99">AST Pattern Search</text>
+  <text class="col-hdr" x="895" y="99">Text / Grep</text>
+
+  <!-- Row 1 -->
+  <rect class="row-odd" x="24" y="122" width="912" height="34" />
+  <text class="row-lbl" x="40" y="144">100% Local-First &amp; Offline Operation</text>
+  <rect class="cell-yes" x="340" y="127" width="110" height="24" /><text class="txt-yes" x="395" y="143">✓ SUPPORTED</text>
+  <rect class="cell-part" x="475" y="127" width="110" height="24" /><text class="txt-part" x="530" y="143">◐ PARTIAL</text>
+  <rect class="cell-yes" x="610" y="127" width="110" height="24" /><text class="txt-yes" x="665" y="143">✓ SUPPORTED</text>
+  <rect class="cell-yes" x="740" y="127" width="110" height="24" /><text class="txt-yes" x="795" y="143">✓ SUPPORTED</text>
+  <rect class="cell-yes" x="858" y="127" width="72" height="24" /><text class="txt-yes" x="894" y="143">✓ YES</text>
+
+  <!-- Row 2 -->
+  <rect class="row-even" x="24" y="158" width="912" height="34" />
+  <text class="row-lbl" x="40" y="180">Native MCP Server + Agent Auto-Onboarding</text>
+  <rect class="cell-yes" x="340" y="163" width="110" height="24" /><text class="txt-yes" x="395" y="179">✓ SUPPORTED</text>
+  <rect class="cell-part" x="475" y="163" width="110" height="24" /><text class="txt-part" x="530" y="179">◐ PARTIAL</text>
+  <rect class="cell-no" x="610" y="163" width="110" height="24" /><text class="txt-no" x="665" y="179">—</text>
+  <rect class="cell-part" x="740" y="163" width="110" height="24" /><text class="txt-part" x="795" y="179">◐ PARTIAL</text>
+  <rect class="cell-no" x="858" y="163" width="72" height="24" /><text class="txt-no" x="894" y="179">—</text>
+
+  <!-- Row 3 -->
+  <rect class="row-odd" x="24" y="194" width="912" height="34" />
+  <text class="row-lbl" x="40" y="216">Semantic Symbol Graph &amp; Multi-Hop Call Tracing</text>
+  <rect class="cell-yes" x="340" y="199" width="110" height="24" /><text class="txt-yes" x="395" y="215">✓ SUPPORTED</text>
+  <rect class="cell-no" x="475" y="199" width="110" height="24" /><text class="txt-no" x="530" y="215">—</text>
+  <rect class="cell-part" x="610" y="199" width="110" height="24" /><text class="txt-part" x="665" y="215">◐ PARTIAL</text>
+  <rect class="cell-part" x="740" y="199" width="110" height="24" /><text class="txt-part" x="795" y="215">◐ PARTIAL</text>
+  <rect class="cell-no" x="858" y="199" width="72" height="24" /><text class="txt-no" x="894" y="215">—</text>
+
+  <!-- Row 4 -->
+  <rect class="row-even" x="24" y="230" width="912" height="34" />
+  <text class="row-lbl" x="40" y="252">HTTP Route, DI Provider &amp; Event Registry Graph</text>
+  <rect class="cell-yes" x="340" y="235" width="110" height="24" /><text class="txt-yes" x="395" y="251">✓ SUPPORTED</text>
+  <rect class="cell-no" x="475" y="235" width="110" height="24" /><text class="txt-no" x="530" y="251">—</text>
+  <rect class="cell-no" x="610" y="235" width="110" height="24" /><text class="txt-no" x="665" y="251">—</text>
+  <rect class="cell-part" x="740" y="235" width="110" height="24" /><text class="txt-part" x="795" y="251">◐ PARTIAL</text>
+  <rect class="cell-no" x="858" y="235" width="72" height="24" /><text class="txt-no" x="894" y="251">—</text>
+
+  <!-- Row 5 -->
+  <rect class="row-odd" x="24" y="266" width="912" height="34" />
+  <text class="row-lbl" x="40" y="288">Database Schema, ORM Models, Migrations &amp; R/W</text>
+  <rect class="cell-yes" x="340" y="271" width="110" height="24" /><text class="txt-yes" x="395" y="287">✓ SUPPORTED</text>
+  <rect class="cell-no" x="475" y="271" width="110" height="24" /><text class="txt-no" x="530" y="287">—</text>
+  <rect class="cell-no" x="610" y="271" width="110" height="24" /><text class="txt-no" x="665" y="287">—</text>
+  <rect class="cell-no" x="740" y="271" width="110" height="24" /><text class="txt-no" x="795" y="287">—</text>
+  <rect class="cell-no" x="858" y="271" width="72" height="24" /><text class="txt-no" x="894" y="287">—</text>
+
+  <!-- Row 6 -->
+  <rect class="row-even" x="24" y="302" width="912" height="34" />
+  <text class="row-lbl" x="40" y="324">Opt-In Runtime Trace Ingestion &amp; Reconciliation</text>
+  <rect class="cell-yes" x="340" y="307" width="110" height="24" /><text class="txt-yes" x="395" y="323">✓ SUPPORTED</text>
+  <rect class="cell-no" x="475" y="307" width="110" height="24" /><text class="txt-no" x="530" y="323">—</text>
+  <rect class="cell-no" x="610" y="307" width="110" height="24" /><text class="txt-no" x="665" y="323">—</text>
+  <rect class="cell-no" x="740" y="307" width="110" height="24" /><text class="txt-no" x="795" y="323">—</text>
+  <rect class="cell-no" x="858" y="307" width="72" height="24" /><text class="txt-no" x="894" y="323">—</text>
+
+  <!-- Row 7 -->
+  <rect class="row-odd" x="24" y="338" width="912" height="34" />
+  <text class="row-lbl" x="40" y="360">Explicit Epistemic States (FACT / POSSIBLE / UNKNOWN)</text>
+  <rect class="cell-yes" x="340" y="343" width="110" height="24" /><text class="txt-yes" x="395" y="359">✓ SUPPORTED</text>
+  <rect class="cell-no" x="475" y="343" width="110" height="24" /><text class="txt-no" x="530" y="359">—</text>
+  <rect class="cell-no" x="610" y="343" width="110" height="24" /><text class="txt-no" x="665" y="359">—</text>
+  <rect class="cell-no" x="740" y="343" width="110" height="24" /><text class="txt-no" x="795" y="359">—</text>
+  <rect class="cell-no" x="858" y="343" width="72" height="24" /><text class="txt-no" x="894" y="359">—</text>
+
+  <!-- Row 8 -->
+  <rect class="row-even" x="24" y="374" width="912" height="34" />
+  <text class="row-lbl" x="40" y="396">Literal Text Search Across HTML/JS/CSS/Config</text>
+  <rect class="cell-yes" x="340" y="379" width="110" height="24" /><text class="txt-yes" x="395" y="395">✓ SUPPORTED</text>
+  <rect class="cell-part" x="475" y="379" width="110" height="24" /><text class="txt-part" x="530" y="395">◐ PARTIAL</text>
+  <rect class="cell-no" x="610" y="379" width="110" height="24" /><text class="txt-no" x="665" y="395">—</text>
+  <rect class="cell-no" x="740" y="379" width="110" height="24" /><text class="txt-no" x="795" y="395">—</text>
+  <rect class="cell-yes" x="858" y="379" width="72" height="24" /><text class="txt-yes" x="894" y="395">✓ YES</text>
+
+  <!-- Row 9 -->
+  <rect class="row-odd" x="24" y="410" width="912" height="34" />
+  <text class="row-lbl" x="40" y="432">Token-Budgeted Context Optimization (get_context)</text>
+  <rect class="cell-yes" x="340" y="415" width="110" height="24" /><text class="txt-yes" x="395" y="431">✓ SUPPORTED</text>
+  <rect class="cell-part" x="475" y="415" width="110" height="24" /><text class="txt-part" x="530" y="431">◐ PARTIAL</text>
+  <rect class="cell-no" x="610" y="415" width="110" height="24" /><text class="txt-no" x="665" y="431">—</text>
+  <rect class="cell-no" x="740" y="415" width="110" height="24" /><text class="txt-no" x="795" y="431">—</text>
+  <rect class="cell-no" x="858" y="415" width="72" height="24" /><text class="txt-no" x="894" y="431">—</text>
+
+  <!-- Row 10 -->
+  <rect class="row-even" x="24" y="446" width="912" height="34" />
+  <text class="row-lbl" x="40" y="468">Git Diff Blast-Radius &amp; Related Test Discovery</text>
+  <rect class="cell-yes" x="340" y="451" width="110" height="24" /><text class="txt-yes" x="395" y="467">✓ SUPPORTED</text>
+  <rect class="cell-no" x="475" y="451" width="110" height="24" /><text class="txt-no" x="530" y="467">—</text>
+  <rect class="cell-no" x="610" y="451" width="110" height="24" /><text class="txt-no" x="665" y="467">—</text>
+  <rect class="cell-no" x="740" y="451" width="110" height="24" /><text class="txt-no" x="795" y="467">—</text>
+  <rect class="cell-no" x="858" y="451" width="72" height="24" /><text class="txt-no" x="894" y="467">—</text>
+
+  <!-- Row 11 -->
+  <rect class="row-odd" x="24" y="482" width="912" height="34" />
+  <text class="row-lbl" x="40" y="504">Secret Redaction &amp; Sensitive File Blocking</text>
+  <rect class="cell-yes" x="340" y="487" width="110" height="24" /><text class="txt-yes" x="395" y="503">✓ SUPPORTED</text>
+  <rect class="cell-part" x="475" y="487" width="110" height="24" /><text class="txt-part" x="530" y="503">◐ PARTIAL</text>
+  <rect class="cell-no" x="610" y="487" width="110" height="24" /><text class="txt-no" x="665" y="503">—</text>
+  <rect class="cell-no" x="740" y="487" width="110" height="24" /><text class="txt-no" x="795" y="503">—</text>
+  <rect class="cell-no" x="858" y="487" width="72" height="24" /><text class="txt-no" x="894" y="503">—</text>
+
+  <!-- Row 12 -->
+  <rect class="row-even" x="24" y="518" width="912" height="34" />
+  <text class="row-lbl" x="40" y="540">Interactive Editor Diagnostics &amp; AST Rewrite Rules</text>
+  <rect class="cell-no" x="340" y="523" width="110" height="24" /><text class="txt-no" x="395" y="539">—</text>
+  <rect class="cell-no" x="475" y="523" width="110" height="24" /><text class="txt-no" x="530" y="539">—</text>
+  <rect class="cell-yes" x="610" y="523" width="110" height="24" /><text class="txt-yes" x="665" y="539">✓ SUPPORTED</text>
+  <rect class="cell-yes" x="740" y="523" width="110" height="24" /><text class="txt-yes" x="795" y="539">✓ SUPPORTED</text>
+  <rect class="cell-no" x="858" y="523" width="72" height="24" /><text class="txt-no" x="894" y="539">—</text>
+
+  <text class="subtitle" x="28" y="574">Legend: ✓ SUPPORTED = Built-in capability • ◐ PARTIAL = Workflow/plugin dependent • — = Not established as a primary design goal</text>
+</svg>

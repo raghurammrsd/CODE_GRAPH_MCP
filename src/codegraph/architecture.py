@@ -224,13 +224,28 @@ def get_architecture(
     # Frameworks
     frameworks = detect_frameworks(con, repository)
 
-    # Top-level modules
+    from codegraph.monorepo import detect_workspace
+    workspace_info = detect_workspace(repository, con=con)
+
+    # Top-level modules (excluding build artifacts, vendors, and bundles, enriched with package boundaries)
     modules: list[str] = []
     try:
         mod_rows = con.execute(
-            "SELECT DISTINCT module FROM symbols WHERE module != '' ORDER BY module LIMIT 20"
+            """
+            SELECT DISTINCT s.module
+            FROM symbols s
+            LEFT JOIN files f ON s.path = f.path
+            WHERE s.module != ''
+              AND (f.category IS NULL OR f.category NOT IN ('BUILD_ARTIFACT', 'VENDOR', 'BUNDLE', 'MINIFIED'))
+            ORDER BY s.module LIMIT 20
+            """
         ).fetchall()
         modules = [r[0] for r in mod_rows]
+        if workspace_info.packages:
+            for p in workspace_info.packages.values():
+                if p.root_path and p.root_path not in modules:
+                    modules.append(p.root_path)
+            modules = sorted(modules)[:max_per_category]
     except sqlite3.OperationalError:
         pass
 
@@ -244,11 +259,31 @@ def get_architecture(
     except sqlite3.OperationalError:
         pass
 
-    # Generated artifacts
+    # Artifact directory separation
+    import posixpath
+    source_dirs: set[str] = set()
+    test_dirs: set[str] = set()
+    build_dirs: set[str] = set()
+    vendor_dirs: set[str] = set()
+    generated_dirs: set[str] = set()
     generated_files: list[str] = []
+
     try:
-        gen_rows = con.execute("SELECT path FROM files WHERE category='GENERATED' ORDER BY path LIMIT 20").fetchall()
-        generated_files = [r[0] for r in gen_rows]
+        file_rows = con.execute("SELECT path, category FROM files WHERE status='ok'").fetchall()
+        for fr in file_rows:
+            p_dir = posixpath.dirname(fr["path"]) or "."
+            cat = str(fr["category"])
+            if cat in ("SOURCE", ""):
+                source_dirs.add(p_dir)
+            elif cat == "TEST":
+                test_dirs.add(p_dir)
+            elif cat in ("BUILD_ARTIFACT", "BUNDLE", "MINIFIED"):
+                build_dirs.add(p_dir)
+            elif cat == "VENDOR":
+                vendor_dirs.add(p_dir)
+            elif cat == "GENERATED":
+                generated_dirs.add(p_dir)
+                generated_files.append(fr["path"])
     except sqlite3.OperationalError:
         pass
 
@@ -299,6 +334,9 @@ def get_architecture(
         },
         "languages": lang_counts,
         "frameworks": frameworks,
+        "workspace": workspace_info.as_dict(),
+        "packages": [p.as_dict() for p in workspace_info.packages.values()],
+        "package_dependencies": [d.as_dict() for d in workspace_info.dependencies],
         "entry_points": entry_points[:max_per_category],
         "top_level_modules": modules,
         "dependency_summary": dependencies,
@@ -306,6 +344,11 @@ def get_architecture(
         "test_summary": test_summary,
         "data_model_summary": data_model_summary,
         "external_services": sorted(set(integrations))[:max_per_category],
+        "source_directories": sorted(source_dirs)[:max_per_category],
+        "test_directories": sorted(test_dirs)[:max_per_category],
+        "build_directories": sorted(build_dirs)[:max_per_category],
+        "vendor_directories": sorted(vendor_dirs)[:max_per_category],
+        "generated_directories": sorted(generated_dirs)[:max_per_category],
         "generated_artifact_summary": {
             "count": len(generated_files),
             "files": generated_files,

@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 
+from codegraph.epistemic import RelationshipEvidenceClass, validate_relationship_invariants
+from codegraph.evidence_contract import validate_graph_edge_contract
+
 
 @dataclass(frozen=True)
 class GraphEdge:
@@ -13,6 +16,17 @@ class GraphEdge:
     start_line: int
     end_line: int
     evidence: str
+    evidence_class: str = RelationshipEvidenceClass.AST_VERIFIED.value
+    reason: str | None = None
+
+    def __post_init__(self) -> None:
+        validate_relationship_invariants(self.relationship, self.evidence_class, self.reason)
+        rel, ev, conf = validate_graph_edge_contract(
+            self.source, self.target, self.relationship, self.evidence_class, self.confidence
+        )
+        object.__setattr__(self, "relationship", rel)
+        object.__setattr__(self, "evidence_class", ev)
+        object.__setattr__(self, "confidence", conf)
 
     def as_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -32,6 +46,7 @@ class GraphSeedPolicy:
         "CALLED_BY",
         "HANDLED_BY",
         "ROUTES_TO",
+        "MOUNTS",
         "DEPENDS_ON",
         "IMPORTS",
         "TESTS",

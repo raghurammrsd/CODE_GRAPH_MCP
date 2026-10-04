@@ -218,31 +218,78 @@ def find_callers(
         return cached
 
     repo = get_repository_from_con(con)
-    short_name = symbol.split(".")[-1]
+    clean_sym = symbol.strip()
+    short_name = clean_sym.split(":")[-1].split(".")[-1]
     results: list[AttrDict] = []
     seen: set[tuple[str, str | None, int]] = set()
+    resolved_lines: set[tuple[str, int]] = set()
+
+    # Resolve symbol to canonical IDs when present in symbols table
+    target_canons: list[str] = []
+    try:
+        sym_rows = con.execute(
+            "SELECT canonical_id, qualified_name FROM symbols "
+            "WHERE canonical_id=? OR qualified_name=? OR name=? "
+            "ORDER BY (canonical_id=?) DESC, (qualified_name=?) DESC",
+            (clean_sym, clean_sym, clean_sym, clean_sym, clean_sym),
+        ).fetchall()
+        exact_canons = [str(r["canonical_id"]) for r in sym_rows if r["canonical_id"] == clean_sym]
+        exact_qnames = [str(r["canonical_id"]) for r in sym_rows if r["qualified_name"] == clean_sym]
+        if exact_canons:
+            target_canons = exact_canons
+        elif exact_qnames:
+            target_canons = exact_qnames
+        elif sym_rows and "." not in clean_sym:
+            target_canons = [str(r["canonical_id"]) for r in sym_rows]
+    except Exception:
+        target_canons = []
 
     # 1. Resolved CALLS edges from references table
-    rows = con.execute(
-        "SELECT source_symbol_id, target_symbol_id, relationship, confidence, "
-        "path, start_line, end_line, evidence, source_hash "
-        "FROM 'references' "
-        "WHERE relationship='CALLS' AND (target_symbol_id=? OR target_symbol_id LIKE ? OR target_symbol_id LIKE ?) "
-        "ORDER BY confidence = 'HIGH' DESC, path, start_line LIMIT ?",
-        (symbol, f"%.{symbol}", f"%.{short_name}", max_results),
-    ).fetchall()
+    if target_canons:
+        ph = ",".join("?" for _ in target_canons)
+        rows = con.execute(
+            "SELECT source_symbol_id, target_symbol_id, relationship, confidence, "
+            "path, start_line, end_line, evidence, source_hash "
+            "FROM 'references' "
+            f"WHERE relationship='CALLS' AND (target_symbol_id IN ({ph}) OR target_symbol_id=? OR target_symbol_id LIKE ?) "
+            "ORDER BY confidence = 'HIGH' DESC, path, start_line LIMIT ?",
+            [*target_canons, clean_sym, f"%.{clean_sym}", max_results],
+        ).fetchall()
+    elif "." in clean_sym:
+        rows = con.execute(
+            "SELECT source_symbol_id, target_symbol_id, relationship, confidence, "
+            "path, start_line, end_line, evidence, source_hash "
+            "FROM 'references' "
+            "WHERE relationship='CALLS' AND (target_symbol_id=? OR target_symbol_id LIKE ?) "
+            "ORDER BY confidence = 'HIGH' DESC, path, start_line LIMIT ?",
+            (clean_sym, f"%.{clean_sym}", max_results),
+        ).fetchall()
+    else:
+        rows = con.execute(
+            "SELECT source_symbol_id, target_symbol_id, relationship, confidence, "
+            "path, start_line, end_line, evidence, source_hash "
+            "FROM 'references' "
+            "WHERE relationship='CALLS' AND (target_symbol_id=? OR target_symbol_id LIKE ? OR target_symbol_id LIKE ?) "
+            "ORDER BY confidence = 'HIGH' DESC, path, start_line LIMIT ?",
+            (clean_sym, f"%.{clean_sym}", f"%.{short_name}", max_results),
+        ).fetchall()
 
     for r in rows:
         key = (r["path"], r["source_symbol_id"], r["start_line"])
         if key in seen:
             continue
         seen.add(key)
+        resolved_lines.add((r["path"], int(r["start_line"])))
         st = verify_source_hash(repo, r["path"], r["source_hash"])
+        ev_text = str(r["evidence"] or "")
+        ev_cls = "DATAFLOW_VERIFIED" if ("resolved via" in ev_text.lower() or "factory" in ev_text.lower()) else "AST_VERIFIED"
         results.append(
             AttrDict(
                 file=r["path"],
                 path=r["path"],
                 symbol=r["source_symbol_id"],
+                caller=r["source_symbol_id"],
+                canonical_id=r["source_symbol_id"],
                 source_symbol_id=r["source_symbol_id"],
                 callee=short_name,
                 target_symbol_id=r["target_symbol_id"],
@@ -250,8 +297,9 @@ def find_callers(
                 start_line=r["start_line"],
                 end_line=r["end_line"],
                 relationship="CALLS",
+                evidence_class=ev_cls,
                 confidence=r["confidence"] if st == "current" else "LOW",
-                evidence=r["evidence"],
+                evidence=ev_text,
                 evidence_status=st,
             )
         )
@@ -259,35 +307,55 @@ def find_callers(
     # 2. Check static calls table (for unresolved or partially resolved calls)
     if len(results) < max_results:
         rem = max_results - len(results)
-        call_rows = con.execute(
-            "SELECT source_path, callee, qualified_callee, line, confidence, source_symbol_id, resolved_symbol_id "
-            "FROM calls WHERE callee=? OR qualified_callee=? OR resolved_symbol_id=? LIMIT ?",
-            (short_name, symbol, symbol, rem),
-        ).fetchall()
+        if target_canons:
+            ph = ",".join("?" for _ in target_canons)
+            call_rows = con.execute(
+                "SELECT source_path, callee, qualified_callee, line, confidence, source_symbol_id, resolved_symbol_id "
+                f"FROM calls WHERE resolved_symbol_id IN ({ph}) OR qualified_callee=? OR (resolved_symbol_id IS NULL AND callee=?) LIMIT ?",
+                [*target_canons, clean_sym, short_name, rem * 2],
+            ).fetchall()
+        else:
+            call_rows = con.execute(
+                "SELECT source_path, callee, qualified_callee, line, confidence, source_symbol_id, resolved_symbol_id "
+                "FROM calls WHERE callee=? OR qualified_callee=? OR resolved_symbol_id=? LIMIT ?",
+                (short_name, clean_sym, clean_sym, rem * 2),
+            ).fetchall()
 
+        target_canon_set = set(target_canons)
         for cr in call_rows:
+            if (cr["source_path"], int(cr["line"])) in resolved_lines:
+                continue
+            if cr["resolved_symbol_id"] and target_canon_set and cr["resolved_symbol_id"] not in target_canon_set:
+                continue
             key = (cr["source_path"], cr["source_symbol_id"], cr["line"])
             if key in seen:
                 continue
             seen.add(key)
             conf = cr["confidence"] or "LOW"
             rel = "CALLS" if conf in ("HIGH", "MEDIUM") else "POSSIBLE_CALLS"
+            ev_cls = "AST_VERIFIED" if rel == "CALLS" else ("UNKNOWN" if conf == "UNKNOWN" else "POSSIBLE")
             results.append(
                 AttrDict(
                     file=cr["source_path"],
                     path=cr["source_path"],
                     symbol=cr["source_symbol_id"] or cr["source_path"],
+                    caller=cr["source_symbol_id"] or cr["source_path"],
+                    canonical_id=cr["source_symbol_id"] or "",
                     source_symbol_id=cr["source_symbol_id"],
                     callee=cr["callee"],
                     qualified_callee=cr["qualified_callee"],
+                    target_symbol_id=cr["resolved_symbol_id"],
                     line=cr["line"],
                     start_line=cr["line"],
                     end_line=cr["line"],
                     relationship=rel,
+                    evidence_class=ev_cls,
                     confidence=conf,
                     evidence=f"Static call site '{cr['callee']}()' in {cr['source_path']}:{cr['line']}",
                 )
             )
+            if len(results) >= max_results:
+                break
 
     final_callers = results[:max_results]
     cache.set(cache_key, final_callers)
@@ -313,20 +381,62 @@ def find_callees(
         return cached
 
     repo = get_repository_from_con(con)
-    short_name = symbol.split(".")[-1]
+    clean_sym = symbol.strip()
+    short_name = clean_sym.split(":")[-1].split(".")[-1]
     results: list[AttrDict] = []
     seen: set[tuple[str, str | None, int]] = set()
 
+    source_canons: list[str] = []
+    try:
+        sym_rows = con.execute(
+            "SELECT canonical_id, qualified_name FROM symbols "
+            "WHERE canonical_id=? OR qualified_name=? OR name=? "
+            "ORDER BY (canonical_id=?) DESC, (qualified_name=?) DESC",
+            (clean_sym, clean_sym, clean_sym, clean_sym, clean_sym),
+        ).fetchall()
+        exact_canons = [str(r["canonical_id"]) for r in sym_rows if r["canonical_id"] == clean_sym]
+        exact_qnames = [str(r["canonical_id"]) for r in sym_rows if r["qualified_name"] == clean_sym]
+        if exact_canons:
+            source_canons = exact_canons
+        elif exact_qnames:
+            source_canons = exact_qnames
+        elif sym_rows and "." not in clean_sym:
+            source_canons = [str(r["canonical_id"]) for r in sym_rows]
+    except Exception:
+        source_canons = []
+
     # 1. Check resolved references where source_symbol_id matches symbol
-    rows = con.execute(
-        "SELECT source_symbol_id, target_symbol_id, relationship, confidence, "
-        "path, start_line, end_line, evidence, source_hash "
-        "FROM 'references' "
-        "WHERE (source_symbol_id=? OR source_symbol_id LIKE ? OR source_symbol_id LIKE ?) "
-        "AND relationship IN ('CALLS', 'UNRESOLVED_REFERENCE') "
-        "ORDER BY confidence = 'HIGH' DESC, path, start_line LIMIT ?",
-        (symbol, f"%.{symbol}", f"%.{short_name}", max_results),
-    ).fetchall()
+    if source_canons:
+        ph = ",".join("?" for _ in source_canons)
+        rows = con.execute(
+            "SELECT source_symbol_id, target_symbol_id, relationship, confidence, "
+            "path, start_line, end_line, evidence, source_hash "
+            "FROM 'references' "
+            f"WHERE (source_symbol_id IN ({ph}) OR source_symbol_id=? OR source_symbol_id LIKE ?) "
+            "AND relationship IN ('CALLS', 'UNRESOLVED_REFERENCE') "
+            "ORDER BY confidence = 'HIGH' DESC, path, start_line LIMIT ?",
+            [*source_canons, clean_sym, f"%.{clean_sym}", max_results],
+        ).fetchall()
+    elif "." in clean_sym:
+        rows = con.execute(
+            "SELECT source_symbol_id, target_symbol_id, relationship, confidence, "
+            "path, start_line, end_line, evidence, source_hash "
+            "FROM 'references' "
+            "WHERE (source_symbol_id=? OR source_symbol_id LIKE ?) "
+            "AND relationship IN ('CALLS', 'UNRESOLVED_REFERENCE') "
+            "ORDER BY confidence = 'HIGH' DESC, path, start_line LIMIT ?",
+            (clean_sym, f"%.{clean_sym}", max_results),
+        ).fetchall()
+    else:
+        rows = con.execute(
+            "SELECT source_symbol_id, target_symbol_id, relationship, confidence, "
+            "path, start_line, end_line, evidence, source_hash "
+            "FROM 'references' "
+            "WHERE (source_symbol_id=? OR source_symbol_id LIKE ? OR source_symbol_id LIKE ?) "
+            "AND relationship IN ('CALLS', 'UNRESOLVED_REFERENCE') "
+            "ORDER BY confidence = 'HIGH' DESC, path, start_line LIMIT ?",
+            (clean_sym, f"%.{clean_sym}", f"%.{short_name}", max_results),
+        ).fetchall()
 
     for r in rows:
         key = (r["path"], r["target_symbol_id"], r["start_line"])
@@ -335,10 +445,17 @@ def find_callees(
         seen.add(key)
         callee_nm = r["target_symbol_id"].split(".")[-1] if r["target_symbol_id"] else "unresolved"
         st = verify_source_hash(repo, r["path"], r["source_hash"])
+        ev_text = str(r["evidence"] or "")
+        ev_cls = (
+            "UNKNOWN"
+            if r["relationship"] == "UNRESOLVED_REFERENCE"
+            else ("DATAFLOW_VERIFIED" if ("resolved via" in ev_text.lower() or "factory" in ev_text.lower()) else "AST_VERIFIED")
+        )
         results.append(
             AttrDict(
                 callee=callee_nm,
                 qualified_callee=r["target_symbol_id"],
+                canonical_id=r["target_symbol_id"],
                 target_symbol_id=r["target_symbol_id"],
                 source_symbol_id=r["source_symbol_id"],
                 file=r["path"],
@@ -347,8 +464,9 @@ def find_callees(
                 start_line=r["start_line"],
                 end_line=r["end_line"],
                 relationship=r["relationship"],
+                evidence_class=ev_cls,
                 confidence=r["confidence"] if st == "current" else "LOW",
-                evidence=r["evidence"],
+                evidence=ev_text,
                 evidence_status=st,
             )
         )
@@ -358,26 +476,31 @@ def find_callees(
         chunk = con.execute(
             "SELECT path, start_line, end_line, content FROM chunks "
             "WHERE symbol=? OR symbol LIKE ? LIMIT 1",
-            (symbol, f"%.{symbol}"),
+            (clean_sym, f"%.{clean_sym}"),
         ).fetchone()
         if chunk:
             call_rows = con.execute(
-                "SELECT callee, qualified_callee, line, confidence FROM calls "
+                "SELECT callee, qualified_callee, resolved_symbol_id, line, confidence FROM calls "
                 "WHERE source_path=? AND line >= ? AND line <= ? LIMIT ?",
                 (chunk["path"], chunk["start_line"], chunk["end_line"], max_results),
             ).fetchall()
             for cr in call_rows:
+                conf = cr["confidence"] or "LOW"
+                rel = "CALLS" if conf in ("HIGH", "MEDIUM") else "POSSIBLE_CALLS"
                 results.append(
                     AttrDict(
                         callee=cr["callee"],
-                        qualified_callee=cr["qualified_callee"],
+                        qualified_callee=cr["resolved_symbol_id"] or cr["qualified_callee"],
+                        canonical_id=cr["resolved_symbol_id"],
+                        target_symbol_id=cr["resolved_symbol_id"],
                         line=cr["line"],
                         start_line=cr["line"],
                         end_line=cr["line"],
                         file=chunk["path"],
                         path=chunk["path"],
-                        relationship="CALLS" if cr["confidence"] in ("HIGH", "MEDIUM") else "POSSIBLE_CALLS",
-                        confidence=cr["confidence"] or "LOW",
+                        relationship=rel,
+                        evidence_class="AST_VERIFIED" if rel == "CALLS" else ("UNKNOWN" if conf == "UNKNOWN" else "POSSIBLE"),
+                        confidence=conf,
                         evidence=f"Call site in {chunk['path']}:{cr['line']}",
                     )
                 )
@@ -590,7 +713,7 @@ def find_related_tests(
     symbol_or_path: str,
     max_results: int = 20,
 ) -> list[dict[str, object]]:
-    """Find test files statically linked to a symbol or file path with verified provenance."""
+    """Find test files and test symbols statically linked to a symbol, route, or file with verified provenance."""
     gov = get_global_governor()
     max_results = min(max_results, gov.policy.max_graph_nodes_per_query)
     gen = index_generation(con)
@@ -600,77 +723,298 @@ def find_related_tests(
     if cached is not None and isinstance(cached, list):
         return cached
 
-    short = symbol_or_path.split(".")[-1]
-    module_name = (
-        symbol_or_path.replace("/", ".").rsplit(".", 1)[0]
-        if "." in symbol_or_path
-        else symbol_or_path
-    )
+    clean_target = symbol_or_path.strip()
+    path_only = clean_target
+    for method in ("POST ", "GET ", "PUT ", "DELETE ", "PATCH ", "HEAD ", "OPTIONS "):
+        if path_only.startswith(method):
+            path_only = path_only[len(method):].strip()
+            break
     tests: list[dict[str, object]] = []
-    seen: set[str] = set()
+    seen: set[tuple[str, str | None]] = set()  # (file, test_symbol)
 
-    # 1. VERIFIED: Tests that directly call or reference the symbol in 'references' table
-    ref_rows = con.execute(
-        "SELECT path, source_symbol_id, start_line, evidence FROM 'references' "
-        "WHERE (target_symbol_id=? OR target_symbol_id LIKE ? OR target_symbol_id=?) "
-        "AND relationship IN ('CALLS', 'TESTS') LIMIT ?",
-        (symbol_or_path, f"%.{short}", short, max_results),
+    def add_test(
+        file_path: str,
+        test_sym: str | None,
+        target_sym: str,
+        rel: str,
+        classification: str,
+        confidence: str,
+        evidence_class: str,
+        reason: str,
+        evidence: str,
+        start_line: int = 1,
+    ) -> None:
+        key = (file_path, test_sym)
+        if key in seen:
+            return
+        seen.add(key)
+        tests.append(
+            {
+                "file": file_path,
+                "symbol": test_sym,
+                "test_symbol": test_sym,
+                "target_symbol": target_sym,
+                "relationship": rel,
+                "classification": classification,
+                "confidence": confidence,
+                "evidence_class": evidence_class,
+                "reason": reason,
+                "evidence": evidence,
+                "line": start_line,
+                "start_line": start_line,
+            }
+        )
+
+    # 1. Target identification
+    target_canonical_ids: set[str] = set()
+    target_routes: list[sqlite3.Row] = []
+
+    # Check if target is an API route or endpoint ID
+    route_rows = con.execute(
+        "SELECT endpoint_id, framework, http_method, route_path, handler_name, handler_canonical_id, file_path, line, evidence "
+        "FROM framework_routes WHERE endpoint_id = ? OR route_path = ? OR normalized_route = ? OR route_path = ?",
+        (
+            clean_target,
+            clean_target,
+            clean_target,
+            path_only,
+        ),
     ).fetchall()
-    for row in ref_rows:
-        if _TEST_FILE_RE.search(row["path"]) and row["path"] not in seen:
-            seen.add(row["path"])
-            tests.append(
-                {
-                    "file": row["path"],
-                    "symbol": row["source_symbol_id"],
-                    "relationship": "TESTS_SYMBOL",
-                    "classification": "VERIFIED_TEST",
-                    "confidence": "HIGH",
-                    "evidence": f"Test verifies symbol: {row['evidence']}",
-                }
-            )
+    target_routes.extend(route_rows)
 
-    # 2. VERIFIED: Tests that import the containing module
-    imp_rows = con.execute(
-        "SELECT DISTINCT source_path FROM imports "
-        "WHERE module=? OR resolved_module=? OR module LIKE ? LIMIT ?",
-        (module_name, module_name, f"%{short}%", max_results),
-    ).fetchall()
-    for row in imp_rows:
-        p = row["source_path"]
-        if _TEST_FILE_RE.search(p) and p not in seen:
-            seen.add(p)
-            tests.append(
-                {
-                    "file": p,
-                    "symbol": None,
-                    "relationship": "TEST_IMPORTS_MODULE",
-                    "classification": "VERIFIED_TEST",
-                    "confidence": "HIGH",
-                    "evidence": f"Test file imports module '{module_name}'",
-                }
-            )
-
-    # 3. POSSIBLE: Test symbols whose name contains the target name
+    # Check if target is in symbols table
     sym_rows = con.execute(
-        "SELECT qualified_name, path, start_line FROM symbols "
-        "WHERE name LIKE ? AND path LIKE ? LIMIT ?",
-        (f"%{short}%", "%test%", max_results),
+        "SELECT canonical_id, qualified_name, name, path, start_line FROM symbols "
+        "WHERE canonical_id = ? OR qualified_name = ? OR name = ?",
+        (clean_target, clean_target, clean_target),
     ).fetchall()
-    for row in sym_rows:
-        if _TEST_FILE_RE.search(row["path"]) and row["path"] not in seen:
-            seen.add(row["path"])
-            tests.append(
-                {
-                    "file": row["path"],
-                    "symbol": row["qualified_name"],
-                    "start_line": row["start_line"],
-                    "relationship": "TEST_COVERS_SYMBOL",
-                    "classification": "POSSIBLE_TEST",
-                    "confidence": "MEDIUM",
-                    "evidence": f"Test name contains '{short}'",
-                }
+    for s_row in sym_rows:
+        target_canonical_ids.add(str(s_row["canonical_id"]))
+
+    if not target_canonical_ids and not target_routes:
+        # Check if target is a file
+        f_row = con.execute("SELECT path FROM files WHERE path = ?", (clean_target,)).fetchone()
+        if f_row:
+            file_syms = con.execute("SELECT canonical_id FROM symbols WHERE path = ?", (clean_target,)).fetchall()
+            for fs in file_syms:
+                target_canonical_ids.add(str(fs["canonical_id"]))
+        else:
+            target_canonical_ids.add(clean_target)
+
+    # Also check if any target_canonical_id is an API route handler
+    for c_id in list(target_canonical_ids):
+        c_short = c_id.split(".")[-1]
+        hr_rows = con.execute(
+            "SELECT endpoint_id, framework, http_method, route_path, handler_name, handler_canonical_id, file_path, line, evidence "
+            "FROM framework_routes WHERE handler_canonical_id = ? OR handler_name = ?",
+            (c_id, c_short),
+        ).fetchall()
+        for hr in hr_rows:
+            if hr["endpoint_id"] not in [r["endpoint_id"] for r in target_routes]:
+                target_routes.append(hr)
+
+    # 2. Collect tests
+
+    # A. Route tests (TESTS_ROUTE edges)
+    for r in target_routes:
+        ep_id = r["endpoint_id"]
+        rt_edges = con.execute(
+            "SELECT source, target, relationship, confidence, file, start_line, evidence, evidence_class, reason "
+            "FROM graph_edges WHERE target = ? AND relationship IN ('TESTS_ROUTE', 'TESTS')",
+            (ep_id,),
+        ).fetchall()
+        for e in rt_edges:
+            add_test(
+                file_path=e["file"],
+                test_sym=e["source"],
+                target_sym=ep_id,
+                rel="TESTS_ROUTE",
+                classification="VERIFIED_TEST",
+                confidence="HIGH",
+                evidence_class=e["evidence_class"] or "FRAMEWORK_VERIFIED",
+                reason=e["reason"] or f"http_client_test:{r['http_method']} {r['route_path']}",
+                evidence=e["evidence"] or f"Test exercises route {r['route_path']}",
+                start_line=e["start_line"],
             )
+
+    # B. Event / Registry Handler tests (TESTS_EVENT_HANDLER)
+    for c_id in target_canonical_ids:
+        c_short = c_id.split(".")[-1]
+        dispatch_tests = con.execute(
+            "SELECT source, target, relationship, confidence, file, start_line, evidence, evidence_class, reason "
+            "FROM graph_edges WHERE (target = ? OR target LIKE ?) AND relationship = 'TESTS_EVENT_HANDLER'",
+            (c_id, f"%.{c_short}"),
+        ).fetchall()
+        for dte in dispatch_tests:
+            add_test(
+                file_path=dte["file"],
+                test_sym=dte["source"],
+                target_sym=c_id,
+                rel="TESTS_EVENT_HANDLER",
+                classification="POSSIBLE_TEST",
+                confidence="MEDIUM",
+                evidence_class="FRAMEWORK_VERIFIED",
+                reason=dte["reason"] or "event_dispatch_test",
+                evidence=dte["evidence"] or f"Test dispatches event exercising {c_id}",
+                start_line=dte["start_line"],
+            )
+
+    # C. DI Provider tests (TESTS_PROVIDER)
+    for c_id in target_canonical_ids:
+        c_short = c_id.split(".")[-1]
+        di_edges = con.execute(
+            "SELECT source, target FROM graph_edges WHERE (source = ? OR target = ?) AND relationship IN ('PROVIDES', 'RESOLVES_DEPENDENCY', 'INJECTS')",
+            (c_id, c_id),
+        ).fetchall()
+        related_prov_canons = {c_id}
+        for de in di_edges:
+            related_prov_canons.add(de["source"])
+            related_prov_canons.add(de["target"])
+
+        for prov in related_prov_canons:
+            prov_edges = con.execute(
+                "SELECT source, target, relationship, confidence, file, start_line, evidence, evidence_class, reason "
+                "FROM graph_edges WHERE (target = ? OR target LIKE ?) AND relationship = 'TESTS_PROVIDER'",
+                (prov, f"%.{prov.split('.')[-1]}"),
+            ).fetchall()
+            for pe in prov_edges:
+                add_test(
+                    file_path=pe["file"],
+                    test_sym=pe["source"],
+                    target_sym=prov,
+                    rel="TESTS_PROVIDER",
+                    classification="VERIFIED_TEST",
+                    confidence="HIGH",
+                    evidence_class="DATAFLOW_VERIFIED",
+                    reason=pe["reason"] or "dependency_provider_test",
+                    evidence=pe["evidence"] or f"Test fixture provides {prov}",
+                    start_line=pe["start_line"],
+                )
+
+    # D. Direct symbol tests via graph_edges and references (TESTS, TESTS_SYMBOL, CALLS)
+    for c_id in target_canonical_ids:
+        c_short = c_id.split(".")[-1]
+        edge_rows = con.execute(
+            "SELECT source, target, relationship, confidence, file, start_line, evidence, evidence_class, reason "
+            "FROM graph_edges WHERE (target = ? OR target LIKE ?) AND relationship IN ('TESTS', 'TESTS_SYMBOL')",
+            (c_id, f"%.{c_short}"),
+        ).fetchall()
+        for e in edge_rows:
+            if _TEST_FILE_RE.search(e["file"]):
+                add_test(
+                    file_path=e["file"],
+                    test_sym=e["source"],
+                    target_sym=c_id,
+                    rel="TESTS_SYMBOL",
+                    classification="VERIFIED_TEST",
+                    confidence=e["confidence"] or "HIGH",
+                    evidence_class=e["evidence_class"] or "AST_VERIFIED",
+                    reason=e["reason"] or "direct_test_call",
+                    evidence=e["evidence"] or f"Test exercises {c_id}",
+                    start_line=e["start_line"],
+                )
+
+        ref_rows = con.execute(
+            "SELECT path, source_symbol_id, start_line, evidence FROM 'references' "
+            "WHERE (target_symbol_id = ? OR target_symbol_id LIKE ? OR target_symbol_id = ?) "
+            "AND relationship IN ('CALLS', 'TESTS')",
+            (c_id, f"%.{c_short}", c_short),
+        ).fetchall()
+        for r in ref_rows:
+            if _TEST_FILE_RE.search(r["path"]):
+                add_test(
+                    file_path=r["path"],
+                    test_sym=r["source_symbol_id"],
+                    target_sym=c_id,
+                    rel="TESTS_SYMBOL",
+                    classification="VERIFIED_TEST",
+                    confidence="HIGH",
+                    evidence_class="AST_VERIFIED",
+                    reason="direct_test_call",
+                    evidence=f"Test verifies symbol: {r['evidence']}",
+                    start_line=r["start_line"],
+                )
+
+    # E. Test imports target symbol specifically
+    for c_id in target_canonical_ids:
+        c_short = c_id.split(".")[-1]
+        imp_rows = con.execute(
+            "SELECT DISTINCT source_path, line FROM imports "
+            "WHERE (imported_name = ? OR local_name = ? OR name = ?)",
+            (c_short, c_short, c_short),
+        ).fetchall()
+        for imp in imp_rows:
+            p = imp["source_path"]
+            if _TEST_FILE_RE.search(p):
+                add_test(
+                    file_path=p,
+                    test_sym=None,
+                    target_sym=c_id,
+                    rel="TEST_IMPORTS_SYMBOL",
+                    classification="VERIFIED_TEST",
+                    confidence="HIGH",
+                    evidence_class="AST_VERIFIED",
+                    reason="test_imports_target_symbol",
+                    evidence=f"Test file specifically imports target '{c_short}'",
+                    start_line=imp["line"] or 1,
+                )
+
+    # F. Indirect test helper calls
+    for c_id in target_canonical_ids:
+        direct_callers = con.execute(
+            "SELECT source_path, source_symbol_id, line FROM calls "
+            "WHERE (qualified_callee = ? OR callee = ?) AND (source_path LIKE '%test%' OR source_path LIKE '%spec%')",
+            (c_id, c_id.split(".")[-1]),
+        ).fetchall()
+        for dc in direct_callers:
+            helper_canon = dc["source_symbol_id"]
+            if helper_canon and not helper_canon.split(".")[-1].startswith("test_"):
+                outer_calls = con.execute(
+                    "SELECT source_path, source_symbol_id, line FROM calls WHERE (qualified_callee = ? OR callee = ?)",
+                    (helper_canon, helper_canon.split(".")[-1]),
+                ).fetchall()
+                for oc in outer_calls:
+                    if _TEST_FILE_RE.search(oc["source_path"]):
+                        add_test(
+                            file_path=oc["source_path"],
+                            test_sym=oc["source_symbol_id"],
+                            target_sym=c_id,
+                            rel="TEST_HELPER_CALL",
+                            classification="POSSIBLE_TEST",
+                            confidence="MEDIUM",
+                            evidence_class="AST_VERIFIED",
+                            reason=f"indirect_test_helper:{helper_canon.split('.')[-1]}",
+                            evidence=f"Test calls helper '{helper_canon}' which calls target",
+                            start_line=oc["line"] or 1,
+                        )
+
+    # G. Imports containing module fallback
+    module_name = (
+        clean_target.replace("/", ".").rsplit(".", 1)[0]
+        if "." in clean_target
+        else clean_target
+    )
+    if not tests:
+        mod_imps = con.execute(
+            "SELECT DISTINCT source_path FROM imports "
+            "WHERE module = ? OR resolved_module = ?",
+            (module_name, module_name),
+        ).fetchall()
+        for mi in mod_imps:
+            p = mi["source_path"]
+            if _TEST_FILE_RE.search(p):
+                add_test(
+                    file_path=p,
+                    test_sym=None,
+                    target_sym=clean_target,
+                    rel="TEST_IMPORTS_MODULE",
+                    classification="VERIFIED_TEST",
+                    confidence="HIGH",
+                    evidence_class="AST_VERIFIED",
+                    reason="test_imports_module",
+                    evidence=f"Test file imports module '{module_name}'",
+                    start_line=1,
+                )
 
     if not tests:
         return [
@@ -702,8 +1046,10 @@ def find_affected_tests(
         for t in res:
             if "result" not in t:
                 f = str(t.get("file", ""))
-                if f not in seen:
-                    seen.add(f)
+                sym = str(t.get("symbol", ""))
+                key = f"{f}:{sym}"
+                if key not in seen:
+                    seen.add(key)
                     affected.append(t)
     return affected[:max_results]
 
@@ -719,42 +1065,124 @@ def analyze_impact(
     max_depth: int = 3,
     max_results: int = 100,
 ) -> dict[str, object]:
-    """Perform a bounded reverse-graph impact analysis for a symbol or file."""
-    short_name = symbol_or_file.split(".")[-1]
-    is_file = "/" in symbol_or_file or symbol_or_file.endswith((".py", ".js", ".ts", ".jsx", ".tsx"))
+    """Perform a bounded reverse-graph impact analysis across 5 explicit categories:
+    DIRECT, FRAMEWORK, SEMANTIC, DI, and TEST.
+    """
+    clean_target = symbol_or_file.strip()
+    short_name = clean_target.split(".")[-1]
+    is_file = "/" in clean_target or clean_target.endswith((".py", ".js", ".ts", ".jsx", ".tsx"))
 
     direct_callers: list[dict[str, object]] = []
     transitive_callers: list[dict[str, object]] = []
     dependencies: list[dict[str, object]] = []
     dependent_modules: list[dict[str, object]] = []
     related_apis: list[dict[str, object]] = []
-    related_tests = find_related_tests(con, symbol_or_file, max_results=20)
+    related_tests = find_related_tests(con, clean_target, max_results=20)
 
-    # 1. Direct callers
-    direct = find_callers(con, symbol_or_file, max_results=max_results)
+    # Structured impact items list & 5-category buckets
+    impact_items: list[dict[str, object]] = []
+    seen_impact: set[tuple[str, str | None, str]] = set()  # (category, source, relationship)
+
+    def add_impact_item(
+        source: str,
+        target: str | None,
+        relationship: str,
+        category: str,  # DIRECT | FRAMEWORK | SEMANTIC | DI | TEST
+        evidence_class: str,
+        reason: str,
+        impact_reason: str,
+        file_path: str | None,
+        start_line: int | None = None,
+        end_line: int | None = None,
+        rank: int = 5,
+        freshness: str = "FRESH",
+    ) -> None:
+        key = (category, source, relationship)
+        if key in seen_impact:
+            return
+        seen_impact.add(key)
+        impact_items.append(
+            {
+                "source": source,
+                "target": target,
+                "relationship": relationship,
+                "category": category,
+                "evidence_class": evidence_class,
+                "reason": reason,
+                "impact_reason": impact_reason,
+                "file": file_path,
+                "start_line": start_line,
+                "end_line": end_line,
+                "rank": rank,
+                "freshness": freshness,
+            }
+        )
+
+    # Check if symbol exists in database
+    target_sym = con.execute(
+        "SELECT canonical_id, qualified_name, name, path, start_line, end_line FROM symbols "
+        "WHERE canonical_id = ? OR qualified_name = ? OR name = ? LIMIT 1",
+        (clean_target, clean_target, clean_target),
+    ).fetchone()
+
+    target_file = con.execute("SELECT path FROM files WHERE path = ?", (clean_target,)).fetchone()
+
+    # Handle deleted/unknown symbol gracefully
+    if not target_sym and not target_file and not is_file:
+        add_impact_item(
+            source=clean_target,
+            target=None,
+            relationship="UNKNOWN",
+            category="DIRECT",
+            evidence_class="UNKNOWN",
+            reason="Symbol not found in current index (may be deleted or renamed)",
+            impact_reason="deleted_symbol",
+            file_path=None,
+            rank=8,
+            freshness="STALE",
+        )
+
+    # 1. Direct callers (DIRECT)
+    direct = find_callers(con, clean_target, max_results=max_results)
     for d in direct:
+        f_p = d.get("file")
+        s_id = d.get("symbol")
+        ln = d.get("line")
         direct_callers.append(
             {
-                "file": d.get("file"),
-                "symbol": d.get("symbol"),
-                "line": d.get("line"),
+                "file": f_p,
+                "symbol": s_id,
+                "line": ln,
                 "relationship": d.get("relationship", "CALLS"),
                 "confidence": d.get("confidence", "HIGH"),
                 "label": "verified" if d.get("confidence") == "HIGH" else "possible",
                 "evidence": d.get("evidence", ""),
             }
         )
+        add_impact_item(
+            source=str(s_id or f_p),
+            target=clean_target,
+            relationship="CALLS",
+            category="DIRECT",
+            evidence_class="AST_VERIFIED",
+            reason=f"Direct call: {s_id} calls {clean_target}",
+            impact_reason="direct_caller",
+            file_path=str(f_p) if f_p else None,
+            start_line=int(ln) if ln else None,
+            rank=2,
+        )
 
-    # 2. Transitive callers
+    # 2. Transitive callers (DIRECT, depth 2+)
     if max_depth > 1:
-        seen_files = {str(c_dict.get("file")) for c_dict in direct_callers}
+        seen_transitive = {(str(c_dict.get("file")), str(c_dict.get("symbol"))) for c_dict in direct_callers}
         for caller_entry in direct_callers[:15]:
             src_sym = caller_entry.get("symbol") or caller_entry.get("file")
             if src_sym:
                 second = find_callers(con, str(src_sym), max_results=10)
                 for s in second:
-                    if str(s.get("file")) not in seen_files:
-                        seen_files.add(str(s.get("file")))
+                    key = (str(s.get("file")), str(s.get("symbol")))
+                    if key not in seen_transitive:
+                        seen_transitive.add(key)
                         transitive_callers.append(
                             {
                                 "file": s.get("file"),
@@ -766,10 +1194,22 @@ def analyze_impact(
                                 "evidence": s.get("evidence", ""),
                             }
                         )
+                        add_impact_item(
+                            source=str(s.get("symbol") or s.get("file")),
+                            target=str(src_sym),
+                            relationship="CALLS",
+                            category="DIRECT",
+                            evidence_class="POSSIBLE",
+                            reason=f"Transitive call through {src_sym}",
+                            impact_reason="indirect_dependent",
+                            file_path=str(s.get("file")) if s.get("file") else None,
+                            start_line=int(s["line"]) if s.get("line") else None,
+                            rank=7,
+                        )
 
-    # 3. Dependencies
+    # 3. Dependencies & Importers (DIRECT)
     if is_file:
-        deps = get_dependency_graph(con, symbol_or_file, depth=1, max_results=50)
+        deps = get_dependency_graph(con, clean_target, depth=1, max_results=50)
         for dep_entry in deps:
             dependencies.append(
                 {
@@ -780,7 +1220,7 @@ def analyze_impact(
                     "evidence": dep_entry.get("evidence", ""),
                 }
             )
-        mod_name = symbol_or_file.replace("/", ".").rsplit(".", 1)[0]
+        mod_name = clean_target.replace("/", ".").rsplit(".", 1)[0]
         importers = find_importers(con, mod_name, max_results=50)
         for imp in importers:
             dependent_modules.append(
@@ -791,11 +1231,19 @@ def analyze_impact(
                     "evidence": imp.get("evidence", ""),
                 }
             )
+            add_impact_item(
+                source=str(imp.get("importer")),
+                target=mod_name,
+                relationship="IMPORTS",
+                category="DIRECT",
+                evidence_class="AST_VERIFIED",
+                reason=f"Direct import of module '{mod_name}'",
+                impact_reason="direct_import",
+                file_path=str(imp.get("importer")),
+                rank=6,
+            )
     else:
-        defn = con.execute(
-            "SELECT path FROM symbols WHERE canonical_id=? OR qualified_name=? OR name=? LIMIT 1",
-            (symbol_or_file, symbol_or_file, short_name),
-        ).fetchone()
+        defn = target_sym
         if defn:
             deps = get_dependency_graph(con, defn["path"], depth=1, max_results=50)
             for dep_entry in deps:
@@ -809,11 +1257,12 @@ def analyze_impact(
                     }
                 )
 
-    # 4. Related APIs (Framework endpoints routing to or matching this handler)
+    # 4. Related APIs & Framework Routes (FRAMEWORK)
+    target_canon = target_sym["canonical_id"] if target_sym else clean_target
     route_rows = con.execute(
         "SELECT endpoint_id, framework, http_method, route_path, handler_canonical_id, file_path, line, evidence "
-        "FROM framework_routes WHERE handler_canonical_id LIKE ? OR handler_name=?",
-        (f"%{short_name}%", short_name),
+        "FROM framework_routes WHERE handler_canonical_id = ? OR handler_canonical_id LIKE ? OR handler_name = ?",
+        (target_canon, f"%{short_name}%", short_name),
     ).fetchall()
     for rr in route_rows:
         related_apis.append(
@@ -829,15 +1278,125 @@ def analyze_impact(
                 "evidence": rr["evidence"],
             }
         )
+        add_impact_item(
+            source=rr["endpoint_id"],
+            target=rr["handler_canonical_id"],
+            relationship="ROUTES_TO",
+            category="FRAMEWORK",
+            evidence_class="FRAMEWORK_VERIFIED",
+            reason=f"Route {rr['route_path']} [{rr['http_method']}] routed to handler",
+            impact_reason="route_handler",
+            file_path=rr["file_path"],
+            start_line=rr["line"],
+            rank=3,
+        )
+
+    # 5. Semantic Registries & Event Handlers (SEMANTIC)
+    sem_rows = con.execute(
+        "SELECT source, target, relationship, confidence, file, start_line, evidence, evidence_class, reason "
+        "FROM graph_edges WHERE (target = ? OR target LIKE ?) "
+        "AND relationship IN ('REGISTERS', 'EVENT_LISTENER', 'TASK_HANDLER', 'COMMAND_HANDLER', 'DISPATCHES_TO')",
+        (target_canon, f"%{short_name}"),
+    ).fetchall()
+    for sr in sem_rows:
+        rel = sr["relationship"]
+        imp_reason = (
+            "registered_handler"
+            if rel == "REGISTERS"
+            else ("event_listener" if rel == "EVENT_LISTENER" else ("dispatches_to" if rel == "DISPATCHES_TO" else "semantic_handler"))
+        )
+        add_impact_item(
+            source=sr["source"],
+            target=sr["target"],
+            relationship=rel,
+            category="SEMANTIC",
+            evidence_class=sr["evidence_class"] or "FRAMEWORK_VERIFIED",
+            reason=sr["reason"] or f"Semantic registration: {sr['source']} {rel} {sr['target']}",
+            impact_reason=imp_reason,
+            file_path=sr["file"],
+            start_line=sr["start_line"],
+            rank=5,
+        )
+
+    # 6. Dependency Injection & Providers (DI)
+    di_rows = con.execute(
+        "SELECT source, target, relationship, confidence, file, start_line, evidence, evidence_class, reason "
+        "FROM graph_edges WHERE (source = ? OR target = ? OR source LIKE ? OR target LIKE ?) "
+        "AND relationship IN ('INJECTS', 'PROVIDES', 'RESOLVES_DEPENDENCY')",
+        (target_canon, target_canon, f"%{short_name}", f"%{short_name}"),
+    ).fetchall()
+    for dr in di_rows:
+        rel = dr["relationship"]
+        imp_reason = (
+            "dependency_injected"
+            if rel == "INJECTS"
+            else ("dependency_provider" if rel == "PROVIDES" else "resolves_dependency")
+        )
+        add_impact_item(
+            source=dr["source"],
+            target=dr["target"],
+            relationship=rel,
+            category="DI",
+            evidence_class=dr["evidence_class"] or "DATAFLOW_VERIFIED",
+            reason=dr["reason"] or f"Dependency relationship: {dr['source']} {rel} {dr['target']}",
+            impact_reason=imp_reason,
+            file_path=dr["file"],
+            start_line=dr["start_line"],
+            rank=4,
+        )
+
+    # 7. Related Tests (TEST)
+    for t in related_tests:
+        if "result" not in t:
+            f_p = t.get("file")
+            t_sym = t.get("symbol") or t.get("test_symbol") or f_p
+            add_impact_item(
+                source=str(t_sym),
+                target=clean_target,
+                relationship=str(t.get("relationship", "TESTS")),
+                category="TEST",
+                evidence_class=str(t.get("evidence_class", "AST_VERIFIED")),
+                reason=str(t.get("reason", "test_exercises_target")),
+                impact_reason="direct_test" if "SYMBOL" in str(t.get("relationship", "")) else "route_test",
+                file_path=str(f_p) if f_p else None,
+                start_line=int(str(t["line"])) if t.get("line") is not None else None,
+                rank=1,
+            )
+
+    # Sort impact items deterministically by (rank, category, file, line, source)
+    impact_items.sort(
+        key=lambda x: (
+            int(str(x.get("rank") or 99)),
+            str(x.get("category") or ""),
+            str(x.get("file") or ""),
+            int(str(x.get("start_line") or 0)),
+            str(x.get("source") or ""),
+        )
+    )
+
+    # Group into categories dictionary
+    categories: dict[str, list[dict[str, object]]] = {
+        "DIRECT": [],
+        "FRAMEWORK": [],
+        "SEMANTIC": [],
+        "DI": [],
+        "TEST": [],
+    }
+    for item in impact_items:
+        cat = str(item.get("category", "DIRECT"))
+        if cat in categories:
+            categories[cat].append(item)
 
     return {
-        "subject": symbol_or_file,
+        "subject": clean_target,
         "direct_callers": direct_callers[:max_results],
         "transitive_callers": transitive_callers[:max_results],
         "dependencies": dependencies,
         "dependent_modules": dependent_modules,
         "related_apis": related_apis,
         "related_tests": related_tests,
+        "impact_items": impact_items,
+        "categories": categories,
         "label_legend": {
             "verified": "Parser-confirmed relationship with concrete source evidence",
             "inferred": "Structurally inferred relationship",

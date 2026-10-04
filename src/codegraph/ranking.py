@@ -80,8 +80,11 @@ class IntentWeights:
 
 _INTENT_WEIGHTS = {
     "explain": IntentWeights(0.30, 0.10, 0.20, 0.05, 0.10, 0.70, 0.05),
+    "understand": IntentWeights(0.30, 0.12, 0.18, 0.10, 0.10, 0.70, 0.05),
+    "trace": IntentWeights(0.25, 0.15, 0.25, 0.10, 0.25, 0.85, 0.05),
     "debug": IntentWeights(0.20, 0.20, 0.10, 0.15, 0.20, 0.80, 0.15),
     "modify": IntentWeights(0.40, 0.15, 0.15, 0.20, 0.05, 0.60, 0.10),
+    "change": IntentWeights(0.35, 0.20, 0.15, 0.20, 0.10, 0.70, 0.10),
     "review": IntentWeights(0.20, 0.10, 0.10, 0.20, 0.05, 0.60, 0.20),
     "test": IntentWeights(0.20, 0.10, 0.05, 0.40, 0.05, 0.50, 0.10),
     "impact": IntentWeights(0.30, 0.30, 0.05, 0.10, 0.10, 0.90, 0.00),
@@ -100,7 +103,7 @@ _ENTRY_PATTERNS = re.compile(
 )
 
 _VENDOR_PATTERNS = re.compile(
-    r"(^|[_/])(node_modules|vendor|\.venv|venv|dist|build|generated)[_/]",
+    r"(^|[_/])(node_modules|vendor|\.venv|venv|third_party)[_/]",
     re.IGNORECASE,
 )
 
@@ -132,7 +135,8 @@ def rank_candidates(
         allowed_relationships: If provided, candidates whose relationship type is
             NOT in this set receive a penalty. From RetrievalPolicy.
     """
-    weights = _INTENT_WEIGHTS.get(intent or "", _INTENT_WEIGHTS["default"])
+    intent_key = (intent or "").lower().strip()
+    weights = _INTENT_WEIGHTS.get(intent_key, _INTENT_WEIGHTS["default"])
     target_symbols = target_symbols or set()
     recent_paths = recent_paths or set()
     relationship_distance = relationship_distance or {}
@@ -216,7 +220,7 @@ def rank_candidates(
             val = weights.callee_bonus
             score += val
             reasons.append(RankingReason("DIRECT_CALLEE", "Direct callee", val))
-        elif relationship in ("POSSIBLE_CALLS", "CALLERS"):
+        elif relationship in ("POSSIBLE_CALLS", "CALLERS", "CALLED_BY"):
             multiplier = 1.0 if confidence in ("HIGH", "MEDIUM") else 0.5
             val = round(weights.caller_bonus * multiplier, 3)
             score += val
@@ -227,10 +231,22 @@ def rank_candidates(
                     val,
                 )
             )
-        elif relationship == "HANDLED_BY":
+        elif relationship in ("HANDLED_BY", "ROUTE_HANDLER", "ROUTES_TO", "MOUNTS"):
             val = weights.target_bonus + 0.10
             score += val
             reasons.append(RankingReason("ENDPOINT_HANDLER", "Endpoint handler", round(val, 3)))
+        elif relationship in ("INJECTS", "PROVIDES", "RESOLVES_DEPENDENCY", "CONFIGURES"):
+            val = round(max(weights.callee_bonus, 0.15), 3)
+            score += val
+            reasons.append(RankingReason("DI_PROVIDER", f"Dependency injection ({relationship})", val))
+        elif relationship in ("REGISTERS", "DISPATCHES_TO", "EVENT_LISTENER", "TASK_HANDLER", "COMMAND_HANDLER"):
+            val = round(max(weights.callee_bonus, 0.15), 3)
+            score += val
+            reasons.append(RankingReason("SEMANTIC_DISPATCH", f"Semantic registration ({relationship})", val))
+        elif relationship == "DEPENDS_ON_PACKAGE":
+            val = 0.15
+            score += val
+            reasons.append(RankingReason("PACKAGE_DEPENDENCY", "Workspace package dependency", val))
         elif relationship in ("EXTENDS", "IMPLEMENTS"):
             val = 0.10
             score += val
@@ -238,13 +254,28 @@ def rank_candidates(
 
         # 2b. Policy relationship allowlist — penalize relationships not permitted for this intent
         if allowed_relationships and relationship and relationship.upper() not in allowed_relationships:
-            penalty = 0.15
-            score -= penalty
-            reasons.append(RankingReason(
-                "RELATIONSHIP_NOT_ALLOWED",
-                f"Relationship '{relationship}' not in policy allowlist",
-                -penalty,
-            ))
+            if not (relationship.upper().startswith("TESTS") and "TESTS" in allowed_relationships):
+                penalty = 0.15
+                score -= penalty
+                reasons.append(RankingReason(
+                    "RELATIONSHIP_NOT_ALLOWED",
+                    f"Relationship '{relationship}' not in policy allowlist",
+                    -penalty,
+                ))
+
+        # 2c. Package boundary relevance
+        pkg_dist_raw = c.get("package_distance")
+        if pkg_dist_raw is not None:
+            pkg_dist = int(str(pkg_dist_raw))
+            if pkg_dist == 0:
+                score += 0.08
+                reasons.append(RankingReason("PACKAGE_OWNER", "Target owning package", 0.08))
+            elif pkg_dist == 1:
+                score += 0.04
+                reasons.append(RankingReason("DEPENDENCY_PACKAGE", "Direct package dependency", 0.04))
+            elif pkg_dist >= 99:
+                score -= 0.15
+                reasons.append(RankingReason("UNRELATED_PACKAGE", "Unrelated workspace package", -0.15))
 
         # 3. Evidence Quality
         if confidence == "HIGH":
@@ -276,10 +307,24 @@ def rank_candidates(
             score += val
             reasons.append(RankingReason("ENTRY_POINT", "Entry point", val))
 
-        # 7. Vendor / Generated Penalty
-        if _VENDOR_PATTERNS.search(file_):
+        # 7. Artifact / Vendor / Generated / Bundle Penalty
+        from codegraph.indexing.classifier import classify_file
+        file_cat = str(c.get("category") or "")
+        if not file_cat and file_:
+            file_cat = str(classify_file(file_).value)
+
+        if file_cat in ("BUNDLE", "MINIFIED"):
+            score -= 0.40
+            reasons.append(RankingReason("BUNDLE_PENALTY", f"artifact_class={file_cat}", -0.40))
+        elif file_cat == "BUILD_ARTIFACT":
+            score -= 0.40
+            reasons.append(RankingReason("BUILD_ARTIFACT_PENALTY", "artifact_class=BUILD_ARTIFACT", -0.40))
+        elif file_cat == "GENERATED":
+            score -= 0.25
+            reasons.append(RankingReason("GENERATED_PENALTY", "artifact_class=GENERATED", -0.25))
+        elif file_cat == "VENDOR" or _VENDOR_PATTERNS.search(file_):
             score -= 0.30
-            reasons.append(RankingReason("VENDOR_PENALTY", "Vendor/generated code penalty", -0.30))
+            reasons.append(RankingReason("VENDOR_PENALTY", "artifact_class=VENDOR", -0.30))
 
         # 8. Recency
         if file_ in recent_paths:
@@ -304,8 +349,8 @@ def rank_candidates(
         )
 
     # 9. Duplicate Context Penalty (deterministic pre-sort ensures stable penalty application)
-    def pre_sort_key(item: RankedItem) -> tuple[float, str, str]:
-        return (-item.score, item.file, str(item.canonical_id or item.symbol or ""))
+    def pre_sort_key(item: RankedItem) -> tuple[float, int, str, str]:
+        return (-item.score, 0 if item.symbol else 1, item.file, str(item.canonical_id or item.symbol or ""))
 
     scored_items.sort(key=pre_sort_key)
     seen_symbols: set[str] = set()

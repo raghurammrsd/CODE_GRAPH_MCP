@@ -153,7 +153,7 @@ def test_cli_startup_on_windows(tmp_path: Path) -> None:
             # 1. Version command
             res_ver = runner.invoke(app, ["--version"])
             assert res_ver.exit_code == 0
-            assert "2.1.3" in res_ver.stdout
+            assert "2.1.7" in res_ver.stdout
 
             # 2. Help command
             res_help = runner.invoke(app, ["--help"], prog_name="codegraph")

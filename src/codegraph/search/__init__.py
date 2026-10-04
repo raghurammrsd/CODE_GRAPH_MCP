@@ -1,6 +1,7 @@
 from .hybrid import (
     SearchResult,
     search,
+    search_code,
     search_exact_canonical_id,
     search_exact_qualified,
     search_exact_symbol,
@@ -14,6 +15,7 @@ __all__ = [
     "SearchResult",
     "SemanticSearchUnavailable",
     "search",
+    "search_code",
     "search_exact_canonical_id",
     "search_exact_qualified",
     "search_exact_symbol",

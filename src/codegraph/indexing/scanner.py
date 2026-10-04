@@ -41,6 +41,8 @@ LANGUAGES = {
     ".jsx": "javascript",
     ".ts": "typescript",
     ".tsx": "typescript",
+    ".sql": "sql",
+    ".prisma": "prisma",
 }
 
 
@@ -79,7 +81,8 @@ class ScanStats:
 
 def is_binary(path: Path) -> bool:
     try:
-        return b"\x00" in path.read_bytes()[:8192]
+        with path.open("rb") as fh:
+            return b"\x00" in fh.read(8192)
     except OSError:
         return True
 

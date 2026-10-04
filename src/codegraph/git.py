@@ -244,14 +244,42 @@ def analyze_change_impact(
     since: str = "HEAD~1",
     until: str = "HEAD",
 ) -> dict[str, object]:
-    """Analyze downstream callers and tests affected by changes between since and until."""
+    """Analyze downstream callers, routes, providers, and tests affected by changes between since and until."""
     diffs = changed_files(repository, since=since, until=until)
     changed_paths = [d.path for d in diffs]
     changed_symbols: list[str] = []
+    removed_symbols: list[str] = []
     affected_callers: list[dict[str, object]] = []
     affected_tests: list[dict[str, object]] = []
+    affected_routes: list[dict[str, object]] = []
+    affected_providers: list[dict[str, object]] = []
+    impact_items: list[dict[str, object]] = []
 
-    from codegraph.graph.traversal import find_callers, find_related_tests
+    from codegraph.graph.traversal import analyze_impact
+
+    # Check for removed symbols via git diff
+    for d in diffs:
+        f_diff = file_diff(repository, d.path, since=since, until=until, max_lines=500)
+        for line in f_diff.splitlines():
+            if line.startswith("-def ") or line.startswith("-class "):
+                rem_name = line[5:].split("(")[0].split(":")[0].strip()
+                if rem_name and rem_name not in removed_symbols:
+                    removed_symbols.append(rem_name)
+                    impact_items.append({
+                        "source": rem_name,
+                        "target": None,
+                        "relationship": "UNKNOWN",
+                        "category": "DIRECT",
+                        "evidence_class": "UNKNOWN",
+                        "freshness": "STALE",
+                        "reason": "deleted_symbol",
+                        "impact_reason": "deleted_symbol",
+                        "file": d.path,
+                        "rank": 8,
+                    })
+
+    seen_callers: set[str] = set()
+    seen_tests: set[str] = set()
 
     for p in changed_paths:
         rows = con.execute("SELECT name, qualified_name FROM symbols WHERE path=?", (p,)).fetchall()
@@ -259,20 +287,74 @@ def analyze_change_impact(
         matched = changed_symbols_since(repository, since, sym_names)
         for s in matched:
             changed_symbols.append(s)
-            callers = find_callers(con, s, max_results=5)
-            for c in callers:
-                affected_callers.append(dict(c))
-            tests = find_related_tests(con, s, max_results=5)
-            for t in tests:
-                if "result" not in t:
-                    affected_tests.append(dict(t))
+
+            # Run rich analyze_impact for each modified symbol
+            impact_res = analyze_impact(con, s, max_depth=2, max_results=20)
+
+            raw_items = impact_res.get("impact_items")
+            if isinstance(raw_items, list):
+                for item in raw_items:
+                    if isinstance(item, dict):
+                        impact_items.append(item)
+
+            raw_callers = impact_res.get("direct_callers")
+            if isinstance(raw_callers, list):
+                for c in raw_callers:
+                    if isinstance(c, dict):
+                        c_key = f"{c.get('file')}:{c.get('symbol')}"
+                        if c_key not in seen_callers:
+                            seen_callers.add(c_key)
+                            affected_callers.append(c)
+
+            raw_tests = impact_res.get("related_tests")
+            if isinstance(raw_tests, list):
+                for t in raw_tests:
+                    if isinstance(t, dict) and "result" not in t:
+                        t_key = f"{t.get('file')}:{t.get('symbol')}"
+                        if t_key not in seen_tests:
+                            seen_tests.add(t_key)
+                            affected_tests.append(t)
+
+            raw_apis = impact_res.get("related_apis")
+            if isinstance(raw_apis, list):
+                for r in raw_apis:
+                    if isinstance(r, dict):
+                        affected_routes.append(r)
+
+            cats = impact_res.get("categories")
+            if isinstance(cats, dict):
+                di_list = cats.get("DI")
+                if isinstance(di_list, list):
+                    for di in di_list:
+                        if isinstance(di, dict):
+                            affected_providers.append(di)
+
+    # Monorepo / Package boundary impact analysis
+    from codegraph.monorepo import detect_workspace
+    ws = detect_workspace(repository, con=con)
+    affected_packages: set[str] = set()
+    for p in changed_paths:
+        pkg = ws.get_package_for_file(p)
+        if pkg:
+            affected_packages.add(pkg.package_id)
+
+    affected_dependent_packages: set[str] = set()
+    for pkg_id in affected_packages:
+        for dep_pkg in ws.get_dependent_packages(pkg_id):
+            affected_dependent_packages.add(dep_pkg.package_id)
 
     return {
         "since": since,
         "until": until,
         "changed_files": [d.as_dict() for d in diffs],
         "changed_symbols": changed_symbols,
+        "removed_symbols": removed_symbols,
         "affected_callers": affected_callers,
         "affected_tests": affected_tests,
+        "affected_routes": affected_routes,
+        "affected_providers": affected_providers,
+        "affected_packages": sorted(affected_packages),
+        "affected_dependent_packages": sorted(affected_dependent_packages),
+        "impact_items": impact_items,
     }
 

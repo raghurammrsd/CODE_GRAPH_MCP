@@ -185,12 +185,12 @@ def resolve_target(raw: str, con: sqlite3.Connection) -> TargetResolution:
     if row:
         return _row_to_resolution(row, clean, ResolutionMethod.CANONICAL_ID)
 
-    # ── 2. Exact qualified_name ──────────────────────────────────────────────
-    row = con.execute(
-        _SYMBOL_SELECT + " WHERE qualified_name=? LIMIT 1", (clean,)
-    ).fetchone()
-    if row:
-        return _row_to_resolution(row, clean, ResolutionMethod.EXACT_QUALIFIED)
+    # ── 2. Exact qualified_name (only when unique across repository) ─────────
+    q_rows = con.execute(
+        _SYMBOL_SELECT + " WHERE qualified_name=? ORDER BY path, start_line LIMIT 10", (clean,)
+    ).fetchall()
+    if len(q_rows) == 1:
+        return _row_to_resolution(q_rows[0], clean, ResolutionMethod.EXACT_QUALIFIED)
 
     # ── 3. Endpoint / route ──────────────────────────────────────────────────
     try:

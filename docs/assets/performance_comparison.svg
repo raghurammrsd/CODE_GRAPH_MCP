@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 440" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #0d1117; rx: 14px; }
+      .card { fill: #161b22; stroke: #30363d; stroke-width: 1; rx: 10px; }
+      .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 18.5px; font-weight: 700; fill: #f0f6fc; }
+      .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 12px; fill: #8b949e; }
+      .section-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13.5px; font-weight: 600; fill: #e6edf3; }
+      .label { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 12.5px; font-weight: 500; fill: #c9d1d9; }
+      .val { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; font-weight: 700; fill: #f0f6fc; }
+      .badge-good { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; font-weight: 700; fill: #3fb950; }
+      .bar-base { fill: #6e7681; rx: 4px; }
+      .bar-cg { fill: #2ea043; rx: 4px; }
+      .bar-cg-blue { fill: #388bfd; rx: 4px; }
+      .legend-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 12px; fill: #c9d1d9; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="920" height="440" />
+
+  <!-- Header -->
+  <text class="title" x="28" y="38">CodeGraph — Measured Context &amp; Exploration Efficiency</text>
+  <text class="subtitle" x="28" y="58">Methodology: 32-task internal evaluation suite across 13 categories, same repository &amp; environment (src/codegraph/tool_selection_eval.py)</text>
+
+  <!-- Legend -->
+  <rect class="bar-base" x="600" y="26" width="14" height="14" />
+  <text class="legend-text" x="620" y="38">Mode A: Unassisted Exploration</text>
+  <rect class="bar-cg" x="795" y="26" width="14" height="14" />
+  <text class="legend-text" x="815" y="38">Mode B: CodeGraph</text>
+
+  <!-- Left Card: Exploration Overhead (Lower is Better) -->
+  <rect class="card" x="24" y="80" width="430" height="334" />
+  <text class="section-title" x="44" y="110">Exploration Overhead Across 32 Tasks (Lower is Better)</text>
+
+  <!-- Metric 1: Total Tool Calls -->
+  <text class="label" x="44" y="145">Total Tool Calls (32-task suite)</text>
+  <rect class="bar-base" x="44" y="154" width="280" height="18" />
+  <text class="val" x="332" y="168">164</text>
+  <rect class="bar-cg" x="44" y="176" width="121" height="18" />
+  <text class="val" x="173" y="190">71</text>
+  <text class="badge-good" x="200" y="190">(-56.7%)</text>
+
+  <!-- Metric 2: Direct File Reads -->
+  <text class="label" x="44" y="227">Direct Full-File Reads (32-task suite)</text>
+  <rect class="bar-base" x="44" y="236" width="275" height="18" />
+  <text class="val" x="327" y="250">161</text>
+  <rect class="bar-cg" x="44" y="258" width="12" height="18" />
+  <text class="val" x="64" y="272">7</text>
+  <text class="badge-good" x="82" y="272">(-95.7%)</text>
+
+  <!-- Metric 3: Unsupported Claims -->
+  <text class="label" x="44" y="309">Unsupported Claims Recorded (32-task suite)</text>
+  <rect class="bar-base" x="44" y="318" width="188" height="18" />
+  <text class="val" x="240" y="332">11 (34.38%)</text>
+  <rect class="bar-cg" x="44" y="340" width="4" height="18" />
+  <text class="val" x="56" y="354">0 (0.00%)</text>
+  <text class="badge-good" x="130" y="354">(-100%)</text>
+
+  <!-- Right Card: Precision & Accuracy (Higher is Better) -->
+  <rect class="card" x="466" y="80" width="430" height="334" />
+  <text class="section-title" x="486" y="110">Measured Task &amp; Routing Accuracy (32-Task Evaluation)</text>
+
+  <!-- Metric 4: Task Accuracy -->
+  <text class="label" x="486" y="145">Task Accuracy on 32-Task Suite</text>
+  <rect class="bar-base" x="486" y="154" width="167" height="18" />
+  <text class="val" x="661" y="168">59.84%</text>
+  <rect class="bar-cg-blue" x="486" y="176" width="280" height="18" />
+  <text class="val" x="774" y="190">100.0%</text>
+  <text class="badge-good" x="830" y="190">(+40.16%)</text>
+
+  <!-- Metric 5: First-Tool Selection Accuracy -->
+  <text class="label" x="486" y="227">First-Tool Selection Accuracy (32-Task Suite)</text>
+  <rect class="bar-base" x="486" y="236" width="26" height="18" />
+  <text class="val" x="520" y="250">9.38%</text>
+  <rect class="bar-cg-blue" x="486" y="258" width="280" height="18" />
+  <text class="val" x="774" y="272">100.0%</text>
+  <text class="badge-good" x="830" y="272">(+90.62%)</text>
+
+  <!-- Metric 6: 50-Task Context Reduction -->
+  <text class="label" x="486" y="309">50-Task Context Compression (v2_0_verified.json)</text>
+  <rect class="bar-base" x="486" y="318" width="240" height="18" />
+  <text class="val" x="734" y="332">~1,548 cand. tokens</text>
+  <rect class="bar-cg-blue" x="486" y="340" width="84" height="18" />
+  <text class="val" x="578" y="354">542.0 selected tokens (65.0% reduction)</text>
+
+  <!-- Footer Note -->
+  <text class="subtitle" x="44" y="392">5-file FastAPI auth trace fixture: 5 direct file reads → 0 direct file reads (4 MCP calls)</text>
+  <text class="subtitle" x="486" y="392">Single-file local edit bypass: 2/2 tasks (100% bypass on trivial edits)</text>
+</svg>

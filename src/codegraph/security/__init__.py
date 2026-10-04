@@ -1,3 +1,51 @@
-from .paths import DEFAULT_SENSITIVE_PATTERNS, is_sensitive, safe_path
+from .paths import (
+    DEFAULT_MAX_READ_BYTES,
+    DEFAULT_SENSITIVE_PATTERNS,
+    is_sensitive,
+    is_sensitive_path,
+    safe_path,
+    safe_read_text,
+)
+from .redaction import (
+    REDACTED_DB_CREDENTIALS,
+    REDACTED_PRIVATE_KEY,
+    REDACTED_SECRET,
+    REDACTED_TOKEN,
+    SECRET_ENV_EXACT_NAMES,
+    SENSITIVE_RUNTIME_KEYS,
+    audit_sqlite_for_secrets,
+    contains_private_key,
+    detect_env_variable_reads,
+    is_probable_secret_value,
+    is_secret_variable_name,
+    normalize_and_redact_sql,
+    parse_safe_connection_metadata,
+    redact_connection_string,
+    redact_payload,
+    redact_secrets,
+)
 
-__all__ = ["DEFAULT_SENSITIVE_PATTERNS", "is_sensitive", "safe_path"]
+__all__ = [
+    "DEFAULT_MAX_READ_BYTES",
+    "DEFAULT_SENSITIVE_PATTERNS",
+    "REDACTED_DB_CREDENTIALS",
+    "REDACTED_PRIVATE_KEY",
+    "REDACTED_SECRET",
+    "REDACTED_TOKEN",
+    "SECRET_ENV_EXACT_NAMES",
+    "SENSITIVE_RUNTIME_KEYS",
+    "audit_sqlite_for_secrets",
+    "contains_private_key",
+    "detect_env_variable_reads",
+    "is_probable_secret_value",
+    "is_secret_variable_name",
+    "is_sensitive",
+    "is_sensitive_path",
+    "normalize_and_redact_sql",
+    "parse_safe_connection_metadata",
+    "redact_connection_string",
+    "redact_payload",
+    "redact_secrets",
+    "safe_path",
+    "safe_read_text",
+]

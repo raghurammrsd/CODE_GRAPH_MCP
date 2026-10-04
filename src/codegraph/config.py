@@ -12,6 +12,7 @@ class Settings(BaseModel):
     repository: Path | None = None
     db_path: Path | None = None
     max_file_size: int = Field(default=1_000_000, ge=1)
+    max_read_bytes: int = Field(default=256_000, ge=1024)
     max_results: int = Field(default=10, ge=1, le=100)
     max_context: int = Field(default=20_000, ge=100)
     max_tool_calls: int = Field(default=12, ge=1)
@@ -34,6 +35,7 @@ class Settings(BaseModel):
             repository=Path(repo) if repo else None,
             db_path=Path(db) if db else None,
             max_file_size=int(os.getenv("CODEGRAPH_MAX_FILE_SIZE", "1000000")),
+            max_read_bytes=int(os.getenv("CODEGRAPH_MAX_READ_BYTES", "256000")),
             max_context=int(os.getenv("CODEGRAPH_MAX_CONTEXT", "20000")),
             max_tool_calls=int(os.getenv("CODEGRAPH_MAX_TOOL_CALLS", "12")),
             resource_profile=os.getenv("CODEGRAPH_RESOURCE_PROFILE", "BALANCED"),

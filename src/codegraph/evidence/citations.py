@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from codegraph.freshness import index_generation
-from codegraph.security import safe_path
+from codegraph.security import DEFAULT_MAX_READ_BYTES, is_sensitive_path, safe_path
 
 PARSER_VERSION = "3.0"
 
@@ -82,12 +82,16 @@ def verify_source_hash(
 
     Returns 'current', 'stale', or 'deleted'.
     """
+    if is_sensitive_path(file_path):
+        return "deleted"
     if not stored_hash or repository is None:
         return "current"
     abs_path = repository / file_path
     if not abs_path.exists():
         return "stale"
     try:
+        if abs_path.stat().st_size > DEFAULT_MAX_READ_BYTES * 4:
+            return "stale"
         current_digest = hashlib.sha256(
             abs_path.read_text(encoding="utf-8", errors="replace").encode()
         ).hexdigest()
@@ -105,6 +109,9 @@ def build_evidence(
 ) -> list[Evidence]:
     """Build verified evidence list for a file/symbol, checking source hash freshness."""
     from codegraph.freshness import indexed_commit as get_indexed_commit
+
+    if is_sensitive_path(path):
+        return []
 
     repo = repository or get_repository_from_con(con)
     idx_commit = get_indexed_commit(con)
@@ -249,6 +256,20 @@ def verify_evidence(
             freshness="UNKNOWN",
             reason="Missing file path and evidence_id not found in index",
             file="",
+            index_generation=gen,
+        )
+
+    if is_sensitive_path(resolved_file):
+        return VerificationReport(
+            valid=False,
+            exists=False,
+            hash_matches=False,
+            lines_valid=False,
+            status="UNKNOWN",
+            confidence="UNKNOWN",
+            freshness="UNKNOWN",
+            reason=f"Access to sensitive file '{resolved_file}' is blocked",
+            file=resolved_file,
             index_generation=gen,
         )
 

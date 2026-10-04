@@ -22,7 +22,7 @@ from codegraph.git import (
     changed_symbols_since,
     current_commit,
 )
-from codegraph.security import is_sensitive, safe_path
+from codegraph.security import contains_private_key, is_sensitive, redact_secrets, safe_path
 
 
 def make_evidence(
@@ -95,7 +95,9 @@ def check_index_available(con: sqlite3.Connection, repository: Path) -> dict[str
 def resolve_symbol(
     con: sqlite3.Connection,
     repository: Path,
-    name: str,
+    name: str = "",
+    symbol: str = "",
+    canonical_id: str = "",
 ) -> dict[str, Any]:
     """Determine whether an exact/canonical symbol exists and return its location and identity.
 
@@ -105,8 +107,22 @@ def resolve_symbol(
     if unindexed:
         return unindexed
 
-    clean_name = name.strip()
     meta = get_index_metadata(con, repository)
+    provided = [v.strip() for v in (symbol, name, canonical_id) if v and v.strip()]
+    if len(set(provided)) > 1:
+        return {
+            "status": "invalid_request",
+            "error_code": ErrorCode.INVALID_ARGUMENT.value,
+            "error": {
+                "code": ErrorCode.INVALID_ARGUMENT.value,
+                "message": "Conflicting symbol arguments provided to resolve_symbol; pass one or identical values.",
+            },
+            "query": symbol or name or canonical_id,
+            **meta,
+        }
+
+    raw_target = symbol if symbol.strip() else (name if name.strip() else canonical_id)
+    clean_name = raw_target.strip()
     if not clean_name:
         return {
             "status": "invalid_request",
@@ -119,7 +135,7 @@ def resolve_symbol(
                     "reason": "Provide a non-empty symbol name to resolve.",
                 },
             },
-            "query": name,
+            "query": raw_target,
             **meta,
         }
 
@@ -350,15 +366,29 @@ def search_symbols(
 def get_symbol(
     con: sqlite3.Connection,
     repository: Path,
-    canonical_id: str,
+    canonical_id: str = "",
+    symbol: str = "",
 ) -> dict[str, Any]:
     """Return complete structured information for a known canonical symbol."""
     unindexed = check_index_available(con, repository)
     if unindexed:
         return unindexed
 
-    clean_id = canonical_id.strip()
     meta = get_index_metadata(con, repository)
+    if symbol.strip() and canonical_id.strip() and symbol.strip() != canonical_id.strip():
+        return {
+            "status": "error",
+            "error_code": ErrorCode.INVALID_ARGUMENT.value,
+            "error": {
+                "code": ErrorCode.INVALID_ARGUMENT.value,
+                "message": f"Conflicting arguments: symbol='{symbol}' and canonical_id='{canonical_id}'.",
+            },
+            "canonical_id": canonical_id or symbol,
+            **meta,
+        }
+
+    raw_input = symbol if symbol.strip() else canonical_id
+    clean_id = raw_input.strip()
     if not clean_id:
         return {
             "status": "error",
@@ -371,7 +401,7 @@ def get_symbol(
                     "reason": "Provide a non-empty canonical ID or symbol name.",
                 },
             },
-            "canonical_id": canonical_id,
+            "canonical_id": raw_input,
             **meta,
         }
 
@@ -437,7 +467,7 @@ def get_symbol(
     # Query relationships from graph_edges
     cid = row["canonical_id"]
     rel_rows = con.execute(
-        "SELECT target, relationship, confidence, file, start_line, end_line "
+        "SELECT target, relationship, confidence, file, start_line, end_line, evidence_class, reason "
         "FROM graph_edges WHERE source=? ORDER BY relationship ASC, target ASC",
         (cid,),
     ).fetchall()
@@ -449,6 +479,8 @@ def get_symbol(
             "file": r["file"],
             "start_line": r["start_line"],
             "end_line": r["end_line"],
+            "evidence_class": r["evidence_class"] if "evidence_class" in r.keys() else "AST_VERIFIED",
+            "reason": r["reason"] if "reason" in r.keys() else None,
         }
         for r in rel_rows
     ]
@@ -478,11 +510,11 @@ def get_symbol(
             "module": row["module"],
             "scope": row["scope"],
             "language": row["language"],
-            "signature": row["signature"] or "",
+            "signature": redact_secrets(str(row["signature"] or "")),
             "parent": parent_info,
             "children": children,
             "decorators": decorators,
-            "docstring": row["documentation"] or "",
+            "docstring": redact_secrets(str(row["documentation"] or "")),
             "visibility": row["visibility"] or "public",
             "relationships": relationships,
         },
@@ -492,13 +524,44 @@ def get_symbol(
 # ---------------------------------------------------------------------------
 # 4. get_file
 # ---------------------------------------------------------------------------
+_TEXT_LANGUAGE_MAP: dict[str, str] = {
+    ".py": "python",
+    ".pyi": "python",
+    ".js": "javascript",
+    ".jsx": "javascript",
+    ".mjs": "javascript",
+    ".cjs": "javascript",
+    ".ts": "typescript",
+    ".tsx": "typescript",
+    ".html": "html",
+    ".htm": "html",
+    ".jinja": "jinja",
+    ".jinja2": "jinja",
+    ".j2": "jinja",
+    ".css": "css",
+    ".scss": "css",
+    ".json": "json",
+    ".yaml": "yaml",
+    ".yml": "yaml",
+    ".toml": "toml",
+    ".md": "markdown",
+    ".sql": "sql",
+    ".prisma": "prisma",
+    ".sh": "shell",
+}
+
+
 def get_file(
     con: sqlite3.Connection,
     repository: Path,
     path: str,
     include_content: bool = False,
+    max_read_bytes: int = 256_000,
+    start_line: int | None = None,
+    end_line: int | None = None,
+    max_lines: int = 200,
 ) -> dict[str, Any]:
-    """Return the structural AST representation of an indexed file."""
+    """Return bounded file source content and structural AST outline for a repository file."""
     unindexed = check_index_available(con, repository)
     if unindexed:
         return unindexed
@@ -506,7 +569,7 @@ def get_file(
     meta = get_index_metadata(con, repository)
     try:
         resolved = safe_path(repository, path)
-        relative = resolved.relative_to(repository).as_posix()
+        relative = resolved.relative_to(repository.resolve(strict=True)).as_posix()
     except SecurityError:
         return {
             "status": "error",
@@ -520,6 +583,7 @@ def get_file(
                 },
             },
             "path": path,
+            "file": path,
             **meta,
         }
     except Exception:
@@ -535,10 +599,16 @@ def get_file(
                 },
             },
             "path": path,
+            "file": path,
             **meta,
         }
 
-    if is_sensitive(Path(relative)):
+    if is_sensitive(Path(relative)) or is_sensitive(Path(str(path))):
+        if include_content:
+            raise SecurityError(
+                f"Access to sensitive file '{relative}' is blocked. "
+                "Sensitive files (e.g. .env, private keys, secrets) may not be read."
+            )
         return {
             "status": "invalid_request",
             "error_code": ErrorCode.SENSITIVE_FILE_ACCESS_DENIED.value,
@@ -551,6 +621,56 @@ def get_file(
                 },
             },
             "path": relative,
+            "file": relative,
+            **meta,
+        }
+
+    if start_line is not None and start_line < 1:
+        return {
+            "status": "invalid_request",
+            "error_code": ErrorCode.INVALID_ARGUMENT.value,
+            "error": {
+                "code": ErrorCode.INVALID_ARGUMENT.value,
+                "message": f"start_line must be >= 1 (got {start_line}).",
+            },
+            "path": relative,
+            "file": relative,
+            **meta,
+        }
+    if end_line is not None and end_line < 1:
+        return {
+            "status": "invalid_request",
+            "error_code": ErrorCode.INVALID_ARGUMENT.value,
+            "error": {
+                "code": ErrorCode.INVALID_ARGUMENT.value,
+                "message": f"end_line must be >= 1 (got {end_line}).",
+            },
+            "path": relative,
+            "file": relative,
+            **meta,
+        }
+    if start_line is not None and end_line is not None and end_line < start_line:
+        return {
+            "status": "invalid_request",
+            "error_code": ErrorCode.INVALID_ARGUMENT.value,
+            "error": {
+                "code": ErrorCode.INVALID_ARGUMENT.value,
+                "message": f"end_line ({end_line}) must be >= start_line ({start_line}).",
+            },
+            "path": relative,
+            "file": relative,
+            **meta,
+        }
+    if max_lines < 1:
+        return {
+            "status": "invalid_request",
+            "error_code": ErrorCode.INVALID_ARGUMENT.value,
+            "error": {
+                "code": ErrorCode.INVALID_ARGUMENT.value,
+                "message": f"max_lines must be >= 1 (got {max_lines}).",
+            },
+            "path": relative,
+            "file": relative,
             **meta,
         }
 
@@ -572,6 +692,7 @@ def get_file(
                 },
             },
             "path": relative,
+            "file": relative,
             **meta,
         }
 
@@ -633,29 +754,123 @@ def get_file(
         for r in route_rows
     ]
 
-    file_size = resolved.stat().st_size if resolved.exists() else 0
-    file_hash = file_row["hash"] if file_row else ""
-    language = file_row["language"] if file_row else "unknown"
+    from codegraph.indexing.classifier import classify_file
+    from codegraph.indexing.scanner import is_binary
 
-    content: str | None = None
-    if include_content and resolved.exists():
-        content = resolved.read_text(encoding="utf-8", errors="replace")
-        if len(content) > 50_000:
-            content = content[:50_000] + "\n...[truncated at 50,000 chars]"
+    file_size = resolved.stat().st_size if resolved.exists() else 0
+    file_hash = str(file_row["hash"]) if file_row else ""
+    inferred_lang = _TEXT_LANGUAGE_MAP.get(Path(relative).suffix.lower(), "text")
+    language = str(file_row["language"]) if file_row else inferred_lang
+    category = (
+        str(file_row["category"])
+        if file_row and "category" in file_row.keys() and file_row["category"]
+        else classify_file(relative).value
+    )
+
+    is_bin = category == "BINARY" or (resolved.exists() and resolved.is_file() and is_binary(resolved))
+    if is_bin:
+        return {
+            "status": "error",
+            "error_code": ErrorCode.BINARY_FILE_NOT_READABLE.value,
+            "error": {
+                "code": ErrorCode.BINARY_FILE_NOT_READABLE.value,
+                "message": f"Binary file '{relative}' cannot be read as text.",
+            },
+            "path": relative,
+            "file": relative,
+            "size_bytes": file_size,
+            **meta,
+        }
+
+    # If full-file content was explicitly requested without a targeted line range on an oversized file, block
+    if include_content and start_line is None and end_line is None and file_size > max_read_bytes:
+        return {
+            "status": "error",
+            "error_code": ErrorCode.FILE_TOO_LARGE.value,
+            "error": {
+                "code": ErrorCode.FILE_TOO_LARGE.value,
+                "message": f"File '{relative}' size ({file_size} bytes) exceeds max_read_bytes limit ({max_read_bytes} bytes).",
+            },
+            "path": relative,
+            "file": relative,
+            "size_bytes": file_size,
+            "max_read_bytes": max_read_bytes,
+            **meta,
+        }
+
+    effective_max_lines = max(1, min(int(max_lines), 500))
+    eff_start = start_line if start_line is not None else 1
+    if end_line is not None:
+        eff_end = min(end_line, eff_start + effective_max_lines - 1)
+        capped_by_max = end_line > eff_end
+    else:
+        eff_end = eff_start + effective_max_lines - 1
+        capped_by_max = False
+
+    selected_lines: list[str] = []
+    has_more_after = False
+    bytes_accum = 0
+    bytes_capped = False
+    actual_start = eff_start
+    actual_end = eff_start
+
+    if resolved.exists() and resolved.is_file():
+        try:
+            with resolved.open("r", encoding="utf-8", errors="replace") as fh:
+                for line_idx, raw_line in enumerate(fh, start=1):
+                    if line_idx < eff_start:
+                        continue
+                    if line_idx > eff_end:
+                        has_more_after = True
+                        break
+                    clean_line = raw_line.rstrip("\r\n")
+                    line_bytes = len(clean_line.encode("utf-8", errors="replace"))
+                    if bytes_accum + line_bytes > max_read_bytes and selected_lines:
+                        bytes_capped = True
+                        has_more_after = True
+                        break
+                    selected_lines.append(clean_line)
+                    bytes_accum += line_bytes + 1
+        except OSError:
+            pass
+
+    if selected_lines:
+        actual_end = eff_start + len(selected_lines) - 1
+    else:
+        actual_end = eff_start
+
+    truncated = bool(
+        capped_by_max
+        or bytes_capped
+        or (end_line is None and (has_more_after or eff_start > 1))
+    )
+    raw_joined = "\n".join(selected_lines)
+    if contains_private_key(raw_joined):
+        raise SecurityError(
+            f"Access to sensitive file '{relative}' containing private key material is blocked."
+        )
+    content_str = redact_secrets(raw_joined)
 
     ev = [
         make_evidence(
             file=relative,
-            start_line=1,
-            end_line=len(symbols_rows) or 1,
-            evidence_type="file_ast",
+            start_line=actual_start,
+            end_line=actual_end,
+            evidence_type="file_ast" if file_row else "source",
             canonical_id=relative,
         )
     ]
 
     result: dict[str, Any] = {
         "status": "ok",
+        "path": relative,
         "file": relative,
+        "start_line": actual_start,
+        "end_line": actual_end,
+        "content": content_str,
+        "truncated": truncated,
+        "category": category,
+        "file_category": category,
         **meta,
         "hash": file_hash,
         "language": language,
@@ -666,71 +881,132 @@ def get_file(
         "routes": routes,
         "evidence": ev,
     }
-    if include_content:
-        result["content"] = content
     return result
 
 
 # ---------------------------------------------------------------------------
 # 5. get_references
 # ---------------------------------------------------------------------------
+def _resolve_symbol_canonical_ids(con: sqlite3.Connection, raw_symbol: str) -> list[str]:
+    clean = raw_symbol.strip()
+    if not clean:
+        return []
+    try:
+        rows = con.execute(
+            "SELECT canonical_id, qualified_name FROM symbols "
+            "WHERE canonical_id=? OR qualified_name=? OR name=? "
+            "ORDER BY (canonical_id=?) DESC, (qualified_name=?) DESC, path ASC, start_line ASC",
+            (clean, clean, clean, clean, clean),
+        ).fetchall()
+        exact_c = [str(r["canonical_id"]) for r in rows if r["canonical_id"] == clean]
+        if exact_c:
+            return exact_c
+        exact_q = [str(r["canonical_id"]) for r in rows if r["qualified_name"] == clean]
+        if exact_q:
+            return exact_q
+        if rows and "." not in clean:
+            return [str(r["canonical_id"]) for r in rows]
+    except Exception:
+        pass
+    return []
+
+
 def get_references(
     con: sqlite3.Connection,
     repository: Path,
-    canonical_id: str,
+    canonical_id: str = "",
+    symbol: str = "",
 ) -> dict[str, Any]:
     """Return all known references and call sites to a canonical symbol with evidence."""
     unindexed = check_index_available(con, repository)
     if unindexed:
         return unindexed
 
-    clean_id = canonical_id.strip()
     meta = get_index_metadata(con, repository)
+    if symbol.strip() and canonical_id.strip() and symbol.strip() != canonical_id.strip():
+        return {
+            "status": "error",
+            "error_code": ErrorCode.INVALID_ARGUMENT.value,
+            "error": {
+                "code": ErrorCode.INVALID_ARGUMENT.value,
+                "message": f"Conflicting arguments: symbol='{symbol}' and canonical_id='{canonical_id}'.",
+            },
+            "canonical_id": canonical_id or symbol,
+            **meta,
+            "count": 0,
+            "references": [],
+        }
+
+    raw_input = symbol if symbol.strip() else canonical_id
+    clean_id = raw_input.strip()
     if not clean_id:
         return {
             "status": "error",
             "error_code": ErrorCode.INVALID_ARGUMENT.value,
             "error": {
                 "code": ErrorCode.INVALID_ARGUMENT.value,
-                "message": "Canonical ID must be non-empty.",
+                "message": "Symbol or canonical_id must be non-empty.",
                 "next_action": {
                     "command": "codegraph resolve <symbol>",
                     "reason": "Resolve canonical ID before querying references.",
                 },
             },
-            "canonical_id": canonical_id,
+            "canonical_id": raw_input,
             **meta,
             "count": 0,
             "references": [],
         }
 
     short_name = clean_id.split(":")[-1].split(".")[-1]
+    target_canons = _resolve_symbol_canonical_ids(con, clean_id)
 
     # 1. Search 'references' table
-    ref_rows = con.execute(
-        "SELECT source_symbol_id, relationship, confidence, path, start_line, end_line, evidence "
-        "FROM 'references' "
-        "WHERE target_symbol_id=? OR target_symbol_id LIKE ? "
-        "ORDER BY path ASC, start_line ASC",
-        (clean_id, f"%.{clean_id}"),
-    ).fetchall()
+    if target_canons:
+        ph = ",".join("?" for _ in target_canons)
+        ref_rows = con.execute(
+            "SELECT source_symbol_id, relationship, confidence, path, start_line, end_line, evidence "
+            "FROM 'references' "
+            f"WHERE target_symbol_id IN ({ph}) OR target_symbol_id=? OR target_symbol_id LIKE ? "
+            "ORDER BY path ASC, start_line ASC",
+            [*target_canons, clean_id, f"%.{clean_id}"],
+        ).fetchall()
+    else:
+        ref_rows = con.execute(
+            "SELECT source_symbol_id, relationship, confidence, path, start_line, end_line, evidence "
+            "FROM 'references' "
+            "WHERE target_symbol_id=? OR target_symbol_id LIKE ? "
+            "ORDER BY path ASC, start_line ASC",
+            (clean_id, f"%.{clean_id}"),
+        ).fetchall()
 
     # 2. Search 'calls' table
-    call_rows = con.execute(
-        "SELECT source_path, callee, line, confidence, source_symbol_id "
-        "FROM calls "
-        "WHERE resolved_symbol_id=? OR qualified_callee=? OR callee=? "
-        "ORDER BY source_path ASC, line ASC",
-        (clean_id, clean_id, short_name),
-    ).fetchall()
+    if target_canons:
+        ph = ",".join("?" for _ in target_canons)
+        call_rows = con.execute(
+            "SELECT source_path, callee, line, confidence, source_symbol_id, resolved_symbol_id "
+            "FROM calls "
+            f"WHERE resolved_symbol_id IN ({ph}) OR qualified_callee=? OR (resolved_symbol_id IS NULL AND callee=?) "
+            "ORDER BY source_path ASC, line ASC",
+            [*target_canons, clean_id, short_name],
+        ).fetchall()
+    else:
+        call_rows = con.execute(
+            "SELECT source_path, callee, line, confidence, source_symbol_id, resolved_symbol_id "
+            "FROM calls "
+            "WHERE resolved_symbol_id=? OR qualified_callee=? OR callee=? "
+            "ORDER BY source_path ASC, line ASC",
+            (clean_id, clean_id, short_name),
+        ).fetchall()
 
     references: list[dict[str, Any]] = []
     seen: set[tuple[str, int, str]] = set()
+    resolved_lines: set[tuple[str, int]] = set()
 
     for r in ref_rows:
         key = (r["path"], r["start_line"], r["source_symbol_id"] or "")
         if key not in seen:
             seen.add(key)
+            resolved_lines.add((r["path"], int(r["start_line"])))
             references.append(
                 {
                     "canonical_id": r["source_symbol_id"] or "",
@@ -749,7 +1025,12 @@ def get_references(
                 }
             )
 
+    target_canon_set = set(target_canons)
     for c in call_rows:
+        if (c["source_path"], int(c["line"])) in resolved_lines:
+            continue
+        if c["resolved_symbol_id"] and target_canon_set and c["resolved_symbol_id"] not in target_canon_set:
+            continue
         key = (c["source_path"], c["line"], c["source_symbol_id"] or "")
         if key not in seen:
             seen.add(key)
@@ -775,7 +1056,8 @@ def get_references(
 
     return {
         "status": "ok",
-        "canonical_id": clean_id,
+        "symbol": clean_id,
+        "canonical_id": target_canons[0] if len(target_canons) == 1 else clean_id,
         **meta,
         "count": len(references),
         "references": references,
@@ -788,61 +1070,173 @@ def get_references(
 def get_callers(
     con: sqlite3.Connection,
     repository: Path,
-    canonical_id: str,
+    canonical_id: str = "",
+    symbol: str = "",
 ) -> dict[str, Any]:
-    """Return functions and methods that call the specified canonical symbol."""
+    """Return functions and methods that call the specified symbol or canonical_id."""
     unindexed = check_index_available(con, repository)
     if unindexed:
         return unindexed
 
-    clean_id = canonical_id.strip()
     meta = get_index_metadata(con, repository)
+    if symbol.strip() and canonical_id.strip() and symbol.strip() != canonical_id.strip():
+        return {
+            "status": "error",
+            "error_code": ErrorCode.INVALID_ARGUMENT.value,
+            "error": {
+                "code": ErrorCode.INVALID_ARGUMENT.value,
+                "message": f"Conflicting arguments: symbol='{symbol}' and canonical_id='{canonical_id}'.",
+            },
+            "canonical_id": canonical_id or symbol,
+            **meta,
+            "count": 0,
+            "callers": [],
+        }
+
+    raw_input = symbol if symbol.strip() else canonical_id
+    clean_id = raw_input.strip()
     if not clean_id:
         return {
             "status": "error",
             "error_code": ErrorCode.INVALID_ARGUMENT.value,
             "error": {
                 "code": ErrorCode.INVALID_ARGUMENT.value,
-                "message": "Canonical ID must be non-empty.",
+                "message": "Symbol or canonical_id must be non-empty.",
                 "next_action": {
                     "command": "codegraph resolve <symbol>",
                     "reason": "Resolve canonical ID before querying callers.",
                 },
             },
-            "canonical_id": canonical_id,
+            "canonical_id": raw_input,
             **meta,
             "count": 0,
             "callers": [],
         }
 
     short_name = clean_id.split(":")[-1].split(".")[-1]
-
-    # Query calls joined with symbols to get authoritative caller canonical IDs
-    rows = con.execute(
-        "SELECT c.source_path, c.callee, c.qualified_callee, c.line, c.confidence, "
-        "c.source_symbol_id, s.canonical_id AS caller_canon, s.name AS caller_name "
-        "FROM calls c "
-        "LEFT JOIN symbols s ON s.canonical_id = c.source_symbol_id "
-        "WHERE c.resolved_symbol_id=? OR c.qualified_callee=? OR c.callee=? "
-        "ORDER BY c.source_path ASC, c.line ASC",
-        (clean_id, clean_id, short_name),
-    ).fetchall()
+    target_canons = _resolve_symbol_canonical_ids(con, clean_id)
+    target_canon_set = set(target_canons)
 
     callers: list[dict[str, Any]] = []
     seen: set[tuple[str, int, str]] = set()
+    resolved_lines: set[tuple[str, int]] = set()
 
-    for r in rows:
-        caller_id = r["caller_canon"] or r["source_symbol_id"] or r["caller_name"] or r["source_path"]
-        key = (r["source_path"], r["line"], caller_id)
+    # 1. Query verified CALLS from 'references' table (shares exact resolution with find_callees / find_callers)
+    if target_canons:
+        ph = ",".join("?" for _ in target_canons)
+        ref_rows = con.execute(
+            "SELECT r.source_symbol_id, r.target_symbol_id, r.relationship, r.confidence, "
+            "r.path, r.start_line, r.end_line, r.evidence, "
+            "s.canonical_id AS caller_canon, s.name AS caller_name "
+            "FROM 'references' r "
+            "LEFT JOIN symbols s ON s.canonical_id = r.source_symbol_id "
+            f"WHERE r.relationship='CALLS' AND (r.target_symbol_id IN ({ph}) OR r.target_symbol_id=? OR r.target_symbol_id LIKE ?) "
+            "ORDER BY r.confidence = 'HIGH' DESC, r.path ASC, r.start_line ASC",
+            [*target_canons, clean_id, f"%.{clean_id}"],
+        ).fetchall()
+    elif "." in clean_id:
+        ref_rows = con.execute(
+            "SELECT r.source_symbol_id, r.target_symbol_id, r.relationship, r.confidence, "
+            "r.path, r.start_line, r.end_line, r.evidence, "
+            "s.canonical_id AS caller_canon, s.name AS caller_name "
+            "FROM 'references' r "
+            "LEFT JOIN symbols s ON s.canonical_id = r.source_symbol_id "
+            "WHERE r.relationship='CALLS' AND (r.target_symbol_id=? OR r.target_symbol_id LIKE ?) "
+            "ORDER BY r.confidence = 'HIGH' DESC, r.path ASC, r.start_line ASC",
+            (clean_id, f"%.{clean_id}"),
+        ).fetchall()
+    else:
+        ref_rows = con.execute(
+            "SELECT r.source_symbol_id, r.target_symbol_id, r.relationship, r.confidence, "
+            "r.path, r.start_line, r.end_line, r.evidence, "
+            "s.canonical_id AS caller_canon, s.name AS caller_name "
+            "FROM 'references' r "
+            "LEFT JOIN symbols s ON s.canonical_id = r.source_symbol_id "
+            "WHERE r.relationship='CALLS' AND (r.target_symbol_id=? OR r.target_symbol_id LIKE ? OR r.target_symbol_id LIKE ?) "
+            "ORDER BY r.confidence = 'HIGH' DESC, r.path ASC, r.start_line ASC",
+            (clean_id, f"%.{clean_id}", f"%.{short_name}"),
+        ).fetchall()
+
+    for r in ref_rows:
+        caller_id = r["caller_canon"] or r["source_symbol_id"] or r["caller_name"] or r["path"]
+        key = (r["path"], int(r["start_line"]), str(caller_id))
         if key not in seen:
             seen.add(key)
+            resolved_lines.add((r["path"], int(r["start_line"])))
+            ev_text = str(r["evidence"] or "")
+            ev_cls = "DATAFLOW_VERIFIED" if ("resolved via" in ev_text.lower() or "factory" in ev_text.lower()) else "AST_VERIFIED"
             callers.append(
                 {
                     "caller": caller_id,
+                    "symbol": caller_id,
                     "canonical_id": r["caller_canon"] or r["source_symbol_id"] or "",
+                    "target_symbol_id": r["target_symbol_id"],
+                    "relationship": "CALLS",
+                    "evidence_class": ev_cls,
+                    "file": r["path"],
+                    "line": r["start_line"],
+                    "confidence": r["confidence"],
+                    "call_site": {
+                        "file": r["path"],
+                        "line": r["start_line"],
+                        "callee": short_name,
+                    },
+                    "evidence": make_evidence(
+                        file=r["path"],
+                        start_line=r["start_line"],
+                        end_line=r["end_line"] or r["start_line"],
+                        evidence_type="call",
+                        canonical_id=caller_id,
+                    ),
+                }
+            )
+
+    # 2. Query calls joined with symbols for any remaining unresolved/static calls
+    if target_canons:
+        ph = ",".join("?" for _ in target_canons)
+        rows = con.execute(
+            "SELECT c.source_path, c.callee, c.qualified_callee, c.line, c.confidence, "
+            "c.source_symbol_id, c.resolved_symbol_id, s.canonical_id AS caller_canon, s.name AS caller_name "
+            "FROM calls c "
+            "LEFT JOIN symbols s ON s.canonical_id = c.source_symbol_id "
+            f"WHERE c.resolved_symbol_id IN ({ph}) OR c.qualified_callee=? OR (c.resolved_symbol_id IS NULL AND c.callee=?) "
+            "ORDER BY c.source_path ASC, c.line ASC",
+            [*target_canons, clean_id, short_name],
+        ).fetchall()
+    else:
+        rows = con.execute(
+            "SELECT c.source_path, c.callee, c.qualified_callee, c.line, c.confidence, "
+            "c.source_symbol_id, c.resolved_symbol_id, s.canonical_id AS caller_canon, s.name AS caller_name "
+            "FROM calls c "
+            "LEFT JOIN symbols s ON s.canonical_id = c.source_symbol_id "
+            "WHERE c.resolved_symbol_id=? OR c.qualified_callee=? OR c.callee=? "
+            "ORDER BY c.source_path ASC, c.line ASC",
+            (clean_id, clean_id, short_name),
+        ).fetchall()
+
+    for r in rows:
+        if (r["source_path"], int(r["line"])) in resolved_lines:
+            continue
+        if r["resolved_symbol_id"] and target_canon_set and r["resolved_symbol_id"] not in target_canon_set:
+            continue
+        caller_id = r["caller_canon"] or r["source_symbol_id"] or r["caller_name"] or r["source_path"]
+        key = (r["source_path"], int(r["line"]), str(caller_id))
+        if key not in seen:
+            seen.add(key)
+            conf = str(r["confidence"] or "UNKNOWN").upper()
+            rel = "CALLS" if conf in ("HIGH", "MEDIUM") else "POSSIBLE_CALLS"
+            ev_cls = "AST_VERIFIED" if rel == "CALLS" else ("UNKNOWN" if conf == "UNKNOWN" else "POSSIBLE")
+            callers.append(
+                {
+                    "caller": caller_id,
+                    "symbol": caller_id,
+                    "canonical_id": r["caller_canon"] or r["source_symbol_id"] or "",
+                    "target_symbol_id": r["resolved_symbol_id"] or (target_canons[0] if len(target_canons) == 1 else clean_id),
+                    "relationship": rel,
+                    "evidence_class": ev_cls,
                     "file": r["source_path"],
                     "line": r["line"],
-                    "confidence": r["confidence"],
+                    "confidence": conf,
                     "call_site": {
                         "file": r["source_path"],
                         "line": r["line"],
@@ -862,7 +1256,8 @@ def get_callers(
 
     return {
         "status": "ok",
-        "canonical_id": clean_id,
+        "symbol": clean_id,
+        "canonical_id": target_canons[0] if len(target_canons) == 1 else clean_id,
         **meta,
         "count": len(callers),
         "callers": callers,
@@ -875,43 +1270,103 @@ def get_callers(
 def get_callees(
     con: sqlite3.Connection,
     repository: Path,
-    canonical_id: str,
+    canonical_id: str = "",
+    symbol: str = "",
 ) -> dict[str, Any]:
-    """Return functions and methods called by the specified canonical symbol."""
+    """Return functions and methods called by the specified symbol or canonical_id."""
     unindexed = check_index_available(con, repository)
     if unindexed:
         return unindexed
 
-    clean_id = canonical_id.strip()
     meta = get_index_metadata(con, repository)
+    if symbol.strip() and canonical_id.strip() and symbol.strip() != canonical_id.strip():
+        return {
+            "status": "error",
+            "error_code": ErrorCode.INVALID_ARGUMENT.value,
+            "error": {
+                "code": ErrorCode.INVALID_ARGUMENT.value,
+                "message": f"Conflicting arguments: symbol='{symbol}' and canonical_id='{canonical_id}'.",
+            },
+            "canonical_id": canonical_id or symbol,
+            **meta,
+            "count": 0,
+            "callees": [],
+        }
+
+    raw_input = symbol if symbol.strip() else canonical_id
+    clean_id = raw_input.strip()
     if not clean_id:
         return {
             "status": "error",
             "error_code": ErrorCode.INVALID_ARGUMENT.value,
             "error": {
                 "code": ErrorCode.INVALID_ARGUMENT.value,
-                "message": "Canonical ID must be non-empty.",
+                "message": "Symbol or canonical_id must be non-empty.",
                 "next_action": {
                     "command": "codegraph resolve <symbol>",
                     "reason": "Resolve canonical ID before querying callees.",
                 },
             },
-            "canonical_id": canonical_id,
+            "canonical_id": raw_input,
             **meta,
             "count": 0,
             "callees": [],
         }
 
-    # Find the symbol record to get line bounds
+    # Find the symbol record to get line bounds (prefer exact canonical_id or qualified_name)
     sym_row = con.execute(
         "SELECT id, canonical_id, path, start_line, end_line FROM symbols "
-        "WHERE canonical_id=? OR qualified_name=? OR name=? LIMIT 1",
-        (clean_id, clean_id, clean_id),
+        "WHERE canonical_id=? OR qualified_name=? OR name=? "
+        "ORDER BY (canonical_id=?) DESC, (qualified_name=?) DESC, path ASC, start_line ASC LIMIT 1",
+        (clean_id, clean_id, clean_id, clean_id, clean_id),
     ).fetchone()
 
     query_id = sym_row["canonical_id"] if sym_row else clean_id
     query_path = sym_row["path"] if sym_row else None
 
+    callees: list[dict[str, Any]] = []
+    seen: set[tuple[str, int, str]] = set()
+
+    # 1. Include verified CALLS from 'references' table
+    ref_rows = con.execute(
+        "SELECT source_symbol_id, target_symbol_id, relationship, confidence, path, start_line, end_line, evidence "
+        "FROM 'references' "
+        "WHERE (source_symbol_id=? OR source_symbol_id LIKE ?) AND relationship='CALLS' AND target_symbol_id IS NOT NULL "
+        "ORDER BY start_line ASC, target_symbol_id ASC",
+        (query_id, f"%.{clean_id}"),
+    ).fetchall()
+
+    for r in ref_rows:
+        target_cid = str(r["target_symbol_id"])
+        callee_name = target_cid.split(":")[-1].split(".")[-1]
+        key = (r["path"], int(r["start_line"]), callee_name)
+        if key not in seen:
+            seen.add(key)
+            ev_text = str(r["evidence"] or "")
+            ev_cls = "DATAFLOW_VERIFIED" if ("resolved via" in ev_text.lower() or "factory" in ev_text.lower()) else "AST_VERIFIED"
+            callees.append(
+                {
+                    "callee": callee_name,
+                    "qualified_callee": target_cid,
+                    "canonical_id": target_cid,
+                    "target_symbol_id": target_cid,
+                    "relationship": "CALLS",
+                    "evidence_class": ev_cls,
+                    "call_type": "resolved_call",
+                    "file": r["path"],
+                    "line": r["start_line"],
+                    "confidence": r["confidence"],
+                    "evidence": make_evidence(
+                        file=r["path"],
+                        start_line=r["start_line"],
+                        end_line=r["end_line"] or r["start_line"],
+                        evidence_type="call",
+                        canonical_id=target_cid,
+                    ),
+                }
+            )
+
+    # 2. Include calls from 'calls' table
     if sym_row and query_path:
         rows = con.execute(
             "SELECT c.source_path, c.callee, c.qualified_callee, c.line, c.confidence, "
@@ -935,9 +1390,6 @@ def get_callees(
             (query_id,),
         ).fetchall()
 
-    callees: list[dict[str, Any]] = []
-    seen: set[tuple[str, int, str]] = set()
-
     for r in rows:
         callee_name = r["callee"]
         target_cid = r["callee_canon"] or r["resolved_symbol_id"]
@@ -948,17 +1400,24 @@ def get_callees(
         else:
             call_type = "unresolved_call"
 
-        key = (r["source_path"], r["line"], callee_name)
+        key = (r["source_path"], int(r["line"]), callee_name)
         if key not in seen:
             seen.add(key)
+            conf = str(r["confidence"] or "UNKNOWN").upper()
+            rel = "CALLS" if conf in ("HIGH", "MEDIUM") else "POSSIBLE_CALLS"
+            ev_cls = "AST_VERIFIED" if rel == "CALLS" else ("UNKNOWN" if conf == "UNKNOWN" else "POSSIBLE")
             callees.append(
                 {
                     "callee": callee_name,
+                    "qualified_callee": target_cid or r["qualified_callee"] or callee_name,
                     "canonical_id": target_cid,
+                    "target_symbol_id": target_cid,
+                    "relationship": rel,
+                    "evidence_class": ev_cls,
                     "call_type": call_type,
                     "file": r["source_path"],
                     "line": r["line"],
-                    "confidence": r["confidence"],
+                    "confidence": conf,
                     "evidence": make_evidence(
                         file=r["source_path"],
                         start_line=r["line"],
@@ -973,7 +1432,8 @@ def get_callees(
 
     return {
         "status": "ok",
-        "canonical_id": clean_id,
+        "symbol": clean_id,
+        "canonical_id": query_id,
         **meta,
         "count": len(callees),
         "callees": callees,
@@ -1040,17 +1500,19 @@ def trace_path(
             "path": [],
         }
 
-    # Resolve from and to targets
+    # Resolve from and to targets (prefer exact canonical_id or qualified_name)
     from_row = con.execute(
         "SELECT canonical_id, qualified_name, name FROM symbols "
-        "WHERE canonical_id=? OR qualified_name=? OR name=? LIMIT 1",
-        (clean_from, clean_from, clean_from),
+        "WHERE canonical_id=? OR qualified_name=? OR name=? "
+        "ORDER BY (canonical_id=?) DESC, (qualified_name=?) DESC, path ASC, start_line ASC LIMIT 1",
+        (clean_from, clean_from, clean_from, clean_from, clean_from),
     ).fetchone()
 
     to_row = con.execute(
         "SELECT canonical_id, qualified_name, name FROM symbols "
-        "WHERE canonical_id=? OR qualified_name=? OR name=? LIMIT 1",
-        (clean_to, clean_to, clean_to),
+        "WHERE canonical_id=? OR qualified_name=? OR name=? "
+        "ORDER BY (canonical_id=?) DESC, (qualified_name=?) DESC, path ASC, start_line ASC LIMIT 1",
+        (clean_to, clean_to, clean_to, clean_to, clean_to),
     ).fetchone()
 
     if not from_row or not to_row:
@@ -1073,7 +1535,9 @@ def trace_path(
 
     start_canon = from_row["canonical_id"]
     target_canon = to_row["canonical_id"]
-    target_names = {to_row["canonical_id"], to_row["qualified_name"], to_row["name"]}
+    target_names = {to_row["canonical_id"], to_row["qualified_name"]}
+    if "." not in clean_to:
+        target_names.add(to_row["name"])
 
     if start_canon == target_canon:
         return {
@@ -1085,7 +1549,7 @@ def trace_path(
             "path": [],
         }
 
-    # Deterministic BFS search
+    # Deterministic BFS search over verified references, graph_edges, and resolved calls
     queue: deque[tuple[str, list[dict[str, Any]]]] = deque([(start_canon, [])])
     visited: set[str] = {start_canon}
 
@@ -1094,40 +1558,67 @@ def trace_path(
         if len(path) >= bounded_depth:
             continue
 
-        curr_short = curr_sym.split(":")[-1].split(".")[-1]
-
-        # Query outgoing edges from calls
-        edges = con.execute(
-            "SELECT c.callee, c.qualified_callee, c.resolved_symbol_id, c.source_path, c.line "
-            "FROM calls c "
-            "WHERE c.source_symbol_id=? OR c.callee=? "
-            "ORDER BY c.source_path ASC, c.line ASC",
-            (curr_sym, curr_short),
-        ).fetchall()
-
-        # Query outgoing edges from graph_edges
+        # 1. Query outgoing edges from graph_edges
         graph_rows = con.execute(
-            "SELECT target, relationship, file, start_line, end_line "
+            "SELECT target, relationship, confidence, evidence_class, file, start_line, end_line "
             "FROM graph_edges "
-            "WHERE source=? AND relationship IN ('CALLS', 'IMPORTS', 'HANDLED_BY') "
+            "WHERE source=? AND relationship IN ("
+            "'CALLS', 'DEFINES', 'CONTAINS', 'IMPORTS', 'HANDLED_BY', 'ROUTES_TO', "
+            "'PROVIDES', 'INJECTS', 'RESOLVES_DEPENDENCY', 'DISPATCHES_TO', 'REGISTERS'"
+            ") AND confidence IN ('HIGH', 'MEDIUM') "
             "ORDER BY relationship ASC, target ASC",
             (curr_sym,),
         ).fetchall()
 
-        all_steps: list[tuple[str, str, str, int, int]] = []
-        for e in edges:
-            dest = e["resolved_symbol_id"] or e["qualified_callee"] or e["callee"]
-            all_steps.append((dest, "CALLS", e["source_path"], e["line"], e["line"]))
+        # 2. Query outgoing verified CALLS from references
+        ref_rows = con.execute(
+            "SELECT target_symbol_id, relationship, confidence, path, start_line, end_line, evidence "
+            "FROM 'references' "
+            "WHERE source_symbol_id=? AND relationship='CALLS' AND confidence IN ('HIGH', 'MEDIUM') AND target_symbol_id IS NOT NULL "
+            "ORDER BY path ASC, start_line ASC",
+            (curr_sym,),
+        ).fetchall()
+
+        # 3. Query outgoing resolved calls from calls table
+        edges = con.execute(
+            "SELECT c.callee, c.qualified_callee, c.resolved_symbol_id, c.confidence, c.source_path, c.line "
+            "FROM calls c "
+            "WHERE c.source_symbol_id=? AND (c.resolved_symbol_id IS NOT NULL OR c.confidence IN ('HIGH', 'MEDIUM')) "
+            "ORDER BY c.source_path ASC, c.line ASC",
+            (curr_sym,),
+        ).fetchall()
+
+        step_map: dict[tuple[str, str], tuple[str, str, str, str, str, int, int]] = {}
         for g in graph_rows:
-            all_steps.append((g["target"], g["relationship"], g["file"], g["start_line"], g["end_line"]))
+            dest = str(g["target"])
+            rel = str(g["relationship"])
+            conf = str(g["confidence"] or "HIGH").upper()
+            ev_cls = str(g["evidence_class"] or "AST_VERIFIED").upper()
+            step_map[(dest, rel)] = (dest, rel, conf, ev_cls, str(g["file"] or ""), int(g["start_line"] or 1), int(g["end_line"] or g["start_line"] or 1))
 
-        # Sort steps deterministically
-        all_steps.sort(key=lambda s: (s[0], s[1], s[2], s[3]))
+        for r in ref_rows:
+            dest = str(r["target_symbol_id"])
+            rel = str(r["relationship"])
+            conf = str(r["confidence"] or "HIGH").upper()
+            ev_text = str(r["evidence"] or "")
+            ev_cls = "DATAFLOW_VERIFIED" if ("resolved via" in ev_text.lower() or "factory" in ev_text.lower()) else "AST_VERIFIED"
+            if (dest, rel) not in step_map:
+                step_map[(dest, rel)] = (dest, rel, conf, ev_cls, str(r["path"] or ""), int(r["start_line"] or 1), int(r["end_line"] or r["start_line"] or 1))
 
-        for dest_sym, rel, s_file, s_line, e_line in all_steps:
+        for e in edges:
+            dest = str(e["resolved_symbol_id"] or e["qualified_callee"] or e["callee"])
+            conf = str(e["confidence"] or "HIGH").upper()
+            if (dest, "CALLS") not in step_map:
+                step_map[(dest, "CALLS")] = (dest, "CALLS", conf, "AST_VERIFIED", str(e["source_path"] or ""), int(e["line"] or 1), int(e["line"] or 1))
+
+        all_steps = sorted(step_map.values(), key=lambda s: (s[0], s[1], s[4], s[5]))
+
+        for dest_sym, rel, conf, ev_cls, s_file, s_line, e_line in all_steps:
             dest_row = con.execute(
-                "SELECT canonical_id FROM symbols WHERE canonical_id=? OR qualified_name=? OR name=? LIMIT 1",
-                (dest_sym, dest_sym, dest_sym),
+                "SELECT canonical_id FROM symbols "
+                "WHERE canonical_id=? OR qualified_name=? OR name=? "
+                "ORDER BY (canonical_id=?) DESC, (qualified_name=?) DESC LIMIT 1",
+                (dest_sym, dest_sym, dest_sym, dest_sym, dest_sym),
             ).fetchone()
             dest_canon = dest_row["canonical_id"] if dest_row else dest_sym
 
@@ -1136,6 +1627,10 @@ def trace_path(
                     "source": curr_sym,
                     "target": dest_canon,
                     "relationship": rel,
+                    "confidence": conf,
+                    "evidence_class": ev_cls,
+                    "file": s_file,
+                    "line": s_line,
                     "evidence": make_evidence(
                         file=s_file,
                         start_line=s_line,
@@ -1151,6 +1646,8 @@ def trace_path(
                     "status": "ok",
                     "from": clean_from,
                     "to": clean_to,
+                    "source_canonical_id": start_canon,
+                    "target_canonical_id": target_canon,
                     **meta,
                     "path_length": len(new_path),
                     "path": new_path,
@@ -1179,6 +1676,8 @@ def get_imports(
     repository: Path,
     file: str | None = None,
     canonical_id: str | None = None,
+    symbol: str | None = None,
+    path: str | None = None,
 ) -> dict[str, Any]:
     """Return imports and import relationships for a file or canonical symbol."""
     unindexed = check_index_available(con, repository)
@@ -1186,12 +1685,38 @@ def get_imports(
         return unindexed
 
     meta = get_index_metadata(con, repository)
-    target_path = file
+    if file and path and file.strip() and path.strip() and file.strip() != path.strip():
+        return {
+            "status": "invalid_request",
+            "error_code": ErrorCode.INVALID_ARGUMENT.value,
+            "error": {
+                "code": ErrorCode.INVALID_ARGUMENT.value,
+                "message": f"Conflicting arguments: file='{file}' and path='{path}'.",
+            },
+            **meta,
+            "count": 0,
+            "imports": [],
+        }
+    if symbol and canonical_id and symbol.strip() and canonical_id.strip() and symbol.strip() != canonical_id.strip():
+        return {
+            "status": "invalid_request",
+            "error_code": ErrorCode.INVALID_ARGUMENT.value,
+            "error": {
+                "code": ErrorCode.INVALID_ARGUMENT.value,
+                "message": f"Conflicting arguments: symbol='{symbol}' and canonical_id='{canonical_id}'.",
+            },
+            **meta,
+            "count": 0,
+            "imports": [],
+        }
 
-    if canonical_id and not target_path:
+    target_path = (file or path or "").strip() or None
+    effective_sym = (symbol or canonical_id or "").strip() or None
+
+    if effective_sym and not target_path:
         sym_row = con.execute(
             "SELECT path FROM symbols WHERE canonical_id=? OR qualified_name=? OR name=? LIMIT 1",
-            (canonical_id, canonical_id, canonical_id),
+            (effective_sym, effective_sym, effective_sym),
         ).fetchone()
         if sym_row:
             target_path = sym_row["path"]
@@ -1202,10 +1727,10 @@ def get_imports(
             "error_code": ErrorCode.INVALID_ARGUMENT.value,
             "error": {
                 "code": ErrorCode.INVALID_ARGUMENT.value,
-                "message": "At least one of 'file' or 'canonical_id' must be specified.",
+                "message": "At least one of 'file' or 'symbol' ('canonical_id') must be specified.",
                 "next_action": {
                     "command": "codegraph get-file <path>",
-                    "reason": "Specify a valid file path or canonical ID.",
+                    "reason": "Specify a valid file path or symbol.",
                 },
             },
             **meta,
@@ -1243,7 +1768,7 @@ def get_imports(
     return {
         "status": "ok",
         "file": target_path,
-        "canonical_id": canonical_id,
+        "canonical_id": effective_sym,
         **meta,
         "count": len(imports),
         "imports": imports,
@@ -1258,6 +1783,8 @@ def get_dependents(
     repository: Path,
     canonical_id: str | None = None,
     file: str | None = None,
+    symbol: str | None = None,
+    path: str | None = None,
 ) -> dict[str, Any]:
     """Reverse dependency query: return files and symbols that depend on the target."""
     unindexed = check_index_available(con, repository)
@@ -1265,17 +1792,44 @@ def get_dependents(
         return unindexed
 
     meta = get_index_metadata(con, repository)
-    target = canonical_id or file
+    if file and path and file.strip() and path.strip() and file.strip() != path.strip():
+        return {
+            "status": "invalid_request",
+            "error_code": ErrorCode.INVALID_ARGUMENT.value,
+            "error": {
+                "code": ErrorCode.INVALID_ARGUMENT.value,
+                "message": f"Conflicting arguments: file='{file}' and path='{path}'.",
+            },
+            **meta,
+            "count": 0,
+            "dependents": [],
+        }
+    if symbol and canonical_id and symbol.strip() and canonical_id.strip() and symbol.strip() != canonical_id.strip():
+        return {
+            "status": "invalid_request",
+            "error_code": ErrorCode.INVALID_ARGUMENT.value,
+            "error": {
+                "code": ErrorCode.INVALID_ARGUMENT.value,
+                "message": f"Conflicting arguments: symbol='{symbol}' and canonical_id='{canonical_id}'.",
+            },
+            **meta,
+            "count": 0,
+            "dependents": [],
+        }
+
+    effective_sym = (symbol or canonical_id or "").strip() or None
+    effective_file = (file or path or "").strip() or None
+    target = effective_sym or effective_file
     if not target:
         return {
             "status": "invalid_request",
             "error_code": ErrorCode.INVALID_ARGUMENT.value,
             "error": {
                 "code": ErrorCode.INVALID_ARGUMENT.value,
-                "message": "At least one of 'canonical_id' or 'file' must be specified.",
+                "message": "At least one of 'symbol' ('canonical_id') or 'file' must be specified.",
                 "next_action": {
                     "command": "codegraph resolve <symbol>",
-                    "reason": "Specify a valid canonical ID or file path.",
+                    "reason": "Specify a valid symbol, canonical ID, or file path.",
                 },
             },
             **meta,
@@ -1284,6 +1838,9 @@ def get_dependents(
         }
 
     clean_target = target.strip()
+    canonical_ids = _resolve_symbol_canonical_ids(con, clean_target) or [clean_target]
+    if clean_target not in canonical_ids:
+        canonical_ids.append(clean_target)
     short_name = clean_target.split(":")[-1].split(".")[-1]
     dependents: list[dict[str, Any]] = []
     seen: set[tuple[str, str, int]] = set()
@@ -1316,16 +1873,45 @@ def get_dependents(
                 }
             )
 
-    # 2. Reverse calls
+    # 2. Reverse calls (verified 'references' + 'calls' table)
+    placeholders = ",".join("?" for _ in canonical_ids)
+    ref_call_rows = con.execute(
+        f"SELECT source_symbol_id, path, start_line FROM 'references' "
+        f"WHERE target_symbol_id IN ({placeholders}) AND relationship='CALLS' "
+        f"ORDER BY path ASC, start_line ASC",
+        canonical_ids,
+    ).fetchall()
+    for r in ref_call_rows:
+        dep_sym = r["source_symbol_id"] or r["path"]
+        key = ("calls", r["path"], int(r["start_line"]))
+        if key not in seen:
+            seen.add(key)
+            dependents.append(
+                {
+                    "dependent": dep_sym,
+                    "dependent_type": "symbol",
+                    "relationship": "calls",
+                    "file": r["path"],
+                    "line": r["start_line"],
+                    "evidence": make_evidence(
+                        file=r["path"],
+                        start_line=r["start_line"],
+                        end_line=r["start_line"],
+                        evidence_type="call",
+                        canonical_id=dep_sym,
+                    ),
+                }
+            )
+
     call_rows = con.execute(
-        "SELECT source_symbol_id, source_path, line FROM calls "
-        "WHERE resolved_symbol_id=? OR qualified_callee=? OR callee=? "
-        "ORDER BY source_path ASC, line ASC",
-        (clean_target, clean_target, short_name),
+        f"SELECT source_symbol_id, source_path, line FROM calls "
+        f"WHERE resolved_symbol_id IN ({placeholders}) OR qualified_callee IN ({placeholders}) OR callee=? "
+        f"ORDER BY source_path ASC, line ASC",
+        [*canonical_ids, *canonical_ids, short_name],
     ).fetchall()
     for r in call_rows:
         dep_sym = r["source_symbol_id"] or r["source_path"]
-        key = ("calls", r["source_path"], r["line"])
+        key = ("calls", r["source_path"], int(r["line"]))
         if key not in seen:
             seen.add(key)
             dependents.append(

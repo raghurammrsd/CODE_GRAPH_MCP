@@ -64,6 +64,77 @@ def normalize_route_path(route_path: str, framework: str) -> str:
     return raw
 
 
+def join_route_prefixes(*parts: str) -> str:
+    """Join route prefix segments cleanly and canonically.
+
+    Examples:
+      join_route_prefixes("/api/v1", "/users") -> "/api/v1/users"
+      join_route_prefixes("api/v1/", "/users/") -> "/api/v1/users"
+      join_route_prefixes("", "/items") -> "/items"
+      join_route_prefixes("/api", "") -> "/api"
+      join_route_prefixes("/", "/") -> "/"
+    """
+    cleaned: list[str] = []
+    for part in parts:
+        p = part.strip()
+        if not p or p == "/":
+            continue
+        p = p.strip("/")
+        if p:
+            cleaned.append(p)
+    if not cleaned:
+        return "/"
+    return "/" + "/".join(cleaned)
+
+
+@dataclass(frozen=True)
+class RouterMountDetection:
+    """Detection of a router mounting or inclusion statement across frameworks.
+
+    Examples:
+      FastAPI: app.include_router(users_router, prefix="/api/v1")
+      Flask:   app.register_blueprint(auth_bp, url_prefix="/auth")
+      Django:  path("api/v1/", include("myapp.urls"))
+      Express: app.use("/api/v1", apiRouter)
+    """
+
+    framework: str  # flask | fastapi | django | express
+    parent_router: str  # e.g. "app", "api_router", "urlpatterns"
+    child_router: str  # e.g. "user_router", "auth_bp", "myapp.urls", "usersRouter"
+    prefix: str  # e.g. "/api/v1", "/users", "api/v1/"
+    file_path: str
+    line: int
+    column: int | None = None
+    confidence: str = "HIGH"
+    evidence: str = ""
+    module: str = ""
+
+    def as_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class RouterDefinition:
+    """Detection of a router instantiation with an inherent base prefix.
+
+    Examples:
+      FastAPI: router = APIRouter(prefix="/items")
+      Flask:   bp = Blueprint("auth", __name__, url_prefix="/auth")
+    """
+
+    framework: str  # flask | fastapi
+    router_name: str  # e.g. "router", "auth_bp"
+    prefix: str  # e.g. "/items", "/auth"
+    file_path: str
+    line: int
+    column: int | None = None
+    evidence: str = ""
+    module: str = ""
+
+    def as_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+
 @dataclass(frozen=True)
 class RouteDetection:
     framework: str  # flask | fastapi | django | express | nextjs
@@ -80,6 +151,7 @@ class RouteDetection:
     evidence: str = ""
     module: str = ""
     endpoint_id_override: str | None = None
+    router_name: str = ""
 
     @property
     def route_signature(self) -> str:
@@ -118,6 +190,7 @@ class RouteDetection:
             "confidence": self.confidence,
             "resolution_status": self.resolution_status,
             "evidence": self.evidence,
+            "router_name": self.router_name,
         }
 
 
@@ -139,6 +212,18 @@ class FrameworkAnalyzer(Protocol):
         node: ast.AST,
         context: AnalysisContext,
     ) -> list[RouteDetection]: ...
+
+    def analyze_python_mounts(
+        self,
+        node: ast.AST,
+        context: AnalysisContext,
+    ) -> list[RouterMountDetection]: ...
+
+    def analyze_python_definitions(
+        self,
+        node: ast.AST,
+        context: AnalysisContext,
+    ) -> list[RouterDefinition]: ...
 
 
 # ---------------------------------------------------------------------------
@@ -189,6 +274,7 @@ class FlaskAnalyzer:
                 if context.scope_qname
                 else f"{context.module}.{node.name}"
             )
+            router_name = ast.unparse(dec.func.value) if hasattr(ast, "unparse") else "app"
 
             for method in methods:
                 routes.append(
@@ -206,9 +292,83 @@ class FlaskAnalyzer:
                         resolution_status="RESOLVED",
                         evidence=f"Flask decorator @{ast.unparse(dec.func)}('{route_path}') on {node.name}",
                         module=context.module,
+                        router_name=router_name,
                     )
                 )
         return routes
+
+    def analyze_python_mounts(
+        self,
+        node: ast.AST,
+        context: AnalysisContext,
+    ) -> list[RouterMountDetection]:
+        mounts: list[RouterMountDetection] = []
+        if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+            return mounts
+
+        if node.func.attr == "register_blueprint" and node.args:
+            parent_expr = ast.unparse(node.func.value) if hasattr(ast, "unparse") else "app"
+            child_expr = ast.unparse(node.args[0]) if hasattr(ast, "unparse") else "blueprint"
+            prefix = ""
+            for kw in node.keywords:
+                if kw.arg == "url_prefix" and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
+                    prefix = kw.value.value
+            col = getattr(node, "col_offset", None)
+            mounts.append(
+                RouterMountDetection(
+                    framework="flask",
+                    parent_router=parent_expr,
+                    child_router=child_expr,
+                    prefix=prefix,
+                    file_path=context.file_path,
+                    line=node.lineno,
+                    column=col,
+                    confidence="HIGH",
+                    evidence=f"Flask register_blueprint: {ast.unparse(node) if hasattr(ast, 'unparse') else 'register_blueprint'}",
+                    module=context.module,
+                )
+            )
+        return mounts
+
+    def analyze_python_definitions(
+        self,
+        node: ast.AST,
+        context: AnalysisContext,
+    ) -> list[RouterDefinition]:
+        defs: list[RouterDefinition] = []
+        target_name = ""
+        call_node: ast.Call | None = None
+
+        if isinstance(node, ast.Assign) and node.targets and isinstance(node.value, ast.Call):
+            if isinstance(node.targets[0], ast.Name):
+                target_name = node.targets[0].id
+            call_node = node.value
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and isinstance(node.value, ast.Call):
+            target_name = node.target.id
+            call_node = node.value
+
+        if call_node and hasattr(ast, "unparse"):
+            func_expr = ast.unparse(call_node.func)
+            if func_expr in ("Blueprint", "flask.Blueprint") or func_expr.endswith(".Blueprint"):
+                prefix = ""
+                for kw in call_node.keywords:
+                    if kw.arg == "url_prefix" and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
+                        prefix = kw.value.value
+                line = getattr(node, "lineno", 1)
+                col = getattr(node, "col_offset", None)
+                defs.append(
+                    RouterDefinition(
+                        framework="flask",
+                        router_name=target_name or "bp",
+                        prefix=prefix,
+                        file_path=context.file_path,
+                        line=line,
+                        column=col,
+                        evidence=f"Flask Blueprint definition: {ast.unparse(node)}",
+                        module=context.module,
+                    )
+                )
+        return defs
 
 
 _FASTAPI_METHODS = {"get", "post", "put", "delete", "patch", "options", "head", "api_route"}
@@ -255,6 +415,7 @@ class FastAPIAnalyzer:
                 if context.scope_qname
                 else f"{context.module}.{node.name}"
             )
+            router_name = ast.unparse(dec.func.value) if hasattr(ast, "unparse") else "app"
 
             for method in methods:
                 routes.append(
@@ -272,9 +433,83 @@ class FastAPIAnalyzer:
                         resolution_status="RESOLVED",
                         evidence=f"FastAPI decorator @{ast.unparse(dec.func)}('{route_path}') on {node.name}",
                         module=context.module,
+                        router_name=router_name,
                     )
                 )
         return routes
+
+    def analyze_python_mounts(
+        self,
+        node: ast.AST,
+        context: AnalysisContext,
+    ) -> list[RouterMountDetection]:
+        mounts: list[RouterMountDetection] = []
+        if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+            return mounts
+
+        if node.func.attr == "include_router" and node.args:
+            parent_expr = ast.unparse(node.func.value) if hasattr(ast, "unparse") else "app"
+            child_expr = ast.unparse(node.args[0]) if hasattr(ast, "unparse") else "router"
+            prefix = ""
+            for kw in node.keywords:
+                if kw.arg == "prefix" and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
+                    prefix = kw.value.value
+            col = getattr(node, "col_offset", None)
+            mounts.append(
+                RouterMountDetection(
+                    framework="fastapi",
+                    parent_router=parent_expr,
+                    child_router=child_expr,
+                    prefix=prefix,
+                    file_path=context.file_path,
+                    line=node.lineno,
+                    column=col,
+                    confidence="HIGH",
+                    evidence=f"FastAPI include_router: {ast.unparse(node) if hasattr(ast, 'unparse') else 'include_router'}",
+                    module=context.module,
+                )
+            )
+        return mounts
+
+    def analyze_python_definitions(
+        self,
+        node: ast.AST,
+        context: AnalysisContext,
+    ) -> list[RouterDefinition]:
+        defs: list[RouterDefinition] = []
+        target_name = ""
+        call_node: ast.Call | None = None
+
+        if isinstance(node, ast.Assign) and node.targets and isinstance(node.value, ast.Call):
+            if isinstance(node.targets[0], ast.Name):
+                target_name = node.targets[0].id
+            call_node = node.value
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and isinstance(node.value, ast.Call):
+            target_name = node.target.id
+            call_node = node.value
+
+        if call_node and hasattr(ast, "unparse"):
+            func_expr = ast.unparse(call_node.func)
+            if "APIRouter" in func_expr or func_expr.endswith("Router"):
+                prefix = ""
+                for kw in call_node.keywords:
+                    if kw.arg == "prefix" and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
+                        prefix = kw.value.value
+                line = getattr(node, "lineno", 1)
+                col = getattr(node, "col_offset", None)
+                defs.append(
+                    RouterDefinition(
+                        framework="fastapi",
+                        router_name=target_name or "router",
+                        prefix=prefix,
+                        file_path=context.file_path,
+                        line=line,
+                        column=col,
+                        evidence=f"FastAPI APIRouter definition: {ast.unparse(node)}",
+                        module=context.module,
+                    )
+                )
+        return defs
 
 
 class DjangoAnalyzer:
@@ -297,6 +532,13 @@ class DjangoAnalyzer:
 
         if func_name in ("path", "re_path") and len(node.args) >= 2:
             arg0, arg1 = node.args[0], node.args[1]
+
+            # If second argument is an include(...) call, do NOT record as a direct route
+            if isinstance(arg1, ast.Call) and hasattr(ast, "unparse"):
+                callee = ast.unparse(arg1.func)
+                if callee in ("include", "django.urls.include") or callee.endswith(".include"):
+                    return routes
+
             if isinstance(arg0, ast.Constant) and isinstance(arg0.value, str):
                 route_path = "/" + arg0.value.lstrip("/")
                 handler_expr = ast.unparse(arg1) if hasattr(ast, "unparse") else "handler"
@@ -325,9 +567,66 @@ class DjangoAnalyzer:
                         resolution_status="RESOLVED",
                         evidence=f"Django {func_name}('{arg0.value}', {handler_expr})",
                         module=context.module,
+                        router_name="urlpatterns",
                     )
                 )
         return routes
+
+    def analyze_python_mounts(
+        self,
+        node: ast.AST,
+        context: AnalysisContext,
+    ) -> list[RouterMountDetection]:
+        mounts: list[RouterMountDetection] = []
+        if not isinstance(node, ast.Call):
+            return mounts
+
+        func_name = ""
+        if isinstance(node.func, ast.Name):
+            func_name = node.func.id
+        elif isinstance(node.func, ast.Attribute):
+            func_name = node.func.attr
+
+        if func_name in ("path", "re_path") and len(node.args) >= 2:
+            arg0, arg1 = node.args[0], node.args[1]
+            if isinstance(arg1, ast.Call) and hasattr(ast, "unparse"):
+                callee = ast.unparse(arg1.func)
+                if callee in ("include", "django.urls.include") or callee.endswith(".include"):
+                    prefix = arg0.value if isinstance(arg0, ast.Constant) and isinstance(arg0.value, str) else ""
+                    child = ""
+                    if arg1.args:
+                        first = arg1.args[0]
+                        if isinstance(first, ast.Constant) and isinstance(first.value, str):
+                            child = first.value
+                        elif isinstance(first, (ast.Tuple, ast.List)) and first.elts:
+                            c0 = first.elts[0]
+                            child = c0.value if isinstance(c0, ast.Constant) and isinstance(c0.value, str) else ast.unparse(c0)
+                        else:
+                            child = ast.unparse(first)
+                    if child:
+                        col = getattr(node, "col_offset", None)
+                        mounts.append(
+                            RouterMountDetection(
+                                framework="django",
+                                parent_router="urlpatterns",
+                                child_router=child,
+                                prefix=prefix,
+                                file_path=context.file_path,
+                                line=node.lineno,
+                                column=col,
+                                confidence="HIGH",
+                                evidence=f"Django include: {ast.unparse(node)}",
+                                module=context.module,
+                            )
+                        )
+        return mounts
+
+    def analyze_python_definitions(
+        self,
+        node: ast.AST,
+        context: AnalysisContext,
+    ) -> list[RouterDefinition]:
+        return []
 
 
 def get_python_analyzers(imports_modules: set[str]) -> list[FrameworkAnalyzer]:
@@ -357,9 +656,25 @@ def get_python_analyzers(imports_modules: set[str]) -> list[FrameworkAnalyzer]:
 # ---------------------------------------------------------------------------
 
 _EXPRESS_CALL_RE = re.compile(
-    r"\b(?:app|router)\.(get|post|put|delete|patch|options|head|all)\s*\(\s*['\"]([^'\"]+)['\"]\s*,\s*([A-Za-z_$][\w$.]*)",
+    r"\b([A-Za-z_$][\w$]*)\.(get|post|put|delete|patch|options|head|all)\s*\(\s*['\"]([^'\"]+)['\"]\s*,\s*([A-Za-z_$][\w$.]*)",
     re.IGNORECASE,
 )
+
+_EXPRESS_USE_RE = re.compile(
+    r"\b([A-Za-z_$][\w$]*)\.use\s*\(\s*(?:['\"]([^'\"]+)['\"]\s*,\s*)?([A-Za-z_$][\w$.]*)\s*\)",
+    re.IGNORECASE,
+)
+
+_EXPRESS_IGNORE_USE = {
+    "express.json",
+    "express.urlencoded",
+    "express.static",
+    "cors",
+    "helmet",
+    "morgan",
+    "cookieparser",
+    "bodyparser",
+}
 
 _NEXT_ROUTE_EXPORT_RE = re.compile(
     r"export\s+(?:async\s+)?function\s+(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)\s*\("
@@ -378,11 +693,16 @@ def analyze_js_ts_line(
 
     # 1. Express route registration
     for m in _EXPRESS_CALL_RE.finditer(line):
-        method = m.group(1).upper()
+        router_obj = m.group(1)
+        # Check if caller looks like an Express router or app
+        if router_obj.lower() not in ("app", "router") and not router_obj.lower().endswith("router") and not router_obj.lower().endswith("routes"):
+            continue
+
+        method = m.group(2).upper()
         if method == "ALL":
             method = "ANY"
-        route_path = m.group(2)
-        handler_expr = m.group(3)
+        route_path = m.group(3)
+        handler_expr = m.group(4)
         handler_name = handler_expr.split(".")[-1]
         handler_canon = f"{module}.{handler_expr}"
         norm = normalize_route_path(route_path, "express")
@@ -402,6 +722,7 @@ def analyze_js_ts_line(
                 resolution_status="RESOLVED",
                 evidence=f"Express route registration {m.group(0)}",
                 module=module,
+                router_name=router_obj,
             )
         )
 
@@ -434,7 +755,41 @@ def analyze_js_ts_line(
                     resolution_status="RESOLVED",
                     evidence=f"Next.js App Router HTTP export {method} in {file_path}",
                     module=module,
+                    router_name="export",
                 )
             )
 
     return routes
+
+
+def analyze_js_ts_mounts(
+    line: str,
+    lineno: int,
+    file_path: str,
+    module: str,
+) -> list[RouterMountDetection]:
+    """Analyze a single JS/TS line for Express router mounting statements (e.g. app.use('/api', router))."""
+    mounts: list[RouterMountDetection] = []
+    for m in _EXPRESS_USE_RE.finditer(line):
+        parent = m.group(1)
+        prefix = m.group(2) or ""
+        child = m.group(3)
+
+        if child.lower() in _EXPRESS_IGNORE_USE or parent.lower() in _EXPRESS_IGNORE_USE:
+            continue
+
+        mounts.append(
+            RouterMountDetection(
+                framework="express",
+                parent_router=parent,
+                child_router=child,
+                prefix=prefix,
+                file_path=file_path,
+                line=lineno,
+                column=m.start(),
+                confidence="HIGH",
+                evidence=f"Express mount {m.group(0)}",
+                module=module,
+            )
+        )
+    return mounts

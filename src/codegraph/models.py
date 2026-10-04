@@ -49,9 +49,23 @@ EdgeType = Literal[
     "IMPLEMENTS",
     "USES",
     "ROUTES_TO",
+    "MOUNTS",
+    "RESOLVES_TO",
+    "REGISTERS",
+    "DISPATCHES_TO",
+    "EVENT_LISTENER",
+    "TASK_HANDLER",
+    "COMMAND_HANDLER",
     "TESTS",
+    "TESTS_ROUTE",
+    "TESTS_SYMBOL",
+    "TESTS_PROVIDER",
+    "TESTS_EVENT_HANDLER",
     "DEPENDS_ON",
     "CONFIGURES",
+    "INJECTS",
+    "PROVIDES",
+    "RESOLVES_DEPENDENCY",
 ]
 
 ErrorCategory = Literal[

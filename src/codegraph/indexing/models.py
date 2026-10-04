@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import posixpath
 from dataclasses import dataclass, field
+from functools import lru_cache
 
 _SOURCE_EXTENSIONS = (
     ".d.ts",
@@ -32,6 +33,7 @@ _SOURCE_EXTENSIONS = (
 )
 
 
+@lru_cache(maxsize=65536)
 def normalize_module(file_path: str, language: str = "") -> str:
     """Deterministically normalize a repository-relative file path into a dotted module ID."""
     del language  # normalization is uniform across Python/JS/TS after extension/index rules
@@ -336,3 +338,76 @@ class Chunk:
     end_line: int
     content: str
     content_hash: str
+
+
+@dataclass(frozen=True)
+class BindingRef:
+    """Local variable alias or expression binding for conservative data-flow resolution."""
+
+    target_name: str
+    file_path: str
+    line: int
+    column: int | None = None
+    scope: str = ""
+    expr_kind: str = "IDENTIFIER"  # IDENTIFIER | ATTRIBUTE | DICT_LITERAL | LIST_LITERAL | SUBSCRIPT | DYNAMIC
+    source_expr: str = ""
+    is_conditional: bool = False
+    base_expr: str = ""
+    attr_name: str = ""
+    dict_entries: tuple[tuple[str, str], ...] = ()
+    list_entries: tuple[str, ...] = ()
+    subscript_target: str | None = None
+    subscript_key: str | None = None
+    subscript_index: int | None = None
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "target_name": self.target_name,
+            "file_path": self.file_path,
+            "line": self.line,
+            "column": self.column,
+            "scope": self.scope,
+            "expr_kind": self.expr_kind,
+            "source_expr": self.source_expr,
+            "is_conditional": self.is_conditional,
+            "base_expr": self.base_expr,
+            "attr_name": self.attr_name,
+            "dict_entries": list(self.dict_entries),
+            "list_entries": list(self.list_entries),
+            "subscript_target": self.subscript_target,
+            "subscript_key": self.subscript_key,
+            "subscript_index": self.subscript_index,
+        }
+
+
+@dataclass(frozen=True)
+class RegistrationRef:
+    """Explicit registry, dispatch mapping, or event listener fact."""
+
+    pattern: str  # CALL_REGISTER | DICT_ASSIGN | EVENT_ON | SUBSCRIBE | COMMAND
+    registry_expr: str
+    key_or_event: str
+    target_expr: str
+    file_path: str
+    line: int
+    scope: str = ""
+    is_conditional: bool = False
+    is_dynamic_key: bool = False
+    is_dynamic_target: bool = False
+    evidence: str = ""
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "pattern": self.pattern,
+            "registry_expr": self.registry_expr,
+            "key_or_event": self.key_or_event,
+            "target_expr": self.target_expr,
+            "file_path": self.file_path,
+            "line": self.line,
+            "scope": self.scope,
+            "is_conditional": self.is_conditional,
+            "is_dynamic_key": self.is_dynamic_key,
+            "is_dynamic_target": self.is_dynamic_target,
+            "evidence": self.evidence,
+        }
+

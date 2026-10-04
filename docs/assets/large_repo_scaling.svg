@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 430" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #0d1117; rx: 14px; }
+      .card { fill: #161b22; stroke: #30363d; stroke-width: 1; rx: 10px; }
+      .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 18.5px; font-weight: 700; fill: #f0f6fc; }
+      .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 12px; fill: #8b949e; }
+      .section-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13.5px; font-weight: 600; fill: #e6edf3; }
+      .axis-lbl { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; fill: #8b949e; }
+      .val-lbl { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; font-weight: 700; fill: #f0f6fc; }
+      .val-green { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; font-weight: 700; fill: #3fb950; }
+      .grid-line { stroke: #21262d; stroke-width: 1; stroke-dasharray: 3,3; }
+      .axis-line { stroke: #30363d; stroke-width: 1.5; }
+      .line-before { fill: none; stroke: #6e7681; stroke-width: 2.5; stroke-dasharray: 5,4; }
+      .line-after { fill: none; stroke: #3fb950; stroke-width: 3; }
+      .line-mem { fill: none; stroke: #58a6ff; stroke-width: 3; }
+      .line-wal-before { fill: none; stroke: #f85149; stroke-width: 2.2; stroke-dasharray: 4,4; }
+      .line-wal-after { fill: none; stroke: #3fb950; stroke-width: 2.8; }
+      .dot-before { fill: #8b949e; }
+      .dot-after { fill: #3fb950; }
+      .dot-mem { fill: #58a6ff; }
+      .dot-wal-before { fill: #f85149; }
+      .legend-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 11.5px; fill: #c9d1d9; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="920" height="430" />
+
+  <text class="title" x="28" y="38">CodeGraph — Measured Large-Repository Scaling (v2.1.6 → v2.1.7)</text>
+  <text class="subtitle" x="28" y="58">Methodology: Reproducible 4-tier benchmark fixture (54 → 2,504 files, 5,015 symbols, 18,528 edges; benchmarks/run_v217_indexing_benchmark.py)</text>
+
+  <!-- Left Chart: Files -> Index Time (v2.1.6 vs v2.1.7) -->
+  <rect class="card" x="24" y="76" width="430" height="330" />
+  <text class="section-title" x="44" y="104">Files → Total Indexing Time (Seconds)</text>
+
+  <!-- Legend Left -->
+  <line class="line-before" x1="44" y1="122" x2="72" y2="122" />
+  <text class="legend-text" x="78" y="126">v2.1.6 Baseline: 21.983s</text>
+  <line class="line-after" x1="230" y1="122" x2="258" y2="122" />
+  <text class="legend-text" x="264" y="126">v2.1.7: 13.395s (39.1% faster)</text>
+
+  <!-- Grid Left (x: 75..420, y: 150..350, max=25s) -->
+  <line class="grid-line" x1="75" y1="150" x2="420" y2="150" /><text class="axis-lbl" x="42" y="154">25s</text>
+  <line class="grid-line" x1="75" y1="190" x2="420" y2="190" /><text class="axis-lbl" x="42" y="194">20s</text>
+  <line class="grid-line" x1="75" y1="230" x2="420" y2="230" /><text class="axis-lbl" x="42" y="234">15s</text>
+  <line class="grid-line" x1="75" y1="270" x2="420" y2="270" /><text class="axis-lbl" x="42" y="274">10s</text>
+  <line class="grid-line" x1="75" y1="310" x2="420" y2="310" /><text class="axis-lbl" x="42" y="314"> 5s</text>
+  <line class="axis-line" x1="75" y1="350" x2="420" y2="350" /><text class="axis-lbl" x="42" y="354"> 0s</text>
+  <line class="axis-line" x1="75" y1="150" x2="75" y2="350" />
+
+  <!-- X-axis labels: 54 (x=90), 304 (x=175), 1004 (x=285), 2504 (x=405) -->
+  <text class="axis-lbl" x="76" y="370">54</text>
+  <text class="axis-lbl" x="162" y="370">304</text>
+  <text class="axis-lbl" x="268" y="370">1,004</text>
+  <text class="axis-lbl" x="385" y="370">2,504 files</text>
+
+  <!-- Before line: (90, 345.8), (175, 329.5), (285, 280.2), (405, 174.1) -->
+  <polyline class="line-before" points="90,346 175,329 285,280 405,174" />
+  <circle class="dot-before" cx="90" cy="346" r="4" />
+  <circle class="dot-before" cx="175" cy="329" r="4" />
+  <circle class="dot-before" cx="285" cy="280" r="4" />
+  <circle class="dot-before" cx="405" cy="174" r="4" />
+  <text class="axis-lbl" x="355" y="166">21.983s</text>
+
+  <!-- After line: (90, 347.4), (175, 337.1), (285, 307.6), (405, 242.8) -->
+  <polyline class="line-after" points="90,347 175,337 285,308 405,243" />
+  <circle class="dot-after" cx="90" cy="347" r="4.5" />
+  <circle class="dot-after" cx="175" cy="337" r="4.5" />
+  <circle class="dot-after" cx="285" cy="308" r="4.5" />
+  <circle class="dot-after" cx="405" cy="243" r="4.5" />
+  <text class="val-green" x="355" y="262">13.395s</text>
+  <text class="val-green" x="266" y="325">5.296s</text>
+  <text class="val-green" x="158" y="323">1.613s</text>
+
+  <text class="subtitle" x="44" y="394">Throughput at 2,504 files: 113.9 → 186.9 files/s (1,383.2 edges/s)</text>
+
+  <!-- Right Chart: Files -> Peak Memory & Peak SQLite WAL (MB) -->
+  <rect class="card" x="466" y="76" width="430" height="330" />
+  <text class="section-title" x="486" y="104">Files → Peak RSS Memory &amp; SQLite WAL Size (MB)</text>
+
+  <!-- Legend Right -->
+  <line class="line-mem" x1="486" y1="122" x2="510" y2="122" />
+  <text class="legend-text" x="515" y="126">Peak RSS (MB)</text>
+  <line class="line-wal-before" x1="612" y1="122" x2="636" y2="122" />
+  <text class="legend-text" x="641" y="126">v2.1.6 Peak WAL</text>
+  <line class="line-wal-after" x1="748" y1="122" x2="772" y2="122" />
+  <text class="legend-text" x="777" y="126">v2.1.7 Peak WAL (-85.9%)</text>
+
+  <!-- Grid Right (x: 525..865, y: 150..350, max=200 MB) -->
+  <line class="grid-line" x1="525" y1="150" x2="865" y2="150" /><text class="axis-lbl" x="484" y="154">200M</text>
+  <line class="grid-line" x1="525" y1="200" x2="865" y2="200" /><text class="axis-lbl" x="484" y="204">150M</text>
+  <line class="grid-line" x1="525" y1="250" x2="865" y2="250" /><text class="axis-lbl" x="484" y="254">100M</text>
+  <line class="grid-line" x1="525" y1="300" x2="865" y2="300" /><text class="axis-lbl" x="484" y="304"> 50M</text>
+  <line class="axis-line" x1="525" y1="350" x2="865" y2="350" /><text class="axis-lbl" x="484" y="354">  0M</text>
+  <line class="axis-line" x1="525" y1="150" x2="525" y2="350" />
+
+  <!-- X-axis labels Right: 54 (x=540), 304 (x=625), 1004 (x=735), 2504 (x=850) -->
+  <text class="axis-lbl" x="528" y="370">54</text>
+  <text class="axis-lbl" x="612" y="370">304</text>
+  <text class="axis-lbl" x="718" y="370">1,004</text>
+  <text class="axis-lbl" x="830" y="370">2,504 files</text>
+
+  <!-- Peak RSS Memory: 46.25MB (y=304), 62.67MB (y=287), 103.44MB (y=247), 180.89MB (y=169) -->
+  <polyline class="line-mem" points="540,304 625,287 735,247 850,169" />
+  <circle class="dot-mem" cx="540" cy="304" r="4" />
+  <circle class="dot-mem" cx="625" cy="287" r="4" />
+  <circle class="dot-mem" cx="735" cy="247" r="4" />
+  <circle class="dot-mem" cx="850" cy="169" r="4" />
+  <text class="val-lbl" x="786" y="162">180.89 MB RSS</text>
+  <text class="val-lbl" x="695" y="238">103.44 MB</text>
+
+  <!-- Peak WAL Before (v2.1.6): 0.99MB (y=349), 5.61MB (y=344), 19.30MB (y=331), 46.98MB (y=303) -->
+  <polyline class="line-wal-before" points="540,349 625,344 735,331 850,303" />
+  <circle class="dot-wal-before" cx="540" cy="349" r="3.5" />
+  <circle class="dot-wal-before" cx="625" cy="344" r="3.5" />
+  <circle class="dot-wal-before" cx="735" cy="331" r="3.5" />
+  <circle class="dot-wal-before" cx="850" cy="303" r="3.5" />
+  <text class="axis-lbl" x="786" y="296" style="fill:#f85149;">46.980 MB WAL</text>
+
+  <!-- Peak WAL After (v2.1.7): 1.54MB (y=348), 4.10MB (y=346), 5.03MB (y=345), 6.63MB (y=343) -->
+  <polyline class="line-wal-after" points="540,348 625,346 735,345 850,343" />
+  <circle class="dot-after" cx="540" cy="348" r="4" />
+  <circle class="dot-after" cx="625" cy="346" r="4" />
+  <circle class="dot-after" cx="735" cy="345" r="4" />
+  <circle class="dot-after" cx="405" cy="243" r="4" />
+  <circle class="dot-after" cx="850" cy="343" r="4" />
+  <text class="val-green" x="758" y="336">6.628 MB (0.0 MB final)</text>
+
+  <text class="subtitle" x="486" y="394">2,504-file fixture tracemalloc peak: 67.25 MB (process RSS: 180.89 MB)</text>
+</svg>
