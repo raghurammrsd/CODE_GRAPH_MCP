@@ -2,14 +2,14 @@
   <img src="docs/assets/codegraph_logo.jpg" alt="CodeGraph MCP — Deep Deterministic Repository Intelligence for AI Coding Agents" width="500" />
 </p>
 
-<h1 align="center">CodeGraph-MCP Engine (v2.2.0)</h1>
+<h1 align="center">CodeGraph MCP Engine (v2.2.1)</h1>
 
 <p align="center">
   <strong>Deep deterministic repository intelligence for AI coding agents.</strong>
 </p>
 
 <p align="center">
-  <a href="https://pypi.org/project/codegraph-engine/2.2.0/"><img src="https://img.shields.io/badge/pypi-codegraph--engine%20v2.2.0-blue.svg" alt="PyPI: codegraph-engine v2.2.0" /></a>
+  <a href="https://pypi.org/project/codegraph-engine/2.2.1/"><img src="https://img.shields.io/badge/pypi-codegraph--engine%20v2.2.1-blue.svg" alt="PyPI: codegraph-engine v2.2.1" /></a>
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/python-3.12%20%7C%203.13-3776AB.svg" alt="Python 3.12 | 3.13" /></a>
   <a href="src/codegraph/mcp/server.py"><img src="https://img.shields.io/badge/MCP-14%20default%20%7C%2056%20full%20tools-2ea043.svg" alt="MCP Tools: 14 default | 56 full" /></a>
   <a href="tests/"><img src="https://img.shields.io/badge/pytest-861%20passed-brightgreen.svg" alt="Tests: 861 passed" /></a>
@@ -19,8 +19,8 @@
 </p>
 
 <p align="center">
-  <a href="https://pypi.org/project/codegraph-engine/2.2.0/"><strong>PyPI (v2.2.0)</strong></a> •
-  <a href="#1-whats-new-in-v220"><strong>What's New in v2.2.0</strong></a> •
+  <a href="https://pypi.org/project/codegraph-engine/2.2.1/"><strong>PyPI (v2.2.1)</strong></a> •
+  <a href="#1-whats-new-in-v220"><strong>What's New in v2.2.1</strong></a> •
   <a href="#2-quickstart-30-second-setup"><strong>Quickstart</strong></a> •
   <a href="#4-real-world-cli-outputs"><strong>Real-World Outputs</strong></a> •
   <a href="#6-database-intelligence"><strong>Database Intelligence</strong></a> •
@@ -32,24 +32,24 @@
 
 ```text
 The AI reasons.
-CodeGraph interrogates the repository.
+CodeGraph MCP interrogates the repository.
 The evidence stays traceable.
 ```
 
 **CodeGraph MCP gives AI coding agents an evidence-backed understanding of code, dependencies, databases, and optional runtime observations.**
 > **Supported Languages & Frameworks:** First-class **Python** (`FastAPI`, `Flask`, `Django`, `SQLAlchemy`, `Celery`, `pytest`) + **TypeScript / JavaScript** (`.ts`, `.tsx`, `.js`, `.jsx`) & **Express.js** support.
 
-When an AI coding agent works inside a complex Python or full-stack codebase, raw text search forces it to open dozens of files and mentally reconstruct call chains, router prefixes, dependency injection providers, and ORM table mappings inside its context window. CodeGraph eliminates blind exploration by interrogating the codebase for deterministic, AST-verified facts.
+When an AI coding agent works inside a complex Python or full-stack codebase, raw text search forces it to open dozens of files and mentally reconstruct call chains, router prefixes, dependency injection providers, and ORM table mappings inside its context window. CodeGraph MCP eliminates blind exploration by interrogating the codebase for deterministic, AST-verified facts.
 
-![CodeGraph v2.2.0 Architecture & Concurrency Pipeline](docs/assets/v22_concurrency_runtime_pipeline.svg)
+![CodeGraph MCP v2.2.1 Architecture & Concurrency Pipeline](docs/assets/v22_concurrency_runtime_pipeline.svg)
 
 ---
 
-## 1. What's New in v2.2.0
+## 1. What's New in v2.2.1
 
-Version `2.2.0` solves the core operational, concurrency, context saturation, and developer friction bottlenecks in the Agent-MCP ecosystem:
+Version `2.2.1` solves the core operational, concurrency, context saturation, and developer friction bottlenecks in the Agent-MCP ecosystem:
 
-| Bottleneck Solved | How It Worked Before | CodeGraph v2.2.0 Solution | Impact |
+| Bottleneck Solved | How It Worked Before | CodeGraph MCP v2.2.1 Solution | Impact |
 | :--- | :--- | :--- | :--- |
 | **Runtime Telemetry Cold Start** | User had to manually configure OpenTelemetry exporters or Pino JSON log streaming pipelines. | **`codegraph run <command>`**: Transparent 1-line wrapper (`codegraph run npm run dev`, `codegraph run uvicorn main:app`) injecting non-invasive hooks (`NODE_OPTIONS` / `PYTHONSTARTUP`). | **Zero code changes**; streams HTTP route hits, latencies, and exception traces directly into `.codegraph/runtime.sqlite3`. |
 | **Database Concurrency (`database is locked`)** | Concurrent agent queries and background indexers could lock the SQLite database and raise crashes. | Enforced permanent **`WAL`** mode, **`synchronous = NORMAL`**, **`busy_timeout = 15000`** (15s), **`cache_size = -64000`** (64MB), and in-memory temporary storage. | Completely eliminates `database is locked` errors during parallel AI interrogation. |
@@ -69,7 +69,7 @@ pip install "codegraph-engine[mcp]"
 
 ### Step 2: Configure Your AI Coding Agents (`codegraph install`)
 
-CodeGraph includes an interactive, idempotent onboarding installer ([`src/codegraph/installer.py`](src/codegraph/installer.py)) that detects installed AI coding agents (**Claude Code**, **Cursor**, **Antigravity**, **Codex CLI**, **Gemini CLI**, and **Cline**), configures `mcpServers.codegraph`, installs marker-bounded routing instructions (`<!-- CODEGRAPH:START -->` … `<!-- CODEGRAPH:END -->`), and verifies server health:
+CodeGraph MCP includes an interactive, idempotent onboarding installer ([`src/codegraph/installer.py`](src/codegraph/installer.py)) that detects installed AI coding agents (**Claude Code**, **Cursor**, **Antigravity**, **Codex CLI**, **Gemini CLI**, and **Cline**), configures `mcpServers.codegraph`, installs marker-bounded routing instructions (`<!-- CODEGRAPH:START -->` … `<!-- CODEGRAPH:END -->`), and verifies server health:
 
 ```bash
 # Interactive setup (detects installed agents, previews planned changes, asks confirmation)
@@ -95,7 +95,7 @@ codegraph doctor
 
 ### Step 4: Run With Zero-Friction Telemetry (`codegraph run`)
 
-Wrap your development server transparently to stream real HTTP routes, durations, and uncaught exceptions directly into CodeGraph:
+Wrap your development server transparently to stream real HTTP routes, durations, and uncaught exceptions directly into CodeGraph MCP:
 
 ```bash
 # Node / Express / Next.js
@@ -149,7 +149,7 @@ EDITING        →  Native agent / IDE editing tools
 
 ## 4. Real-World CLI Outputs
 
-Below are exact, verifiable outputs produced by CodeGraph v2.2.0:
+Below are exact, verifiable outputs produced by CodeGraph MCP v2.2.1:
 
 ### 1. Zero-Friction Runtime Interceptor (`codegraph run`)
 
@@ -254,7 +254,7 @@ InferenceService.run_inference
                                    db:table:postgresql.public.prediction_logs
 ```
 
-**What CodeGraph structurally proves**:
+**What CodeGraph MCP structurally proves**:
 - `find_routes(path="/v1/predict")` resolves composed router prefixes (`MOUNTS`) to `predict_endpoint`.
 - `trace_path(from_symbol="predict_endpoint", to_symbol="log_prediction")` proves the multi-hop execution chain across DI injection, preprocessing, model execution, and persistence.
 - `get_db_impact(symbol="InferenceService.run_inference")` identifies downstream writes to `prediction_logs`.
@@ -272,10 +272,10 @@ TrainingPipeline.run
       └──►CALLS (AST_VERIFIED) ──► Evaluator.compute_metrics
 ```
 
-**What CodeGraph structurally proves**:
+**What CodeGraph MCP structurally proves**:
 - `find_callees(symbol="TrainingPipeline.run")` enumerates every stage of the pipeline with exact file and line ranges.
 - `find_tests(symbol="Evaluator.compute_metrics")` locates the unit and regression tests covering metric calculation.
-- When a transform or model class is dynamically instantiated from a YAML string (`getattr(models, cfg.arch)`), CodeGraph explicitly records `POSSIBLE_CALLS` (`POSSIBLE`) or `UNRESOLVED_REFERENCE` (`UNKNOWN`) rather than fabricating a false static call edge.
+- When a transform or model class is dynamically instantiated from a YAML string (`getattr(models, cfg.arch)`), CodeGraph MCP explicitly records `POSSIBLE_CALLS` (`POSSIBLE`) or `UNRESOLVED_REFERENCE` (`UNKNOWN`) rather than fabricating a false static call edge.
 
 ### Example 3: LLM Agent & Tool Registry
 
@@ -291,7 +291,7 @@ AgentRunner.execute_step
       └──►CALLS (AST_VERIFIED)           ──► ModelProviderClient.generate
 ```
 
-**What CodeGraph structurally proves**:
+**What CodeGraph MCP structurally proves**:
 - Tracks decorator and call-based registrations (`@tool_registry.register("search_orders")`) via `REGISTERS` and `REGISTERED_HANDLER` edges.
 - Tracks environment variable dependencies (`os.getenv("OPENAI_API_KEY")`) as `READS_ENV` edges with the variable name only—never indexing or exposing secret values.
 
@@ -323,7 +323,7 @@ orders.user_id ──► users.id
 
 ## 7. Zero-Friction Runtime Intelligence & Static Reconciliation
 
-Static analysis proves what **can** happen structurally; runtime telemetry records what **was observed** during execution. CodeGraph v2.2.0 brings them together transparently:
+Static analysis proves what **can** happen structurally; runtime telemetry records what **was observed** during execution. CodeGraph MCP v2.2.1 brings them together transparently:
 
 ```text
 STATIC GRAPH (AST + Framework + Dataflow + DB)
@@ -351,7 +351,7 @@ RUNTIME OBSERVATION (codegraph run / OTel JSON / JSONL / SQL Logs)
 
 ## 8. Epistemic Trust & Evidence Contract
 
-CodeGraph enforces a fail-closed evidence contract ([`src/codegraph/evidence_contract.py`](src/codegraph/evidence_contract.py)) across all **51 canonical relationship types** and **9 evidence classes**. CodeGraph prefers **explicit uncertainty** over **fabricated certainty**:
+CodeGraph MCP enforces a fail-closed evidence contract ([`src/codegraph/evidence_contract.py`](src/codegraph/evidence_contract.py)) across all **51 canonical relationship types** and **9 evidence classes**. CodeGraph MCP prefers **explicit uncertainty** over **fabricated certainty**:
 
 ```text
 Dynamically resolved target (getattr(handler, action_name)())
@@ -377,7 +377,7 @@ UNRESOLVED_REFERENCE / POSSIBLE_CALLS (status = "UNKNOWN" | "POSSIBLE")
 
 Recorded using [`benchmarks/run_v217_indexing_benchmark.py`](benchmarks/run_v217_indexing_benchmark.py) on macOS `arm64`, Python `3.13` with permanent SQLite WAL concurrency:
 
-| Workload Tier | Files | Symbols | Graph Edges | Baseline Total | v2.2.0 Total | Improvement | Peak RSS | Peak WAL | Final WAL |
+| Workload Tier | Files | Symbols | Graph Edges | Baseline Total | v2.2.1 Total | Improvement | Peak RSS | Peak WAL | Final WAL |
 | :--- | ---: | ---: | ---: | ---: | ---: | :--- | ---: | ---: | ---: |
 | **Small** | `54` | `115` | `398` | `0.527 s` | `0.325 s` | **38.3% faster (`1.62x`)** | `46.25 MB` | `1.544 MB` | `0.0 MB` |
 | **Medium** | `304` | `615` | `2,248` | `2.564 s` | `1.613 s` | **37.1% faster (`1.59x`)** | `62.67 MB` | `4.098 MB` | `0.0 MB` |
@@ -386,7 +386,7 @@ Recorded using [`benchmarks/run_v217_indexing_benchmark.py`](benchmarks/run_v217
 
 ### Stress Tier (`2,504` Files) Phase Breakdown
 
-| Phase / Metric | Legacy Baseline | v2.2.0 Release | Measured Improvement |
+| Phase / Metric | Legacy Baseline | v2.2.1 Release | Measured Improvement |
 | :--- | ---: | ---: | :--- |
 | **Total Indexing Time** | `21.983 s` | `13.395 s` | **39.1% faster (`1.64x`)** |
 | **Database Intelligence Pass** | `4.818 s` | `0.832 s` | **82.7% faster (`5.79x`)** |
@@ -397,9 +397,9 @@ Recorded using [`benchmarks/run_v217_indexing_benchmark.py`](benchmarks/run_v217
 | **Peak SQLite WAL Size** | `46.980 MB` | `6.628 MB` | **85.9% reduction (`7.09x` smaller)** |
 | **Final SQLite WAL Size** | `0.000 MB` | `0.000 MB` | **100% reclaimed (`TRUNCATE`)** |
 
-![CodeGraph — Measured Large-Repository Scaling](docs/assets/large_repo_scaling.svg)
+![CodeGraph MCP — Measured Large-Repository Scaling](docs/assets/large_repo_scaling.svg)
 
-### 50-Task Production Benchmark Results (`v2.2.0`)
+### 50-Task Production Benchmark Results (`v2.2.1`)
 
 Evaluated across 50 production tasks and 10 categories via [`benchmarks/run_v21_eval.py`](benchmarks/run_v21_eval.py):
 
@@ -427,17 +427,17 @@ Evaluated across 50 production tasks and 10 categories via [`benchmarks/run_v21_
 | **Unsupported Claims (Hallucinated Edges)** | `11 (34.38%)` | `0 (0.00%)` | **`0% unsupported claims`** |
 | **Task Accuracy** | `59.84%` | `100.0%` | **`+40.16%`** |
 
-![CodeGraph — Measured Context & Exploration Efficiency](docs/assets/performance_comparison.svg)
+![CodeGraph MCP — Measured Context & Exploration Efficiency](docs/assets/performance_comparison.svg)
 
 ---
 
-## 10. Where CodeGraph Fits
+## 10. Where CodeGraph MCP Fits
 
-CodeGraph works **alongside** your editor's language server (LSP), `ripgrep`, and structural AST tools:
+CodeGraph MCP works **alongside** your editor's language server (LSP), `ripgrep`, and structural AST tools:
 
 Legend: `✓` supported • `◐` partial / workflow-dependent • `—` not supported
 
-| Capability | CodeGraph MCP (`v2.2.0`) | Editor LSP | Structural AST (`ast-grep`) | Lexical Search (`ripgrep`) | Remote Code Search (`Sourcegraph`) |
+| Capability | CodeGraph MCP (`v2.2.1`) | Editor LSP | Structural AST (`ast-grep`) | Lexical Search (`ripgrep`) | Remote Code Search (`Sourcegraph`) |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **100% Local-First & Offline Operation** | ✓ | ✓ | ✓ | ✓ | — |
 | **Native MCP Server for AI Agents** | ✓ (14 default / 56 full) | — | ◐ | — | ✓ |
@@ -457,7 +457,7 @@ Legend: `✓` supported • `◐` partial / workflow-dependent • `—` not sup
 
 ## 11. Security, Privacy & Redaction Boundaries
 
-CodeGraph runs **100% locally** (`stdio` / `sse` MCP + local `.codegraph.sqlite3`), never executes repository code during indexing, and enforces strict file-access and redaction boundaries ([`src/codegraph/security/paths.py`](src/codegraph/security/paths.py), [`src/codegraph/security/redaction.py`](src/codegraph/security/redaction.py)):
+CodeGraph MCP runs **100% locally** (`stdio` / `sse` MCP + local `.codegraph.sqlite3`), never executes repository code during indexing, and enforces strict file-access and redaction boundaries ([`src/codegraph/security/paths.py`](src/codegraph/security/paths.py), [`src/codegraph/security/redaction.py`](src/codegraph/security/redaction.py)):
 
 | Security Boundary | Enforcement Mode | Exact Behavior |
 | :--- | :---: | :--- |
@@ -519,9 +519,9 @@ codegraph install                                          # Interactive agent d
 codegraph install --yes --target auto --location local     # Non-interactive local setup
 codegraph install --print-config claude                    # Print MCP JSON + rules for an agent
 codegraph install --dry-run                                # Preview planned file changes
-codegraph uninstall --yes                                  # Remove CodeGraph agent integrations
+codegraph uninstall --yes                                  # Remove CodeGraph MCP agent integrations
 
-# Zero-Friction Runtime Interceptor (v2.2.0)
+# Zero-Friction Runtime Interceptor (v2.2.1)
 codegraph run npm run dev                                  # Wrap Node/Express/Next.js dev server
 codegraph run uvicorn main:app --reload                    # Wrap FastAPI/ASGI dev server
 codegraph run python manage.py runserver                   # Wrap Django dev server
@@ -542,7 +542,7 @@ codegraph doctor --processes                               # Inspect active MCP 
 codegraph status .                                         # Show index freshness (sub-50ms Git fast path)
 codegraph doctor . --database --processes                  # Verify SQLite integrity, FKs, FTS, and memory
 codegraph privacy .                                        # Verify zero sensitive files indexed
-codegraph version                                          # Print CodeGraph version (2.2.0)
+codegraph version                                          # Print CodeGraph MCP version (2.2.1)
 
 # Code, Graph, Routes & Context Interrogation
 codegraph search "authenticate" -r .                       # Search indexed symbols and text chunks

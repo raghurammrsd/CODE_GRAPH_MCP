@@ -1,6 +1,6 @@
 """CodeGraph MCP: local, evidence-backed codebase intelligence."""
 
-__version__ = "2.2.0"
+__version__ = "2.2.1"
 from codegraph.errors import (
     CodeGraphError,
     ErrorCode,
