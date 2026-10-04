@@ -91,13 +91,17 @@
     .search-trigger-btn {
       display: flex; align-items: center; gap: 0.65rem;
       background: #f5f5f5; border: 1px solid var(--border);
-      border-radius: 6px; padding: 0.35rem 0.85rem; width: 360px; cursor: pointer;
+      border-radius: 6px; padding: 0 0.75rem; width: 280px; height: 34px; cursor: pointer;
       color: var(--text-dim); font-size: 0.84rem; transition: all 0.15s ease;
+      white-space: nowrap; overflow: hidden;
     }
     .search-trigger-btn:hover { border-color: #cbd5e1; background: #ffffff; color: var(--text-muted); }
+    .search-label-text {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; text-align: left;
+    }
     .kbd-shortcut {
       font-family: var(--font-mono); font-size: 0.7rem; background: #e5e5e5;
-      padding: 0.12rem 0.4rem; border-radius: 4px; color: #404040; margin-left: auto;
+      padding: 0.12rem 0.4rem; border-radius: 4px; color: #404040; margin-left: auto; flex-shrink: 0;
     }
 
     .top-links-row { display: flex; align-items: center; gap: 1.5rem; list-style: none; font-size: 0.88rem; font-weight: 600; }
@@ -110,26 +114,26 @@
     }
     .github-star-pill:hover { background: #e5e5e5; }
 
-    /* Landing Section: Split Hero */
+    /* Landing Section: Split Hero (Compact, desktop-balanced) */
     .landing-hero-section {
-      max-width: 1400px; margin: 0 auto; padding: 4rem 2.5rem 3rem;
-      display: grid; grid-template-columns: 1fr 1.15fr; gap: 3.5rem; align-items: center;
+      max-width: 1400px; margin: 0 auto; padding: 2.75rem 2.5rem 2.25rem;
+      display: grid; grid-template-columns: 1fr 1.15fr; gap: 3rem; align-items: center;
     }
     @media (max-width: 1080px) {
-      .landing-hero-section { grid-template-columns: 1fr; gap: 3rem; padding: 2.5rem 1.5rem; }
+      .landing-hero-section { grid-template-columns: 1fr; gap: 2.5rem; padding: 2.5rem 1.5rem; }
     }
 
     .hero-badge-tag {
       display: inline-flex; align-items: center; gap: 0.5rem;
       background: #eff6ff; border: 1px solid #bfdbfe;
-      border-radius: 9999px; padding: 0.35rem 0.9rem; font-size: 0.8rem; font-family: var(--font-mono);
-      font-weight: 700; color: #1d4ed8; margin-bottom: 1.25rem;
+      border-radius: 9999px; padding: 0.32rem 0.85rem; font-size: 0.78rem; font-family: var(--font-mono);
+      font-weight: 700; color: #1d4ed8; margin-bottom: 1rem;
     }
     .dot-online { width: 7px; height: 7px; border-radius: 50%; background: #10b981; }
 
     .hero-headline-h1 {
-      font-size: clamp(2.4rem, 4.2vw, 3.6rem); font-weight: 800; line-height: 1.12;
-      letter-spacing: -0.04em; color: #000000; margin-bottom: 1.25rem;
+      font-size: clamp(2.2rem, 3.8vw, 3.2rem); font-weight: 800; line-height: 1.14;
+      letter-spacing: -0.04em; color: #000000; margin-bottom: 0.85rem;
     }
     .gradient-blue-span {
       background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
@@ -137,135 +141,131 @@
     }
 
     .hero-summary-p {
-      font-size: 1.1rem; color: var(--text-muted); line-height: 1.65;
-      max-width: 540px; margin-bottom: 1.75rem;
+      font-size: 1.05rem; color: var(--text-muted); line-height: 1.6;
+      max-width: 520px; margin-bottom: 1.25rem;
     }
     .hero-summary-p strong { color: #000000; font-weight: 700; }
 
-    .cap-pills-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.75rem; }
+    .cap-pills-row { display: flex; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
     .cap-pill-btn {
       display: inline-flex; align-items: center; gap: 0.4rem;
       background: #f8fafc; border: 1px solid var(--border);
-      color: #334155; font-size: 0.82rem; font-weight: 700; padding: 0.35rem 0.75rem;
+      color: #334155; font-size: 0.8rem; font-weight: 700; padding: 0.32rem 0.7rem;
       border-radius: 6px; cursor: pointer; text-decoration: none; transition: all 0.15s ease;
     }
     .cap-pill-btn:hover { border-color: var(--primary); }
     .cap-pill-btn.rt { background: #dcfce7; border-color: #bbf7d0; color: #166534; }
     .cap-pill-btn.db { background: #fef3c7; border-color: #fde68a; color: #92400e; }
 
-    .hero-cta-row { display: flex; gap: 0.85rem; flex-wrap: wrap; margin-bottom: 2rem; }
+    .hero-cta-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.35rem; }
     .btn-cta-primary {
       background: #000000; color: #ffffff; text-decoration: none;
-      padding: 0.75rem 1.6rem; border-radius: 8px; font-size: 0.92rem; font-weight: 700;
+      padding: 0.68rem 1.4rem; border-radius: 7px; font-size: 0.9rem; font-weight: 700;
       display: inline-flex; align-items: center; gap: 0.5rem; transition: background 0.15s ease;
     }
     .btn-cta-primary:hover { background: #262626; }
     .btn-cta-secondary {
       background: #ffffff; color: var(--text); text-decoration: none;
-      border: 1px solid var(--border); padding: 0.75rem 1.6rem; border-radius: 8px;
-      font-size: 0.92rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem;
+      border: 1px solid var(--border); padding: 0.68rem 1.4rem; border-radius: 7px;
+      font-size: 0.9rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem;
       transition: all 0.15s ease;
     }
     .btn-cta-secondary:hover { background: #f9f9f9; border-color: #cbd5e1; }
 
     /* Interactive Hero Terminal Box */
     .hero-term-box {
-      background: #090d16; border: 1px solid #1e293b; border-radius: 12px;
-      padding: 0.85rem 1.25rem; max-width: 540px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+      background: #090d16; border: 1px solid #1e293b; border-radius: 10px;
+      padding: 0.75rem 1.15rem; max-width: 520px; box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.05);
     }
-    .term-tab-strip { display: flex; gap: 1rem; margin-bottom: 0.65rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.5rem; }
+    .term-tab-strip { display: flex; gap: 1rem; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.4rem; }
     .term-tab-item {
-      background: none; border: none; font-size: 0.78rem; font-weight: 700;
-      color: #64748b; cursor: pointer; padding: 0.2rem 0; font-family: var(--font-mono);
+      background: none; border: none; font-size: 0.76rem; font-weight: 700;
+      color: #64748b; cursor: pointer; padding: 0.15rem 0; font-family: var(--font-mono);
       transition: color 0.15s ease;
     }
     .term-tab-item.active, .term-tab-item:hover { color: #f8fafc; }
     .term-code-line {
       display: flex; align-items: center; justify-content: space-between;
-      font-family: var(--font-mono); font-size: 0.85rem; color: #f8fafc;
+      font-family: var(--font-mono); font-size: 0.82rem; color: #f8fafc;
     }
     .btn-term-copy {
       background: rgba(255, 255, 255, 0.08); border: none; border-radius: 4px;
-      padding: 0.25rem 0.5rem; cursor: pointer; color: #94a3b8; transition: all 0.15s ease;
+      padding: 0.2rem 0.45rem; cursor: pointer; color: #94a3b8; transition: all 0.15s ease;
     }
     .btn-term-copy:hover { background: rgba(255, 255, 255, 0.18); color: #fff; }
 
-    /* IDE Mockup Window */
-    .ide-mockup-frame {
-      background: #090d16; border: 1px solid #1e293b; border-radius: 16px;
-      overflow: hidden; box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.12);
+    /* Polished Code Editor Window (Right Column) */
+    .code-ide-window {
+      background: #090d16; border: 1px solid #1e293b; border-radius: 12px;
+      box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.15); overflow: hidden;
       display: flex; flex-direction: column;
     }
-    .ide-frame-header {
+    .code-ide-topbar {
       background: #0d121f; border-bottom: 1px solid #1e293b;
-      padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between;
+      padding: 0.55rem 0.95rem; display: flex; align-items: center; justify-content: space-between;
     }
-    .ide-dots-row { display: flex; gap: 6px; }
+    .ide-dots-row { display: flex; gap: 6px; align-items: center; }
     .ide-dot { width: 10px; height: 10px; border-radius: 50%; }
     .ide-dot.r { background: #ef4444; }
     .ide-dot.y { background: #eab308; }
     .ide-dot.g { background: #22c55e; }
-    .ide-title-tab {
-      font-family: var(--font-mono); font-size: 0.78rem; font-weight: 600;
-      color: #94a3b8; background: #090d16; padding: 0.25rem 0.75rem; border-radius: 6px;
-      border: 1px solid #1e293b;
+
+    .ide-tabs-strip { display: flex; gap: 0.35rem; align-items: center; }
+    .ide-tab-btn {
+      background: transparent; border: 1px solid transparent; border-radius: 6px;
+      padding: 0.22rem 0.6rem; font-family: var(--font-mono); font-size: 0.74rem;
+      color: #94a3b8; cursor: pointer; display: flex; align-items: center; gap: 0.4rem;
+      transition: all 0.15s ease;
     }
-    .ide-status-badge {
-      font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700;
+    .ide-tab-btn:hover { background: rgba(255, 255, 255, 0.05); color: #f8fafc; }
+    .ide-tab-btn.active {
+      background: #1e293b; color: #f8fafc; border-color: #334155; font-weight: 600;
+    }
+    .tab-badge-color { width: 6px; height: 6px; border-radius: 50%; }
+    .tab-badge-color.rt { background: #10b981; }
+    .tab-badge-color.db { background: #f59e0b; }
+    .tab-badge-color.json { background: #3b82f6; }
+
+    .ide-verified-tag {
+      font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700;
       color: #10b981; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25);
-      padding: 0.2rem 0.5rem; border-radius: 9999px;
+      padding: 0.15rem 0.45rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 4px;
     }
 
-    .ide-frame-body {
-      display: grid; grid-template-columns: 190px 1fr 200px;
-      height: 380px; background: #090d16;
+    .code-ide-content {
+      padding: 1.15rem 1.25rem; font-family: var(--font-mono); font-size: 0.8rem;
+      color: #f8fafc; line-height: 1.55; min-height: 290px; overflow-x: auto;
     }
-    @media (max-width: 900px) { .ide-frame-body { grid-template-columns: 1fr; height: auto; } }
+    .code-ide-pane { display: none; }
+    .code-ide-pane.active { display: block; }
 
-    .ide-tree-pane {
-      border-right: 1px solid #1e293b; padding: 0.75rem 0.5rem; font-family: var(--font-mono);
-      font-size: 0.78rem; color: #94a3b8;
-    }
-    .ide-tree-title {
-      font-size: 0.7rem; font-weight: 700; color: #475569; text-transform: uppercase;
-      letter-spacing: 0.05em; padding: 0.25rem 0.5rem; margin-bottom: 0.35rem;
-    }
-    .ide-tree-row {
-      padding: 0.3rem 0.5rem; border-radius: 4px; display: flex; align-items: center; gap: 0.45rem;
-      cursor: pointer; transition: background 0.15s ease;
-    }
-    .ide-tree-row:hover { background: rgba(255, 255, 255, 0.04); color: #f8fafc; }
-    .ide-tree-row.active { background: rgba(37, 99, 235, 0.15); color: #60a5fa; font-weight: 600; }
-    .ide-tree-row.db { color: #f59e0b; }
-    .ide-tree-row.rt { color: #34d399; }
+    .code-row { display: flex; align-items: flex-start; gap: 1.15rem; white-space: pre; }
+    .code-ln { color: #475569; user-select: none; width: 1.35rem; text-align: right; flex-shrink: 0; font-size: 0.74rem; }
+    .c-kw { color: #c084fc; font-weight: 600; }
+    .c-fn { color: #60a5fa; }
+    .c-mod { color: #f8fafc; }
+    .c-str { color: #34d399; }
+    .c-cm { color: #64748b; font-style: italic; }
+    .c-var { color: #f1f5f9; }
+    .c-prop { color: #fbbf24; }
+    .c-out { color: #a5b4fc; }
+    .c-badge-insert { background: #065f46; color: #6ee7b7; padding: 0.05rem 0.35rem; border-radius: 3px; font-size: 0.68rem; font-weight: 700; }
+    .c-badge-update { background: #78350f; color: #fde68a; padding: 0.05rem 0.35rem; border-radius: 3px; font-size: 0.68rem; font-weight: 700; }
+    .c-badge-delete { background: #881337; color: #fecdd3; padding: 0.05rem 0.35rem; border-radius: 3px; font-size: 0.68rem; font-weight: 700; }
 
-    .ide-graph-canvas {
-      position: relative; background: #090d16; overflow: hidden;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .ide-svg-elem { width: 100%; height: 100%; }
-
-    .ide-inspector-pane {
-      border-left: 1px solid #1e293b; padding: 0.9rem; font-family: var(--font-mono);
-      font-size: 0.78rem; color: #94a3b8; display: flex; flex-direction: column; justify-content: space-between;
-    }
-    .inspector-title-row { font-weight: 700; color: #f8fafc; display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.25rem; }
-    .inspector-path-sub { font-size: 0.7rem; color: #64748b; margin-bottom: 0.85rem; }
-    .inspector-prop-row { display: flex; justify-content: space-between; margin-bottom: 0.45rem; }
-    .inspector-val { color: #f8fafc; font-weight: 600; }
-    .inspector-val.amber { color: #f59e0b; }
-    .inspector-val.green { color: #10b981; }
-
-    .ide-stats-bottom-bar {
+    .code-ide-footer {
       background: #0d121f; border-top: 1px solid #1e293b;
-      padding: 0.75rem 1.25rem; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+      padding: 0.6rem 1.15rem; display: flex; justify-content: space-between; align-items: center;
+      font-family: var(--font-mono); font-size: 0.72rem; color: #94a3b8;
     }
-    .ide-stat-item-num { font-family: var(--font-mono); font-size: 1.15rem; font-weight: 800; color: #f8fafc; line-height: 1; }
-    .ide-stat-item-label { font-size: 0.72rem; color: #64748b; font-weight: 600; }
+    .footer-metric-pill { display: flex; align-items: center; gap: 0.35rem; }
+    .metric-val { color: #f8fafc; font-weight: 700; }
+    .metric-val.green { color: #10b981; }
+    .metric-val.blue { color: #60a5fa; }
 
     /* 6 Feature Cards Grid */
     .landing-features-grid {
-      max-width: 1400px; margin: 0 auto; padding: 2rem 2.5rem 4rem;
+      max-width: 1400px; margin: 0 auto; padding: 1.5rem 2.5rem 3.5rem;
       display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem;
     }
     .landing-feature-card {
@@ -535,7 +535,7 @@
       font-family: var(--font-mono); font-size: 1.2rem; font-weight: 800; color: #000000;
     }
 
-    /* Spotlight Search Modal (⌘ K) */
+    /* Spotlight Search Modal (Cmd K) */
     .spotlight-backdrop {
       display: none; position: fixed; inset: 0; z-index: 200;
       background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(4px);
@@ -596,11 +596,11 @@
       <span class="badge-ver">v2.2.1 Production</span>
     </a>
 
-    <!-- Universal Search (⌘ K) -->
+    <!-- Universal Search (Cmd K) with Fixed No-Wrap Button -->
     <button class="search-trigger-btn" onclick="openSpotlightModal()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-      <span>Search documentation, 56 tools, CLI (Press ⌘ K)...</span>
-      <kbd class="kbd-shortcut">⌘ K</kbd>
+      <span class="search-label-text">Search documentation...</span>
+      <kbd class="kbd-shortcut">Cmd K</kbd>
     </button>
 
     <!-- Top Links -->
@@ -652,7 +652,7 @@
         <a href="#tools-database" class="btn-cta-secondary">View 56 MCP Tools</a>
       </div>
 
-      <!-- Tabbed Terminal Box -->
+      <!-- Tabbed Terminal Box (Fits cleanly above desktop fold) -->
       <div class="hero-term-box">
         <div class="term-tab-strip">
           <button class="term-tab-item active" onclick="setHeroTermCmd('pip install codegraph-engine[mcp]', this)">Install</button>
@@ -669,100 +669,88 @@
       </div>
     </div>
 
-    <!-- Right Column: Interactive Visualizer Mockup -->
+    <!-- Right Column: Interactive Verified Code IDE Window -->
     <div>
-      <div class="ide-mockup-frame">
-        <div class="ide-frame-header">
+      <div class="code-ide-window">
+        
+        <!-- Top Bar with Traffic Dots & Interactive File Tabs -->
+        <div class="code-ide-topbar">
           <div class="ide-dots-row">
             <div class="ide-dot r"></div>
             <div class="ide-dot y"></div>
             <div class="ide-dot g"></div>
           </div>
-          <div class="ide-title-tab">CodeGraph Graph Visualizer</div>
-          <div class="ide-status-badge">&#10003; Synchronized</div>
-        </div>
-
-        <div class="ide-frame-body">
-          <!-- Tree Pane -->
-          <div class="ide-tree-pane">
-            <div class="ide-tree-title">Explorer</div>
-            <div class="ide-tree-row">&bull; app/</div>
-            <div class="ide-tree-row">&nbsp;&nbsp;&bull; api/</div>
-            <div class="ide-tree-row active">&nbsp;&nbsp;&nbsp;&nbsp;router.py</div>
-            <div class="ide-tree-row">&nbsp;&nbsp;&nbsp;&nbsp;auth.py</div>
-            <div class="ide-tree-row db">&nbsp;&nbsp;&bull; db/users.sql</div>
-            <div class="ide-tree-row rt">&nbsp;&nbsp;&bull; traces/live.json</div>
-            <div class="ide-tree-row">&bull; tests/test_api.py</div>
+          <div class="ide-tabs-strip">
+            <button class="ide-tab-btn active" onclick="switchEditorTab('runtime', this)">
+              <span class="tab-badge-color rt"></span>runtime_telemetry.py
+            </button>
+            <button class="ide-tab-btn" onclick="switchEditorTab('database', this)">
+              <span class="tab-badge-color db"></span>database_lineage.sql
+            </button>
+            <button class="ide-tab-btn" onclick="switchEditorTab('context', this)">
+              <span class="tab-badge-color json"></span>context_packet.json
+            </button>
           </div>
-
-          <!-- Center Canvas -->
-          <div class="ide-graph-canvas">
-            <svg class="ide-svg-elem" viewBox="0 0 420 280">
-              <defs>
-                <linearGradient id="edgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.6"/>
-                  <stop offset="100%" stop-color="#60a5fa" stop-opacity="0.2"/>
-                </linearGradient>
-                <linearGradient id="dbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.6"/>
-                  <stop offset="100%" stop-color="#fbbf24" stop-opacity="0.2"/>
-                </linearGradient>
-                <linearGradient id="rtGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#10b981" stop-opacity="0.6"/>
-                  <stop offset="100%" stop-color="#34d399" stop-opacity="0.2"/>
-                </linearGradient>
-              </defs>
-
-              <path d="M200 120 L90 85" stroke="url(#edgeGrad)" stroke-width="1.8" stroke-dasharray="3 3"/>
-              <path d="M200 120 L330 90" stroke="url(#dbGrad)" stroke-width="2"/>
-              <path d="M200 120 L130 185" stroke="url(#edgeGrad)" stroke-width="1.8"/>
-              <path d="M200 120 L270 195" stroke="url(#rtGrad)" stroke-width="2"/>
-
-              <circle cx="270" cy="40" r="14" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/>
-              <text x="270" y="43" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#fff" font-weight="700">index</text>
-
-              <rect x="165" y="105" width="70" height="30" rx="6" fill="#1d4ed8" stroke="#60a5fa" stroke-width="2"/>
-              <text x="200" y="124" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#fff" font-weight="700">router.py</text>
-
-              <circle cx="90" cy="85" r="14" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8"/>
-              <text x="90" y="88" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#fff">auth</text>
-
-              <circle cx="330" cy="90" r="14" fill="#0f172a" stroke="#f59e0b" stroke-width="1.8"/>
-              <text x="330" y="93" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#fff">users</text>
-
-              <circle cx="130" cy="185" r="12" fill="#064e3b" stroke="#10b981" stroke-width="1.8"/>
-              <text x="130" y="188" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#fff">&gt;_</text>
-
-              <circle cx="270" cy="195" r="12" fill="#064e3b" stroke="#34d399" stroke-width="1.8"/>
-              <text x="270" y="198" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#fff">&#10003;</text>
-            </svg>
-          </div>
-
-          <!-- Inspector Pane -->
-          <div class="ide-inspector-pane">
-            <div>
-              <div class="inspector-title-row">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                <span>router.py</span>
-              </div>
-              <div class="inspector-path-sub">app/routes/router.py</div>
-
-              <div class="inspector-prop-row"><span>Type</span><span class="inspector-val">File</span></div>
-              <div class="inspector-prop-row"><span>DB Writers</span><span class="inspector-val amber">users, orders</span></div>
-              <div class="inspector-prop-row"><span>Telemetry</span><span class="inspector-val green">Observed</span></div>
-              <div class="inspector-prop-row"><span>Routes</span><span class="inspector-val">3</span></div>
-              <div class="inspector-prop-row"><span>Verification</span><span class="inspector-val green">100% AST</span></div>
-            </div>
+          <div class="ide-verified-tag">
+            &#10003; Verified
           </div>
         </div>
 
-        <!-- Bottom Stats Strip -->
-        <div class="ide-stats-bottom-bar">
-          <div><div class="ide-stat-item-num">199</div><div class="ide-stat-item-label">Symbols</div></div>
-          <div><div class="ide-stat-item-num">618</div><div class="ide-stat-item-label">Relationships</div></div>
-          <div><div class="ide-stat-item-num">84</div><div class="ide-stat-item-label">API Routes</div></div>
-          <div><div class="ide-stat-item-num">58</div><div class="ide-stat-item-label">Files</div></div>
+        <!-- Code Content Area -->
+        <div class="code-ide-content">
+          
+          <!-- Tab 1: Runtime Telemetry -->
+          <div id="tab-runtime" class="code-ide-pane active">
+            <div class="code-row"><span class="code-ln">1</span><span><span class="c-kw">from</span> <span class="c-mod">codegraph</span> <span class="c-kw">import</span> <span class="c-fn">reconcile_static_runtime</span></span></div>
+            <div class="code-row"><span class="code-ln">2</span><span></span></div>
+            <div class="code-row"><span class="code-ln">3</span><span><span class="c-cm"># Reconcile static AST edges against live recorded traces</span></span></div>
+            <div class="code-row"><span class="code-ln">4</span><span><span class="c-var">report</span> = <span class="c-fn">reconcile_static_runtime</span>(</span></div>
+            <div class="code-row"><span class="code-ln">5</span><span>    <span class="c-prop">route</span>=<span class="c-str">&quot;/api/v1/scan-bill&quot;</span>,</span></div>
+            <div class="code-row"><span class="code-ln">6</span><span>    <span class="c-prop">table</span>=<span class="c-str">&quot;bills&quot;</span></span></div>
+            <div class="code-row"><span class="code-ln">7</span><span>)</span></div>
+            <div class="code-row"><span class="code-ln">8</span><span></span></div>
+            <div class="code-row"><span class="code-ln">9</span><span><span class="c-cm"># Verified execution context returned in &lt; 25ms:</span></span></div>
+            <div class="code-row"><span class="code-ln">10</span><span><span class="c-kw">assert</span> <span class="c-var">report</span>.<span class="c-prop">status</span> == <span class="c-str">&quot;RECONCILED&quot;</span></span></div>
+            <div class="code-row"><span class="code-ln">11</span><span><span class="c-out">&gt;&gt;&gt; [scan_bill_handler &rarr; BillService.process (RUNTIME_OBSERVED)]</span></span></div>
+            <div class="code-row"><span class="code-ln">12</span><span><span class="c-out">&gt;&gt;&gt; [BillService.process &rarr; bills table (DATAFLOW_VERIFIED)]</span></span></div>
+          </div>
+
+          <!-- Tab 2: Database Lineage -->
+          <div id="tab-database" class="code-ide-pane">
+            <div class="code-row"><span class="code-ln">1</span><span><span class="c-cm">-- Trace all mutating callers writing to SQL tables</span></span></div>
+            <div class="code-row"><span class="code-ln">2</span><span><span class="c-kw">SELECT</span> * <span class="c-kw">FROM</span> <span class="c-fn">find_db_writers</span>(<span class="c-str">'users'</span>);</span></div>
+            <div class="code-row"><span class="code-ln">3</span><span></span></div>
+            <div class="code-row"><span class="code-ln">4</span><span><span class="c-cm">-- Verified Mutating Callers (INSERT / UPDATE / DELETE):</span></span></div>
+            <div class="code-row"><span class="code-ln">5</span><span><span class="c-out">&bull; AuthService.register_user (app/auth.py:42)</span> <span class="c-badge-insert">INSERT</span></span></div>
+            <div class="code-row"><span class="code-ln">6</span><span><span class="c-out">&bull; BillingService.charge_card (app/billing.py:91)</span> <span class="c-badge-update">UPDATE</span></span></div>
+            <div class="code-row"><span class="code-ln">7</span><span><span class="c-out">&bull; AdminService.delete_user (app/admin.py:114)</span> <span class="c-badge-delete">DELETE</span></span></div>
+            <div class="code-row"><span class="code-ln">8</span><span></span></div>
+            <div class="code-row"><span class="code-ln">9</span><span><span class="c-cm">-- Column lineage traced to SQLite foreign keys &amp; models</span></span></div>
+          </div>
+
+          <!-- Tab 3: Context Packet -->
+          <div id="tab-context" class="code-ide-pane">
+            <div class="code-row"><span class="code-ln">1</span><span>{</span></div>
+            <div class="code-row"><span class="code-ln">2</span><span>  <span class="c-prop">&quot;query&quot;</span>: <span class="c-str">&quot;Trace scan_bill and database writes&quot;</span>,</span></div>
+            <div class="code-row"><span class="code-ln">3</span><span>  <span class="c-prop">&quot;status&quot;</span>: <span class="c-str">&quot;AST_VERIFIED&quot;</span>,</span></div>
+            <div class="code-row"><span class="code-ln">4</span><span>  <span class="c-prop">&quot;freshness&quot;</span>: <span class="c-str">&quot;FRESH (Git HEAD match in 2ms)&quot;</span>,</span></div>
+            <div class="code-row"><span class="code-ln">5</span><span>  <span class="c-prop">&quot;telemetry&quot;</span>: <span class="c-str">&quot;OBSERVED (pytest live traces)&quot;</span>,</span></div>
+            <div class="code-row"><span class="code-ln">6</span><span>  <span class="c-prop">&quot;database_impact&quot;</span>: { <span class="c-prop">&quot;writers&quot;</span>: 3, <span class="c-prop">&quot;table&quot;</span>: <span class="c-str">&quot;bills&quot;</span> },</span></div>
+            <div class="code-row"><span class="code-ln">7</span><span>  <span class="c-prop">&quot;context_reduction_pct&quot;</span>: <span class="c-prop">94.2</span>,</span></div>
+            <div class="code-row"><span class="code-ln">8</span><span>  <span class="c-prop">&quot;latency_ms&quot;</span>: <span class="c-prop">18.4</span></span></div>
+            <div class="code-row"><span class="code-ln">9</span><span>}</span></div>
+          </div>
+
         </div>
+
+        <!-- Bottom Metric Strip -->
+        <div class="code-ide-footer">
+          <div class="footer-metric-pill"><span class="metric-val">18ms</span> Latency</div>
+          <div class="footer-metric-pill"><span class="metric-val green">-94%</span> Agent Tokens</div>
+          <div class="footer-metric-pill"><span class="metric-val">56</span> MCP Tools</div>
+          <div class="footer-metric-pill"><span class="metric-val blue">0%</span> Hallucinations</div>
+        </div>
+
       </div>
     </div>
   </section>
@@ -6161,7 +6149,7 @@ Configured Antigravity (.agents/mcp_config.json, AGENTS.md)</pre>
 
   </div>
 
-  <!-- Spotlight Search Modal (⌘ K) -->
+  <!-- Spotlight Search Modal (Cmd K) -->
   <div class="spotlight-backdrop" id="spotlightModal" onclick="closeSpotlightOnBackdrop(event)">
     <div class="spotlight-box">
       <div class="spotlight-input-bar">
@@ -6186,6 +6174,14 @@ Configured Antigravity (.agents/mcp_config.json, AGENTS.md)</pre>
     function copyHeroTermCode() {
       const text = document.getElementById('heroTermCmdText').textContent.replace('$ ', '');
       navigator.clipboard.writeText(text);
+    }
+
+    function switchEditorTab(tabId, btn) {
+      document.querySelectorAll('.ide-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.code-ide-pane').forEach(p => p.classList.remove('active'));
+      const target = document.getElementById('tab-' + tabId);
+      if (target) target.classList.add('active');
     }
 
     const searchIndex = [
