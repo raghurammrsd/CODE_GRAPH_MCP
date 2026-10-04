@@ -597,29 +597,63 @@ class _PythonScopeVisitor(ast.NodeVisitor):
         doc = ast.get_docstring(node)
         c_hash = _normalized_body_hash(self.lines, node.lineno, end_line)
 
-        self.symbols.append(
-            Symbol(
-                id=canon_id,
-                canonical_id=canon_id,
-                name=node.name,
-                qualified_name=qname,
-                kind=kind,
-                language="python",
-                module=self.module,
-                path=self.file_path,
-                file_path=self.file_path,
-                scope=parent_scope,
-                signature=sig,
-                start_line=node.lineno,
-                end_line=end_line,
+        # Avoid duplicate canonical symbol IDs for @name.setter within the same class
+        is_setter = any(d.endswith(".setter") for d in decorators)
+        existing_prop = None
+        if is_setter and parent_kind == "class":
+            for s in self.symbols:
+                if s.canonical_id == canon_id and s.kind == "property":
+                    existing_prop = s
+                    break
+
+        if existing_prop is not None:
+            # Merge setter signature/span into the existing property symbol
+            idx = self.symbols.index(existing_prop)
+            self.symbols[idx] = Symbol(
+                id=existing_prop.id,
+                canonical_id=existing_prop.canonical_id,
+                name=existing_prop.name,
+                qualified_name=existing_prop.qualified_name,
+                kind="property",
+                language=existing_prop.language,
+                module=existing_prop.module,
+                path=existing_prop.path,
+                file_path=existing_prop.file_path,
+                scope=existing_prop.scope,
+                signature=f"{existing_prop.signature} | setter: {sig}" if existing_prop.signature else sig,
+                start_line=existing_prop.start_line,
+                end_line=max(existing_prop.end_line, end_line),
                 content_hash=c_hash,
-                parent_symbol_id=parent_canon,
-                decorators=decorators,
-                return_type=ret_type,
-                parameter_count=param_count,
-                documentation=doc,
+                parent_symbol_id=existing_prop.parent_symbol_id,
+                decorators=list(dict.fromkeys(existing_prop.decorators + decorators)),
+                return_type=existing_prop.return_type,
+                parameter_count=existing_prop.parameter_count,
+                documentation=existing_prop.documentation or doc,
             )
-        )
+        else:
+            self.symbols.append(
+                Symbol(
+                    id=canon_id,
+                    canonical_id=canon_id,
+                    name=node.name,
+                    qualified_name=qname,
+                    kind=kind,
+                    language="python",
+                    module=self.module,
+                    path=self.file_path,
+                    file_path=self.file_path,
+                    scope=parent_scope,
+                    signature=sig,
+                    start_line=node.lineno,
+                    end_line=end_line,
+                    content_hash=c_hash,
+                    parent_symbol_id=parent_canon,
+                    decorators=decorators,
+                    return_type=ret_type,
+                    parameter_count=param_count,
+                    documentation=doc,
+                )
+            )
 
         # Framework analyzer hook: check function/class for route decorators during this traversal
         if node.decorator_list or isinstance(node, ast.ClassDef):
