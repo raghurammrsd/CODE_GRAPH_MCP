@@ -8,14 +8,14 @@
 
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/">
-  <meta property="og:title" content="CodeGraph MCP — Official Documentation &amp; Reference">
-  <meta property="og:description" content="Official documentation for CodeGraph MCP: deterministic local-first code intelligence with runtime telemetry reconciliation, database lineage, and 56 verified MCP tools.">
+  <meta property="og:title" content="CodeGraph MCP — Deterministic Code Intelligence Engine">
+  <meta property="og:description" content="Official website and documentation for CodeGraph MCP: deterministic local-first code intelligence with runtime telemetry reconciliation, database lineage, and 56 verified MCP tools.">
   <meta property="og:image" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/assets/codegraph_logo.jpg">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/">
-  <meta name="twitter:title" content="CodeGraph MCP — Official Documentation &amp; Reference">
-  <meta name="twitter:description" content="Official documentation for CodeGraph MCP: runtime telemetry reconciliation, database lineage, and 56 verified tools.">
+  <meta name="twitter:title" content="CodeGraph MCP — Deterministic Code Intelligence Engine">
+  <meta name="twitter:description" content="Official website and documentation for CodeGraph MCP: runtime telemetry reconciliation, database lineage, and 56 verified tools.">
   <meta name="twitter:image" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/assets/codegraph_logo.jpg">
 
   <script type="application/ld+json">
@@ -43,14 +43,14 @@
   }
   </script>
 
-  <title>CodeGraph MCP · Official Documentation &amp; Reference</title>
+  <title>CodeGraph MCP · Deterministic Codebase Intelligence</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #ffffff;
-      --bg-alt: #fcfdfd;
+      --bg-alt: #f8fafc;
       --border: #e5e5e5;
       --border-dark: #171717;
       --text: #000000;
@@ -71,10 +71,12 @@
     html { scroll-behavior: smooth; font-family: var(--font-sans); color: var(--text-body); background: var(--bg); }
     body { min-height: 100vh; line-height: 1.6; overflow-x: hidden; }
 
-    /* Clean Universal Top Nav */
+    /* Sticky Universal Header */
     header.book-nav-top {
       position: sticky; top: 0; z-index: 100; height: 56px;
-      background: #ffffff; border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
       padding: 0 1.75rem; display: flex; align-items: center; justify-content: space-between;
     }
     .brand-group { display: flex; align-items: center; gap: 0.65rem; text-decoration: none; color: var(--text); }
@@ -89,7 +91,7 @@
     .search-trigger-btn {
       display: flex; align-items: center; gap: 0.65rem;
       background: #f5f5f5; border: 1px solid var(--border);
-      border-radius: 6px; padding: 0.35rem 0.85rem; width: 340px; cursor: pointer;
+      border-radius: 6px; padding: 0.35rem 0.85rem; width: 360px; cursor: pointer;
       color: var(--text-dim); font-size: 0.84rem; transition: all 0.15s ease;
     }
     .search-trigger-btn:hover { border-color: #cbd5e1; background: #ffffff; color: var(--text-muted); }
@@ -108,9 +110,199 @@
     }
     .github-star-pill:hover { background: #e5e5e5; }
 
-    /* 3-Column Book Layout */
+    /* Landing Section: Split Hero */
+    .landing-hero-section {
+      max-width: 1400px; margin: 0 auto; padding: 4rem 2.5rem 3rem;
+      display: grid; grid-template-columns: 1fr 1.15fr; gap: 3.5rem; align-items: center;
+    }
+    @media (max-width: 1080px) {
+      .landing-hero-section { grid-template-columns: 1fr; gap: 3rem; padding: 2.5rem 1.5rem; }
+    }
+
+    .hero-badge-tag {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: #eff6ff; border: 1px solid #bfdbfe;
+      border-radius: 9999px; padding: 0.35rem 0.9rem; font-size: 0.8rem; font-family: var(--font-mono);
+      font-weight: 700; color: #1d4ed8; margin-bottom: 1.25rem;
+    }
+    .dot-online { width: 7px; height: 7px; border-radius: 50%; background: #10b981; }
+
+    .hero-headline-h1 {
+      font-size: clamp(2.4rem, 4.2vw, 3.6rem); font-weight: 800; line-height: 1.12;
+      letter-spacing: -0.04em; color: #000000; margin-bottom: 1.25rem;
+    }
+    .gradient-blue-span {
+      background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .hero-summary-p {
+      font-size: 1.1rem; color: var(--text-muted); line-height: 1.65;
+      max-width: 540px; margin-bottom: 1.75rem;
+    }
+    .hero-summary-p strong { color: #000000; font-weight: 700; }
+
+    .cap-pills-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.75rem; }
+    .cap-pill-btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: #f8fafc; border: 1px solid var(--border);
+      color: #334155; font-size: 0.82rem; font-weight: 700; padding: 0.35rem 0.75rem;
+      border-radius: 6px; cursor: pointer; text-decoration: none; transition: all 0.15s ease;
+    }
+    .cap-pill-btn:hover { border-color: var(--primary); }
+    .cap-pill-btn.rt { background: #dcfce7; border-color: #bbf7d0; color: #166534; }
+    .cap-pill-btn.db { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+
+    .hero-cta-row { display: flex; gap: 0.85rem; flex-wrap: wrap; margin-bottom: 2rem; }
+    .btn-cta-primary {
+      background: #000000; color: #ffffff; text-decoration: none;
+      padding: 0.75rem 1.6rem; border-radius: 8px; font-size: 0.92rem; font-weight: 700;
+      display: inline-flex; align-items: center; gap: 0.5rem; transition: background 0.15s ease;
+    }
+    .btn-cta-primary:hover { background: #262626; }
+    .btn-cta-secondary {
+      background: #ffffff; color: var(--text); text-decoration: none;
+      border: 1px solid var(--border); padding: 0.75rem 1.6rem; border-radius: 8px;
+      font-size: 0.92rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem;
+      transition: all 0.15s ease;
+    }
+    .btn-cta-secondary:hover { background: #f9f9f9; border-color: #cbd5e1; }
+
+    /* Interactive Hero Terminal Box */
+    .hero-term-box {
+      background: #090d16; border: 1px solid #1e293b; border-radius: 12px;
+      padding: 0.85rem 1.25rem; max-width: 540px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    }
+    .term-tab-strip { display: flex; gap: 1rem; margin-bottom: 0.65rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.5rem; }
+    .term-tab-item {
+      background: none; border: none; font-size: 0.78rem; font-weight: 700;
+      color: #64748b; cursor: pointer; padding: 0.2rem 0; font-family: var(--font-mono);
+      transition: color 0.15s ease;
+    }
+    .term-tab-item.active, .term-tab-item:hover { color: #f8fafc; }
+    .term-code-line {
+      display: flex; align-items: center; justify-content: space-between;
+      font-family: var(--font-mono); font-size: 0.85rem; color: #f8fafc;
+    }
+    .btn-term-copy {
+      background: rgba(255, 255, 255, 0.08); border: none; border-radius: 4px;
+      padding: 0.25rem 0.5rem; cursor: pointer; color: #94a3b8; transition: all 0.15s ease;
+    }
+    .btn-term-copy:hover { background: rgba(255, 255, 255, 0.18); color: #fff; }
+
+    /* IDE Mockup Window */
+    .ide-mockup-frame {
+      background: #090d16; border: 1px solid #1e293b; border-radius: 16px;
+      overflow: hidden; box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.12);
+      display: flex; flex-direction: column;
+    }
+    .ide-frame-header {
+      background: #0d121f; border-bottom: 1px solid #1e293b;
+      padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between;
+    }
+    .ide-dots-row { display: flex; gap: 6px; }
+    .ide-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .ide-dot.r { background: #ef4444; }
+    .ide-dot.y { background: #eab308; }
+    .ide-dot.g { background: #22c55e; }
+    .ide-title-tab {
+      font-family: var(--font-mono); font-size: 0.78rem; font-weight: 600;
+      color: #94a3b8; background: #090d16; padding: 0.25rem 0.75rem; border-radius: 6px;
+      border: 1px solid #1e293b;
+    }
+    .ide-status-badge {
+      font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700;
+      color: #10b981; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25);
+      padding: 0.2rem 0.5rem; border-radius: 9999px;
+    }
+
+    .ide-frame-body {
+      display: grid; grid-template-columns: 190px 1fr 200px;
+      height: 380px; background: #090d16;
+    }
+    @media (max-width: 900px) { .ide-frame-body { grid-template-columns: 1fr; height: auto; } }
+
+    .ide-tree-pane {
+      border-right: 1px solid #1e293b; padding: 0.75rem 0.5rem; font-family: var(--font-mono);
+      font-size: 0.78rem; color: #94a3b8;
+    }
+    .ide-tree-title {
+      font-size: 0.7rem; font-weight: 700; color: #475569; text-transform: uppercase;
+      letter-spacing: 0.05em; padding: 0.25rem 0.5rem; margin-bottom: 0.35rem;
+    }
+    .ide-tree-row {
+      padding: 0.3rem 0.5rem; border-radius: 4px; display: flex; align-items: center; gap: 0.45rem;
+      cursor: pointer; transition: background 0.15s ease;
+    }
+    .ide-tree-row:hover { background: rgba(255, 255, 255, 0.04); color: #f8fafc; }
+    .ide-tree-row.active { background: rgba(37, 99, 235, 0.15); color: #60a5fa; font-weight: 600; }
+    .ide-tree-row.db { color: #f59e0b; }
+    .ide-tree-row.rt { color: #34d399; }
+
+    .ide-graph-canvas {
+      position: relative; background: #090d16; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ide-svg-elem { width: 100%; height: 100%; }
+
+    .ide-inspector-pane {
+      border-left: 1px solid #1e293b; padding: 0.9rem; font-family: var(--font-mono);
+      font-size: 0.78rem; color: #94a3b8; display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .inspector-title-row { font-weight: 700; color: #f8fafc; display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.25rem; }
+    .inspector-path-sub { font-size: 0.7rem; color: #64748b; margin-bottom: 0.85rem; }
+    .inspector-prop-row { display: flex; justify-content: space-between; margin-bottom: 0.45rem; }
+    .inspector-val { color: #f8fafc; font-weight: 600; }
+    .inspector-val.amber { color: #f59e0b; }
+    .inspector-val.green { color: #10b981; }
+
+    .ide-stats-bottom-bar {
+      background: #0d121f; border-top: 1px solid #1e293b;
+      padding: 0.75rem 1.25rem; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+    }
+    .ide-stat-item-num { font-family: var(--font-mono); font-size: 1.15rem; font-weight: 800; color: #f8fafc; line-height: 1; }
+    .ide-stat-item-label { font-size: 0.72rem; color: #64748b; font-weight: 600; }
+
+    /* 6 Feature Cards Grid */
+    .landing-features-grid {
+      max-width: 1400px; margin: 0 auto; padding: 2rem 2.5rem 4rem;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem;
+    }
+    .landing-feature-card {
+      background: #ffffff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.35rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+      text-decoration: none; color: inherit; transition: all 0.2s ease;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04); cursor: pointer;
+    }
+    .landing-feature-card:hover {
+      border-color: #cbd5e1; transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    }
+    .feat-card-left { display: flex; align-items: center; gap: 1.1rem; }
+    .feat-icon-box {
+      width: 44px; height: 44px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .feat-icon-box.rt { background: #dcfce7; color: #10b981; }
+    .feat-icon-box.db { background: #fef3c7; color: #f59e0b; }
+    .feat-icon-box.blue { background: #eff6ff; color: #2563eb; }
+    .feat-icon-box.indigo { background: #e0e7ff; color: #4f46e5; }
+    .feat-icon-box.rose { background: #ffe4e6; color: #e11d48; }
+
+    .feat-card-texts h3 { font-size: 1.05rem; font-weight: 700; color: #000000; margin-bottom: 0.2rem; }
+    .feat-card-texts p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.45; }
+    .feat-arrow-circle {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #f5f5f5; display: flex; align-items: center; justify-content: center;
+      color: var(--text-dim); font-size: 0.85rem; flex-shrink: 0; transition: all 0.15s ease;
+    }
+    .landing-feature-card:hover .feat-arrow-circle { background: #000000; color: #ffffff; }
+
+    /* 3-Column Book Layout (Exact layout from user screenshot) */
     .book-layout-wrap {
-      display: flex; min-height: calc(100vh - 56px); width: 100%;
+      display: flex; min-height: 100vh; width: 100%;
+      border-top: 1px solid var(--border);
+      background: #ffffff;
     }
 
     /* Left Sidebar */
@@ -118,7 +310,7 @@
       width: var(--sidebar-w); flex-shrink: 0;
       position: sticky; top: 56px; height: calc(100vh - 56px);
       overflow-y: auto; background: #ffffff; border-right: 1px solid var(--border);
-      padding: 1.5rem 1rem 3rem 1.25rem;
+      padding: 1.5rem 1rem 3rem 1.25rem; margin: 0;
     }
     aside.book-sidebar-left::-webkit-scrollbar { width: 4px; }
     aside.book-sidebar-left::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 4px; }
@@ -153,24 +345,24 @@
 
     /* Middle Area (Book Content) */
     main.book-center-content {
-      flex: 1; min-width: 0;
-      background: #ffffff;
+      flex: 1; min-width: 0; background: #ffffff;
     }
     .page-title-banner {
-      padding: 2.25rem 3.5rem 1.25rem;
+      padding: 1.5rem 2.5rem 1.25rem;
       border-bottom: 1px solid var(--border);
+      margin: 0;
     }
     .h1-page-title {
       font-size: 2.5rem; font-weight: 700; letter-spacing: -0.03em;
       color: #000000; margin: 0;
     }
     .page-body-container {
-      padding: 2rem 3.5rem 8rem; max-width: 960px;
+      padding: 2rem 2.5rem 8rem; max-width: 960px;
     }
 
     @media (max-width: 1100px) {
-      .page-title-banner { padding: 1.75rem 2rem 1rem; }
-      .page-body-container { padding: 1.5rem 2rem 6rem; }
+      .page-title-banner { padding: 1.5rem 1.5rem 1rem; }
+      .page-body-container { padding: 1.5rem 1.5rem 6rem; }
     }
     @media (max-width: 860px) {
       .book-layout-wrap { flex-direction: column; }
@@ -182,7 +374,7 @@
       width: var(--toc-w); flex-shrink: 0;
       position: sticky; top: 56px; height: calc(100vh - 56px);
       overflow-y: auto; background: #ffffff; border-left: 1px solid var(--border);
-      padding: 2.25rem 1.25rem 3rem 1.25rem;
+      padding: 1.5rem 1.25rem 3rem; margin: 0;
     }
     @media (max-width: 1240px) {
       aside.book-toc-right { display: none; }
@@ -217,7 +409,7 @@
       color: #171717; padding: 0.15rem 0.35rem; border-radius: 4px; border: 1px solid var(--border);
     }
 
-    /* Bullet Link Lists (Exact Book Style from image) */
+    /* Bullet Link Lists (Exact Book Style from reference) */
     .book-bullet-list {
       list-style: disc; margin: 1rem 0 2rem 1.75rem; font-size: 0.98rem; line-height: 1.75;
       color: var(--text-body);
@@ -413,7 +605,8 @@
 
     <!-- Top Links -->
     <ul class="top-links-row">
-      <li><a href="#quickstart">Quickstart</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#next-steps">Documentation</a></li>
       <li><a href="#tools-database">MCP Tools (56)</a></li>
       <li><a href="#cli-reference">CLI (13)</a></li>
       <li><a href="#benchmarks">Benchmarks</a></li>
@@ -426,10 +619,247 @@
     </ul>
   </header>
 
-  <!-- 3-Column Book Layout -->
-  <div class="book-layout-wrap">
+  <!-- Landing Page Hero -->
+  <section class="landing-hero-section">
+    <div>
+      <div class="hero-badge-tag">
+        <span class="dot-online"></span>
+        <span>v2.2.1 Production · Runtime &amp; Database Verified</span>
+      </div>
 
-    <!-- Left Sidebar (Exact layout from user screenshot) -->
+      <h1 class="hero-headline-h1">
+        The deterministic<br>
+        <span class="gradient-blue-span">code-intelligence</span> engine.
+      </h1>
+
+      <p class="hero-summary-p">
+        CodeGraph MCP maps repository relationships with <strong>runtime telemetry reconciliation</strong> and <strong>database lineage</strong>. AI coding agents resolve call hierarchies, mutating SQL queries, and API routes in <strong>&lt; 50ms</strong> without token waste.
+      </p>
+
+      <div class="cap-pills-row">
+        <a href="#runtime-telemetry-concept" class="cap-pill-btn rt">&#10003; Runtime Reconciliation</a>
+        <a href="#database-lineage-concept" class="cap-pill-btn db">&#9670; Database Lineage</a>
+        <a href="#framework-routes-guide" class="cap-pill-btn">Routes &amp; Handlers</a>
+        <a href="#how-it-works" class="cap-pill-btn">Deterministic AST</a>
+        <a href="#tools-database" class="cap-pill-btn">56 Verified Tools</a>
+      </div>
+
+      <div class="hero-cta-row">
+        <a href="#next-steps" class="btn-cta-primary">
+          <span>Explore Documentation</span>
+          <span>&darr;</span>
+        </a>
+        <a href="#tools-database" class="btn-cta-secondary">View 56 MCP Tools</a>
+      </div>
+
+      <!-- Tabbed Terminal Box -->
+      <div class="hero-term-box">
+        <div class="term-tab-strip">
+          <button class="term-tab-item active" onclick="setHeroTermCmd('pip install codegraph-engine[mcp]', this)">Install</button>
+          <button class="term-tab-item" onclick="setHeroTermCmd('codegraph search --database 'users table writes'', this)">Database CLI</button>
+          <button class="term-tab-item" onclick="setHeroTermCmd('codegraph run --record pytest', this)">Runtime Traces</button>
+          <button class="term-tab-item" onclick="setHeroTermCmd('from codegraph import get_context', this)">Python API</button>
+        </div>
+        <div class="term-code-line">
+          <span id="heroTermCmdText">$ pip install codegraph-engine[mcp]</span>
+          <button class="btn-term-copy" onclick="copyHeroTermCode()" title="Copy command">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Interactive Visualizer Mockup -->
+    <div>
+      <div class="ide-mockup-frame">
+        <div class="ide-frame-header">
+          <div class="ide-dots-row">
+            <div class="ide-dot r"></div>
+            <div class="ide-dot y"></div>
+            <div class="ide-dot g"></div>
+          </div>
+          <div class="ide-title-tab">CodeGraph Graph Visualizer</div>
+          <div class="ide-status-badge">&#10003; Synchronized</div>
+        </div>
+
+        <div class="ide-frame-body">
+          <!-- Tree Pane -->
+          <div class="ide-tree-pane">
+            <div class="ide-tree-title">Explorer</div>
+            <div class="ide-tree-row">&bull; app/</div>
+            <div class="ide-tree-row">&nbsp;&nbsp;&bull; api/</div>
+            <div class="ide-tree-row active">&nbsp;&nbsp;&nbsp;&nbsp;router.py</div>
+            <div class="ide-tree-row">&nbsp;&nbsp;&nbsp;&nbsp;auth.py</div>
+            <div class="ide-tree-row db">&nbsp;&nbsp;&bull; db/users.sql</div>
+            <div class="ide-tree-row rt">&nbsp;&nbsp;&bull; traces/live.json</div>
+            <div class="ide-tree-row">&bull; tests/test_api.py</div>
+          </div>
+
+          <!-- Center Canvas -->
+          <div class="ide-graph-canvas">
+            <svg class="ide-svg-elem" viewBox="0 0 420 280">
+              <defs>
+                <linearGradient id="edgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.6"/>
+                  <stop offset="100%" stop-color="#60a5fa" stop-opacity="0.2"/>
+                </linearGradient>
+                <linearGradient id="dbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.6"/>
+                  <stop offset="100%" stop-color="#fbbf24" stop-opacity="0.2"/>
+                </linearGradient>
+                <linearGradient id="rtGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#10b981" stop-opacity="0.6"/>
+                  <stop offset="100%" stop-color="#34d399" stop-opacity="0.2"/>
+                </linearGradient>
+              </defs>
+
+              <path d="M200 120 L90 85" stroke="url(#edgeGrad)" stroke-width="1.8" stroke-dasharray="3 3"/>
+              <path d="M200 120 L330 90" stroke="url(#dbGrad)" stroke-width="2"/>
+              <path d="M200 120 L130 185" stroke="url(#edgeGrad)" stroke-width="1.8"/>
+              <path d="M200 120 L270 195" stroke="url(#rtGrad)" stroke-width="2"/>
+
+              <circle cx="270" cy="40" r="14" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/>
+              <text x="270" y="43" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#fff" font-weight="700">index</text>
+
+              <rect x="165" y="105" width="70" height="30" rx="6" fill="#1d4ed8" stroke="#60a5fa" stroke-width="2"/>
+              <text x="200" y="124" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#fff" font-weight="700">router.py</text>
+
+              <circle cx="90" cy="85" r="14" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8"/>
+              <text x="90" y="88" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#fff">auth</text>
+
+              <circle cx="330" cy="90" r="14" fill="#0f172a" stroke="#f59e0b" stroke-width="1.8"/>
+              <text x="330" y="93" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#fff">users</text>
+
+              <circle cx="130" cy="185" r="12" fill="#064e3b" stroke="#10b981" stroke-width="1.8"/>
+              <text x="130" y="188" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#fff">&gt;_</text>
+
+              <circle cx="270" cy="195" r="12" fill="#064e3b" stroke="#34d399" stroke-width="1.8"/>
+              <text x="270" y="198" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#fff">&#10003;</text>
+            </svg>
+          </div>
+
+          <!-- Inspector Pane -->
+          <div class="ide-inspector-pane">
+            <div>
+              <div class="inspector-title-row">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                <span>router.py</span>
+              </div>
+              <div class="inspector-path-sub">app/routes/router.py</div>
+
+              <div class="inspector-prop-row"><span>Type</span><span class="inspector-val">File</span></div>
+              <div class="inspector-prop-row"><span>DB Writers</span><span class="inspector-val amber">users, orders</span></div>
+              <div class="inspector-prop-row"><span>Telemetry</span><span class="inspector-val green">Observed</span></div>
+              <div class="inspector-prop-row"><span>Routes</span><span class="inspector-val">3</span></div>
+              <div class="inspector-prop-row"><span>Verification</span><span class="inspector-val green">100% AST</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Stats Strip -->
+        <div class="ide-stats-bottom-bar">
+          <div><div class="ide-stat-item-num">199</div><div class="ide-stat-item-label">Symbols</div></div>
+          <div><div class="ide-stat-item-num">618</div><div class="ide-stat-item-label">Relationships</div></div>
+          <div><div class="ide-stat-item-num">84</div><div class="ide-stat-item-label">API Routes</div></div>
+          <div><div class="ide-stat-item-num">58</div><div class="ide-stat-item-label">Files</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 Feature Cards Grid -->
+  <section class="landing-features-grid" id="features">
+    
+    <!-- Card 1: Runtime Evidence -->
+    <a href="#runtime-telemetry-concept" class="landing-feature-card" style="border-top: 3px solid #10b981;">
+      <div class="feat-card-left">
+        <div class="feat-icon-box rt">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        </div>
+        <div class="feat-card-texts">
+          <h3>Runtime evidence</h3>
+          <p>Reconcile static AST with live execution traces for verified context.</p>
+        </div>
+      </div>
+      <div class="feat-arrow-circle">&rarr;</div>
+    </a>
+
+    <!-- Card 2: Database Intelligence -->
+    <a href="#database-lineage-concept" class="landing-feature-card" style="border-top: 3px solid #f59e0b;">
+      <div class="feat-card-left">
+        <div class="feat-icon-box db">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+        </div>
+        <div class="feat-card-texts">
+          <h3>Database intelligence</h3>
+          <p>Trace SQL/ORM to tables, columns, mutating queries, and data flows.</p>
+        </div>
+      </div>
+      <div class="feat-arrow-circle">&rarr;</div>
+    </a>
+
+    <!-- Card 3: Tree-sitter & AST -->
+    <a href="#how-it-works" class="landing-feature-card">
+      <div class="feat-card-left">
+        <div class="feat-icon-box indigo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        </div>
+        <div class="feat-card-texts">
+          <h3>Tree-sitter &amp; AST parsing</h3>
+          <p>Deterministic parsing across Python, JavaScript, and TypeScript.</p>
+        </div>
+      </div>
+      <div class="feat-arrow-circle">&rarr;</div>
+    </a>
+
+    <!-- Card 4: 56 MCP Tools -->
+    <a href="#tools-database" class="landing-feature-card">
+      <div class="feat-card-left">
+        <div class="feat-icon-box blue">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+        </div>
+        <div class="feat-card-texts">
+          <h3>56 MCP tools server</h3>
+          <p>Expose the graph to Claude Code, Cursor, Codex, and Antigravity.</p>
+        </div>
+      </div>
+      <div class="feat-arrow-circle">&rarr;</div>
+    </a>
+
+    <!-- Card 5: Framework-aware routes -->
+    <a href="#framework-routes-guide" class="landing-feature-card">
+      <div class="feat-card-left">
+        <div class="feat-icon-box rose">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+        </div>
+        <div class="feat-card-texts">
+          <h3>Framework-aware routes</h3>
+          <p>FastAPI, Flask, Django, and Express.js route discovery.</p>
+        </div>
+      </div>
+      <div class="feat-arrow-circle">&rarr;</div>
+    </a>
+
+    <!-- Card 6: Impact analysis -->
+    <a href="#tools-graph" class="landing-feature-card">
+      <div class="feat-card-left">
+        <div class="feat-icon-box db">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+        </div>
+        <div class="feat-card-texts">
+          <h3>Impact analysis</h3>
+          <p>Trace callers, callees, and potential impact of code modifications.</p>
+        </div>
+      </div>
+      <div class="feat-arrow-circle">&rarr;</div>
+    </a>
+
+  </section>
+
+  <!-- 3-Column Book Layout (Exact layout from user screenshot) -->
+  <div class="book-layout-wrap" id="docs-book">
+
+    <!-- Left Sidebar (Aligned at top) -->
     <aside class="book-sidebar-left">
       
       <!-- Group 1: GETTING STARTED -->
@@ -491,10 +921,10 @@
 
     </aside>
 
-    <!-- Center Book Area -->
+    <!-- Center Book Area (Aligned with left sidebar and right TOC) -->
     <main class="book-center-content">
       
-      <!-- Page Title Banner (Horizontal rule right below title from screenshot) -->
+      <!-- Page Title Banner (Horizontal rule dividing title and body) -->
       <div class="page-title-banner">
         <h1 class="h1-page-title" id="next-steps">Next Steps</h1>
       </div>
@@ -568,7 +998,7 @@
           <pre class="code-text-pre">pip install &quot;codegraph-engine[mcp]&quot;</pre>
         </div>
 
-        <p class="editorial-p">Initialize and index your repository:</p>
+        <p class="editorial-p" id="installation">Initialize and index your repository:</p>
         <div class="code-box-wrapper">
           <div class="code-box-header">
             <span>Terminal</span>
@@ -601,7 +1031,7 @@ codegraph status .</pre>
 
         <!-- Section: How It Works -->
         <h2 class="editorial-h2" id="how-it-works">How It Works</h2>
-        <p class="editorial-p">
+        <p class="editorial-p" id="the-knowledge-graph">
           CodeGraph MCP operates through a deterministic four-phase pipeline:
         </p>
         <ul class="book-bullet-list">
@@ -628,6 +1058,32 @@ codegraph status .</pre>
         <div class="callout-box db">
           <strong>Mutating SQL Writers:</strong> Instantly discover which API routes execute <code>INSERT</code>, <code>UPDATE</code>, or <code>DELETE</code> queries before performing breaking database migrations.
         </div>
+
+        <!-- Guides Section -->
+        <h2 class="editorial-h2" id="indexing-a-project">Indexing a Project</h2>
+        <p class="editorial-p">
+          Run <code>codegraph index .</code> to scan and parse all files in your repository. Incremental indexing utilizes content hashes so subsequent runs finish in milliseconds.
+        </p>
+
+        <h2 class="editorial-h2" id="reading-graph-browser">Reading Your Graph in the Browser</h2>
+        <p class="editorial-p">
+          Launch the local interactive visualizer with <code>codegraph ui</code> to explore callers, callees, and database relationships directly in your browser.
+        </p>
+
+        <h2 class="editorial-h2" id="framework-routes-guide">Framework Routes</h2>
+        <p class="editorial-p">
+          CodeGraph MCP automatically traces routes for FastAPI, Flask, Django, and Express.js, connecting HTTP verbs and path templates directly to their handler symbols.
+        </p>
+
+        <h2 class="editorial-h2" id="affected-tests-ci">Affected Tests in CI</h2>
+        <p class="editorial-p">
+          Use <code>find_related_tests</code> to discover the exact subset of unit and integration tests covering a modified symbol, optimizing continuous integration test run times.
+        </p>
+
+        <h2 class="editorial-h2" id="database-schema-guide">Database Schema &amp; Writers</h2>
+        <p class="editorial-p">
+          Query <code>find_db_tables</code>, <code>find_db_columns</code>, and <code>find_db_writers</code> to audit data flow before performing database refactors.
+        </p>
 
         <!-- Reference: 56 MCP Tools -->
         <h2 class="editorial-h2" id="tools-reference">MCP Tools Reference (56 Verified Tools)</h2>
@@ -5681,7 +6137,7 @@ Configured Antigravity (.agents/mcp_config.json, AGENTS.md)</pre>
       </div>
     </main>
 
-    <!-- Right Sidebar (On this page) -->
+    <!-- Right Sidebar (On this page - perfectly aligned with left sidebar and title) -->
     <aside class="book-toc-right">
       <div class="toc-heading-text">On this page</div>
       <ul class="toc-nav-list">
@@ -5721,6 +6177,17 @@ Configured Antigravity (.agents/mcp_config.json, AGENTS.md)</pre>
   </div>
 
   <script>
+    function setHeroTermCmd(cmd, btn) {
+      document.getElementById('heroTermCmdText').textContent = '$ ' + cmd;
+      document.querySelectorAll('.term-tab-item').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function copyHeroTermCode() {
+      const text = document.getElementById('heroTermCmdText').textContent.replace('$ ', '');
+      navigator.clipboard.writeText(text);
+    }
+
     const searchIndex = [
       { title: "Next Steps", sub: "Getting Started Overview & Guide Links", url: "#next-steps" },
       { title: "Introduction & Overview", sub: "Architectural Foundations & Deterministic AST", url: "#introduction" },
