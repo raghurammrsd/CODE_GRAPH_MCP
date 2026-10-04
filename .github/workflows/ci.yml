@@ -15,6 +15,11 @@ jobs:
         python-version: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Ensure branch ref for detached HEAD in PRs
+        run: git checkout -B ci-eval-head || true
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -36,6 +41,11 @@ jobs:
     needs: [lint-and-typecheck]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Ensure branch ref for detached HEAD in PRs
+        run: git checkout -B ci-eval-head || true
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
@@ -59,6 +69,11 @@ jobs:
     needs: [lint-and-typecheck]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Ensure branch ref for detached HEAD in PRs
+        run: git checkout -B ci-eval-head || true
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
@@ -68,7 +83,7 @@ jobs:
           pip install --upgrade pip
           pip install -e '.[dev,mcp]'
       - name: Run v2.1 Benchmark & Diagnostic Suite
-        run: python benchmarks/run_v21_eval.py --output-dir benchmarks/reports/v2_1
+        run: python3 benchmarks/run_v21_eval.py --output-dir benchmarks/reports/v2_1
 
   packaging-and-clean-install:
     name: Package Build & Clean Wheel Install
@@ -76,6 +91,11 @@ jobs:
     needs: [unit-and-integration-tests, production-benchmark-regression]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Ensure branch ref for detached HEAD in PRs
+        run: git checkout -B ci-eval-head || true
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
