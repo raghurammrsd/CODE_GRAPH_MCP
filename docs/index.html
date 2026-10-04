@@ -74,8 +74,13 @@
       padding: 0.85rem 2rem;
     }
     .brand-logo {
+      display: flex; align-items: center; gap: 0.6rem;
       font-weight: 800; font-size: 1.25rem; letter-spacing: -0.04em;
       color: var(--text-main); text-decoration: none;
+    }
+    .brand-logo-img {
+      width: 28px; height: 28px; border-radius: 6px; object-fit: cover;
+      border: 1px solid var(--border-color);
     }
     .search-trigger {
       display: flex; align-items: center; justify-content: space-between;
@@ -372,7 +377,10 @@
 
   <!-- Top Universal Header -->
   <header class="top-nav">
-    <a href="#" class="brand-logo">codegraph</a>
+    <a href="#" class="brand-logo">
+      <img src="assets/codegraph_logo.jpg" alt="CodeGraph Logo" class="brand-logo-img">
+      <span>codegraph</span>
+    </a>
     <div class="search-trigger" onclick="document.getElementById('mcpToolsSearch').focus(); window.location.hash = '#tools-catalog';">
       <span>Search tools, commands, or concepts...</span>
       <span class="kbd-shortcut">&#8984; K</span>
@@ -2115,7 +2123,10 @@ codegraph run uvicorn main:app --reload'); this.title='Copied!'; setTimeout(()=>
 
   <!-- Universal Bottom Footer -->
   <footer class="bottom-bar">
-    <a href="#" class="footer-logo">codegraph</a>
+    <a href="#" class="footer-logo" style="display:flex; align-items:center; gap:0.5rem;">
+      <img src="assets/codegraph_logo.jpg" alt="CodeGraph Logo" style="width:22px; height:22px; border-radius:4px; object-fit:cover;">
+      <span>codegraph</span>
+    </a>
     <ul class="footer-links-list">
       <li><a href="#introduction">Docs</a></li>
       <li><a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP" target="_blank">GitHub</a></li>
