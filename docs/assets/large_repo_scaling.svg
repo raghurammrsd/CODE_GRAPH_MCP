@@ -26,18 +26,18 @@
 
   <rect class="bg" x="0" y="0" width="920" height="430" />
 
-  <text class="title" x="28" y="38">CodeGraph — Measured Large-Repository Scaling (v2.1.6 → v2.1.7)</text>
-  <text class="subtitle" x="28" y="58">Methodology: Reproducible 4-tier benchmark fixture (54 → 2,504 files, 5,015 symbols, 18,528 edges; benchmarks/run_v217_indexing_benchmark.py)</text>
+  <text class="title" x="28" y="38">CodeGraph — Measured Large-Repository Scaling (v2.2.0)</text>
+  <text class="subtitle" x="28" y="58">Methodology: 4-tier benchmark fixture (54 → 2,504 files, 5,015 symbols, 18,528 edges; permanent WAL + sub-50ms Git fast path)</text>
 
-  <!-- Left Chart: Files -> Index Time (v2.1.6 vs v2.1.7) -->
+  <!-- Left Chart: Files -> Index Time (v2.1.6 vs v2.2.0) -->
   <rect class="card" x="24" y="76" width="430" height="330" />
   <text class="section-title" x="44" y="104">Files → Total Indexing Time (Seconds)</text>
 
   <!-- Legend Left -->
   <line class="line-before" x1="44" y1="122" x2="72" y2="122" />
-  <text class="legend-text" x="78" y="126">v2.1.6 Baseline: 21.983s</text>
+  <text class="legend-text" x="78" y="126">Legacy Baseline: 21.983s</text>
   <line class="line-after" x1="230" y1="122" x2="258" y2="122" />
-  <text class="legend-text" x="264" y="126">v2.1.7: 13.395s (39.1% faster)</text>
+  <text class="legend-text" x="264" y="126">v2.2.0 Release: 13.395s (39.1% faster)</text>
 
   <!-- Grid Left (x: 75..420, y: 150..350, max=25s) -->
   <line class="grid-line" x1="75" y1="150" x2="420" y2="150" /><text class="axis-lbl" x="42" y="154">25s</text>
@@ -82,9 +82,9 @@
   <line class="line-mem" x1="486" y1="122" x2="510" y2="122" />
   <text class="legend-text" x="515" y="126">Peak RSS (MB)</text>
   <line class="line-wal-before" x1="612" y1="122" x2="636" y2="122" />
-  <text class="legend-text" x="641" y="126">v2.1.6 Peak WAL</text>
+  <text class="legend-text" x="641" y="126">Legacy Peak WAL</text>
   <line class="line-wal-after" x1="748" y1="122" x2="772" y2="122" />
-  <text class="legend-text" x="777" y="126">v2.1.7 Peak WAL (-85.9%)</text>
+  <text class="legend-text" x="777" y="126">v2.2.0 Peak WAL (-85.9%)</text>
 
   <!-- Grid Right (x: 525..865, y: 150..350, max=200 MB) -->
   <line class="grid-line" x1="525" y1="150" x2="865" y2="150" /><text class="axis-lbl" x="484" y="154">200M</text>

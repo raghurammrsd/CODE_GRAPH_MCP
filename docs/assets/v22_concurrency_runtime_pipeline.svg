@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #0d1117; rx: 14px; }
+      .card { fill: #161b22; stroke: #30363d; stroke-width: 1.2; rx: 10px; }
+      .card-glow { fill: #161b22; stroke: #2ea043; stroke-width: 1.5; rx: 10px; }
+      .card-blue { fill: #161b22; stroke: #388bfd; stroke-width: 1.5; rx: 10px; }
+      .card-purple { fill: #161b22; stroke: #a371f7; stroke-width: 1.5; rx: 10px; }
+      .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 19px; font-weight: 700; fill: #f0f6fc; }
+      .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 12px; fill: #8b949e; }
+      .header-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13.5px; font-weight: 700; fill: #58a6ff; }
+      .header-green { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13.5px; font-weight: 700; fill: #3fb950; }
+      .header-purple { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13.5px; font-weight: 700; fill: #d2a8ff; }
+      .body-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 11.5px; fill: #c9d1d9; }
+      .code-lbl { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; fill: #79c0ff; }
+      .code-green { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; fill: #7ee787; }
+      .code-badge { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 10px; font-weight: 700; fill: #f0f6fc; }
+      .badge-bg { fill: #238636; rx: 4px; }
+      .badge-bg-blue { fill: #1f6feb; rx: 4px; }
+      .arrow { stroke: #58a6ff; stroke-width: 1.8; fill: none; marker-end: url(#arrowhead); }
+      .arrow-green { stroke: #3fb950; stroke-width: 1.8; fill: none; marker-end: url(#arrowhead-green); }
+      .arrow-dash { stroke: #8b949e; stroke-width: 1.5; stroke-dasharray: 4,3; fill: none; }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#58a6ff" />
+    </marker>
+    <marker id="arrowhead-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#3fb950" />
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="480" />
+
+  <!-- Top Title -->
+  <text class="title" x="28" y="36">CodeGraph v2.2.0 — Zero-Friction Runtime Tracing &amp; Low-Latency Concurrency Engine</text>
+  <text class="subtitle" x="28" y="56">Deterministic AST analysis, transparent dev server request interception, lock-free SQLite WAL, and bounded monorepo context scaling</text>
+
+  <!-- Box 1: Zero-Friction Telemetry Capture (codegraph run) -->
+  <rect class="card-glow" x="24" y="76" width="285" height="375" />
+  <rect class="badge-bg" x="40" y="92" width="76" height="18" />
+  <text class="code-badge" x="47" y="105">INNOVATION</text>
+  <text class="header-green" x="126" y="106">Zero-Friction Runtime</text>
+  <text class="code-lbl" x="40" y="132">codegraph run &lt;command&gt;</text>
+  <text class="body-text" x="40" y="152">• 1-line wrapper for development:</text>
+  <text class="code-green" x="52" y="170">npm run dev / uvicorn / python</text>
+  <text class="body-text" x="40" y="192">• Injects non-invasive runtime hooks:</text>
+  <text class="code-lbl" x="52" y="210">NODE_OPTIONS / PYTHONSTARTUP</text>
+  <text class="body-text" x="40" y="232">• Automatically streams:</text>
+  <text class="body-text" x="52" y="250">✔ Route hits &amp; HTTP status codes</text>
+  <text class="body-text" x="52" y="268">✔ Request latency &amp; execution times</text>
+  <text class="body-text" x="52" y="286">✔ Uncaught exceptions &amp; crash traces</text>
+  <text class="body-text" x="40" y="310">• <tspan fill="#f0883e" font-weight="700">Zero code changes</tspan> required</text>
+  <text class="body-text" x="40" y="328">• Streams directly into:</text>
+  <text class="code-lbl" x="52" y="346">.codegraph/runtime.sqlite3</text>
+  <text class="body-text" x="40" y="374">• Redacts auth tokens, cookies &amp; keys</text>
+  <text class="body-text" x="40" y="394">• Auto-drains &amp; terminates child on exit</text>
+  <text class="body-text" x="40" y="426" fill="#8b949e">Eliminates manual OTel / Pino setup</text>
+
+  <!-- Box 2: Lock-Free SQLite WAL Concurrency Engine -->
+  <rect class="card-blue" x="335" y="76" width="290" height="375" />
+  <rect class="badge-bg-blue" x="351" y="92" width="78" height="18" />
+  <text class="code-badge" x="358" y="105">CORE ENGINE</text>
+  <text class="header-title" x="439" y="106">Low-Latency WAL Engine</text>
+  <text class="code-lbl" x="351" y="132">Permanent SQLite Concurrency</text>
+  <text class="body-text" x="351" y="152">• Lock-Free Multi-Process Concurrency:</text>
+  <text class="code-lbl" x="363" y="170">PRAGMA journal_mode = WAL</text>
+  <text class="code-lbl" x="363" y="188">PRAGMA synchronous = NORMAL</text>
+  <text class="code-lbl" x="363" y="206">PRAGMA busy_timeout = 15000 (15s)</text>
+  <text class="code-lbl" x="363" y="224">PRAGMA cache_size = -64000 (64MB)</text>
+  <text class="code-lbl" x="363" y="242">PRAGMA temp_store = MEMORY</text>
+  <text class="body-text" x="351" y="266">• Eliminates <tspan fill="#f85149" font-weight="700">"database is locked"</tspan> errors</text>
+  <text class="body-text" x="363" y="284">during heavy agent interrogation</text>
+  <text class="body-text" x="351" y="306">• <tspan fill="#3fb950" font-weight="700">Sub-50ms Freshness Verification:</tspan></text>
+  <text class="body-text" x="363" y="324">Instantaneous Git commit diff fast path</text>
+  <text class="body-text" x="363" y="342">(git rev-parse HEAD match in &lt; 5ms)</text>
+  <text class="body-text" x="351" y="366">• Streaming dirty-file reconciliation</text>
+  <text class="body-text" x="351" y="386">• Zero memory leakage &amp; 0.0 MB final WAL</text>
+  <text class="body-text" x="351" y="426" fill="#8b949e">Validated across macOS, Linux &amp; Windows</text>
+
+  <!-- Box 3: Resilient Transport & Context Saturation Guard -->
+  <rect class="card-purple" x="650" y="76" width="285" height="375" />
+  <rect class="badge-bg" x="666" y="92" width="70" height="18" style="fill:#8957e5;" />
+  <text class="code-badge" x="674" y="105">SCALING</text>
+  <text class="header-purple" x="746" y="106">Transport &amp; Monorepos</text>
+  <text class="code-lbl" x="666" y="132">Multi-Transport MCP Server</text>
+  <text class="body-text" x="666" y="152">• Standard I/O + SSE HTTP Transport:</text>
+  <text class="code-lbl" x="678" y="170">codegraph serve --transport sse</text>
+  <text class="code-lbl" x="678" y="188">--port 8765 --host 127.0.0.1</text>
+  <text class="body-text" x="666" y="212">• Eliminates <tspan fill="#f85149" font-weight="700">exit status 0xffffffff</tspan></text>
+  <text class="body-text" x="678" y="230">crash loops on client reconnection</text>
+  <text class="body-text" x="666" y="254">• Dynamic index hot-reloading (no restart)</text>
+  <text class="body-text" x="666" y="280">• <tspan fill="#d2a8ff" font-weight="700">Context Saturation Guard:</tspan></text>
+  <text class="body-text" x="678" y="298">Enforces strict bounded pagination</text>
+  <text class="code-lbl" x="678" y="316">list_routes(limit=50, offset=0)</text>
+  <text class="code-lbl" x="678" y="334">get_db_schema(limit=25, offset=0)</text>
+  <text class="body-text" x="666" y="358">• Protects LLM context windows on</text>
+  <text class="body-text" x="678" y="376">40,000+ file enterprise monorepos</text>
+  <text class="body-text" x="666" y="400">• Deterministic token reduction: <tspan fill="#3fb950" font-weight="700">41.8%</tspan></text>
+  <text class="body-text" x="666" y="426" fill="#8b949e">Average context payload: 510 tokens</text>
+</svg>

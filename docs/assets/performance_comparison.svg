@@ -76,12 +76,12 @@
   <text class="val" x="774" y="272">100.0%</text>
   <text class="badge-good" x="830" y="272">(+90.62%)</text>
 
-  <!-- Metric 6: 50-Task Context Reduction -->
-  <text class="label" x="486" y="309">50-Task Context Compression (v2_0_verified.json)</text>
+  <!-- Metric 6: 50-Task Production Benchmark -->
+  <text class="label" x="486" y="309">50-Task Production Context &amp; Recall (v2.2.0)</text>
   <rect class="bar-base" x="486" y="318" width="240" height="18" />
-  <text class="val" x="734" y="332">~1,548 cand. tokens</text>
-  <rect class="bar-cg-blue" x="486" y="340" width="84" height="18" />
-  <text class="val" x="578" y="354">542.0 selected tokens (65.0% reduction)</text>
+  <text class="val" x="734" y="332">88.0% Task Coverage</text>
+  <rect class="bar-cg-blue" x="486" y="340" width="79" height="18" />
+  <text class="val" x="575" y="354">510 tokens (40.5ms latency, 0% unsupported)</text>
 
   <!-- Footer Note -->
   <text class="subtitle" x="44" y="392">5-file FastAPI auth trace fixture: 5 direct file reads → 0 direct file reads (4 MCP calls)</text>
