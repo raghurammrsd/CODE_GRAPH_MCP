@@ -16,10 +16,12 @@
   <a href="tests/"><img src="https://img.shields.io/badge/pytest-861%20passed-brightgreen.svg" alt="Tests: 861 passed" /></a>
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/ruff-0%20errors-success.svg" alt="Ruff: 0 errors" /></a>
   <a href="src/codegraph/"><img src="https://img.shields.io/badge/mypy-0%20issues%20(80%20files)-blue.svg" alt="Mypy: strict" /></a>
+  <a href="https://raghurammrsd.github.io/CODE_GRAPH_MCP/"><img src="https://img.shields.io/badge/docs-GitHub%20Pages-0969da.svg" alt="Documentation: GitHub Pages" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
 </p>
 
 <p align="center">
+  <a href="https://raghurammrsd.github.io/CODE_GRAPH_MCP/"><strong>Documentation Site</strong></a> •
   <a href="https://pypi.org/project/codegraph-engine/2.2.1/"><strong>PyPI Package</strong></a> •
   <a href="#overview"><strong>Overview</strong></a> •
   <a href="#1-whats-new-in-v221"><strong>What's New in v2.2.1</strong></a> •
