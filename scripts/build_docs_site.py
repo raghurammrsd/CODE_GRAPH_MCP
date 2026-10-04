@@ -159,6 +159,7 @@ def generate_docs():
   <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
   <link rel="shortcut icon" href="favicon.ico">
   <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+  <link rel="sitemap" type="application/xml" title="Sitemap" href="https://raghurammrsd.github.io/CODE_GRAPH_MCP/sitemap.xml">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
