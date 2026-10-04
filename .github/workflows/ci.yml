@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint-and-typecheck:
     name: Lint & Typecheck (Ruff + Mypy)
@@ -26,8 +30,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -e '.[dev,mcp]'
+          pip install --upgrade --retries 5 pip
+          pip install --retries 5 -e '.[dev,mcp]'
       - name: Ruff Lint & Format Check
         run: ruff check .
       - name: Mypy Typecheck src/
@@ -52,8 +56,8 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -e '.[dev,mcp]'
+          pip install --upgrade --retries 5 pip
+          pip install --retries 5 -e '.[dev,mcp]'
       - name: Run Pytest Test Suite
         run: python -m pytest -v
       - name: Run Adversarial & Security Tests
@@ -80,8 +84,8 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -e '.[dev,mcp]'
+          pip install --upgrade --retries 5 pip
+          pip install --retries 5 -e '.[dev,mcp]'
       - name: Run v2.1 Benchmark & Diagnostic Suite
         run: python3 benchmarks/run_v21_eval.py --output-dir benchmarks/reports/v2_1
 
@@ -101,13 +105,13 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install build tools
-        run: pip install build
+        run: pip install --retries 5 build
       - name: Build wheel and sdist
         run: python -m build
       - name: Install Wheel in Isolated Environment
         run: |
           python -m venv test_env
-          test_env/bin/pip install dist/*.whl
+          test_env/bin/pip install --retries 5 dist/*.whl
           test_env/bin/codegraph --version
           test_env/bin/codegraph --help
           test_env/bin/codegraph doctor --database
