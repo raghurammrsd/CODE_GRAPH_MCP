@@ -152,24 +152,24 @@
 
     /* Landing Section: Split Hero (Compact, desktop-balanced) */
     .landing-hero-section {
-      max-width: 1400px; margin: 0 auto; padding: 2.75rem 2.5rem 2.25rem;
+      max-width: 1400px; margin: 0 auto; padding: 2rem 2.5rem 1.75rem;
       display: grid; grid-template-columns: 1fr 1.15fr; gap: 3rem; align-items: center;
     }
     @media (max-width: 1080px) {
-      .landing-hero-section { grid-template-columns: 1fr; gap: 2.5rem; padding: 2.5rem 1.5rem; }
+      .landing-hero-section { grid-template-columns: 1fr; gap: 2rem; padding: 2rem 1.5rem; }
     }
 
     .hero-badge-tag {
       display: inline-flex; align-items: center; gap: 0.5rem;
       background: #eff6ff; border: 1px solid #bfdbfe;
-      border-radius: 9999px; padding: 0.32rem 0.85rem; font-size: 0.78rem; font-family: var(--font-mono);
-      font-weight: 700; color: #1d4ed8; margin-bottom: 1rem;
+      border-radius: 9999px; padding: 0.3rem 0.8rem; font-size: 0.78rem; font-family: var(--font-mono);
+      font-weight: 700; color: #1d4ed8; margin-bottom: 0.85rem;
     }
     .dot-online { width: 7px; height: 7px; border-radius: 50%; background: #10b981; }
 
     .hero-headline-h1 {
-      font-size: clamp(2.2rem, 3.8vw, 3.2rem); font-weight: 800; line-height: 1.14;
-      letter-spacing: -0.04em; color: #000000; margin-bottom: 0.85rem;
+      font-size: clamp(2.1rem, 3.6vw, 3rem); font-weight: 800; line-height: 1.14;
+      letter-spacing: -0.04em; color: #000000; margin-bottom: 0.75rem;
     }
     .gradient-blue-span {
       background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
@@ -177,42 +177,43 @@
     }
 
     .hero-summary-p {
-      font-size: 1.05rem; color: var(--text-muted); line-height: 1.6;
-      max-width: 520px; margin-bottom: 1.25rem;
+      font-size: 1.02rem; color: var(--text-muted); line-height: 1.58;
+      max-width: 520px; margin-bottom: 1.1rem;
     }
     .hero-summary-p strong { color: #000000; font-weight: 700; }
 
-    .cap-pills-row { display: flex; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
-    .cap-pill-btn {
-      display: inline-flex; align-items: center; gap: 0.4rem;
-      background: #f8fafc; border: 1px solid var(--border);
-      color: #334155; font-size: 0.8rem; font-weight: 700; padding: 0.32rem 0.7rem;
-      border-radius: 6px; cursor: pointer; text-decoration: none; transition: all 0.15s ease;
+    /* Interactive Hero Terminal Box (Elevated placement) */
+    .hero-term-box {
+      background: #090d16; border: 1px solid #1e293b; border-radius: 10px;
+      padding: 0.7rem 1.1rem; max-width: 520px; box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.05);
+      margin-bottom: 1.15rem;
     }
-    .cap-pill-btn:hover { border-color: var(--primary); }
-    .cap-pill-btn.rt { background: #dcfce7; border-color: #bbf7d0; color: #166534; }
-    .cap-pill-btn.db { background: #fef3c7; border-color: #fde68a; color: #92400e; }
 
-    .hero-cta-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.35rem; }
+    .hero-cta-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem; }
     .btn-cta-primary {
       background: #000000; color: #ffffff; text-decoration: none;
-      padding: 0.68rem 1.4rem; border-radius: 7px; font-size: 0.9rem; font-weight: 700;
+      padding: 0.65rem 1.35rem; border-radius: 7px; font-size: 0.88rem; font-weight: 700;
       display: inline-flex; align-items: center; gap: 0.5rem; transition: background 0.15s ease;
     }
     .btn-cta-primary:hover { background: #262626; }
     .btn-cta-secondary {
       background: #ffffff; color: var(--text); text-decoration: none;
-      border: 1px solid var(--border); padding: 0.68rem 1.4rem; border-radius: 7px;
-      font-size: 0.9rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem;
+      border: 1px solid var(--border); padding: 0.65rem 1.35rem; border-radius: 7px;
+      font-size: 0.88rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem;
       transition: all 0.15s ease;
     }
     .btn-cta-secondary:hover { background: #f9f9f9; border-color: #cbd5e1; }
 
-    /* Interactive Hero Terminal Box */
-    .hero-term-box {
-      background: #090d16; border: 1px solid #1e293b; border-radius: 10px;
-      padding: 0.75rem 1.15rem; max-width: 520px; box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.05);
+    .cap-pills-row { display: flex; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0; }
+    .cap-pill-btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: #f8fafc; border: 1px solid var(--border);
+      color: #334155; font-size: 0.78rem; font-weight: 700; padding: 0.3rem 0.65rem;
+      border-radius: 6px; cursor: pointer; text-decoration: none; transition: all 0.15s ease;
     }
+    .cap-pill-btn:hover { border-color: var(--primary); }
+    .cap-pill-btn.rt { background: #dcfce7; border-color: #bbf7d0; color: #166534; }
+    .cap-pill-btn.db { background: #fef3c7; border-color: #fde68a; color: #92400e; }
     .term-tab-strip { display: flex; gap: 1rem; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.4rem; }
     .term-tab-item {
       background: none; border: none; font-size: 0.76rem; font-weight: 700;
@@ -696,23 +697,7 @@
         CodeGraph MCP maps repository relationships with <strong>runtime telemetry reconciliation</strong> and <strong>database lineage</strong>. AI coding agents resolve call hierarchies, mutating SQL queries, and API routes in <strong>&lt; 50ms</strong> without token waste.
       </p>
 
-      <div class="cap-pills-row">
-        <a href="#runtime-telemetry-concept" class="cap-pill-btn rt">&#10003; Runtime Reconciliation</a>
-        <a href="#database-lineage-concept" class="cap-pill-btn db">&#9670; Database Lineage</a>
-        <a href="#framework-routes-guide" class="cap-pill-btn">Routes &amp; Handlers</a>
-        <a href="#how-it-works" class="cap-pill-btn">Deterministic AST</a>
-        <a href="#tools-database" class="cap-pill-btn">56 Verified Tools</a>
-      </div>
-
-      <div class="hero-cta-row">
-        <a href="#next-steps" class="btn-cta-primary">
-          <span>Explore Documentation</span>
-          <span>&darr;</span>
-        </a>
-        <a href="#tools-database" class="btn-cta-secondary">View 56 MCP Tools</a>
-      </div>
-
-      <!-- Tabbed Terminal Box (Fits cleanly above desktop fold) -->
+      <!-- Tabbed Terminal Box (Elevated above fold for immediate visibility) -->
       <div class="hero-term-box">
         <div class="term-tab-strip">
           <button class="term-tab-item active" onclick="setHeroTermCmd('pip install codegraph-engine[mcp]', this)">Install</button>
@@ -726,6 +711,22 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
           </button>
         </div>
+      </div>
+
+      <div class="hero-cta-row">
+        <a href="#next-steps" class="btn-cta-primary">
+          <span>Explore Documentation</span>
+          <span>&darr;</span>
+        </a>
+        <a href="#tools-database" class="btn-cta-secondary">View 56 MCP Tools</a>
+      </div>
+
+      <div class="cap-pills-row">
+        <a href="#runtime-telemetry-concept" class="cap-pill-btn rt">&#10003; Runtime Reconciliation</a>
+        <a href="#database-lineage-concept" class="cap-pill-btn db">&#9670; Database Lineage</a>
+        <a href="#framework-routes-guide" class="cap-pill-btn">Routes &amp; Handlers</a>
+        <a href="#how-it-works" class="cap-pill-btn">Deterministic AST</a>
+        <a href="#tools-database" class="cap-pill-btn">56 Verified Tools</a>
       </div>
     </div>
 
