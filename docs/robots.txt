@@ -1,7 +1,6 @@
 User-agent: *
 Allow: /
 
-# Explicit AI and search crawler permissions
 User-agent: Googlebot
 Allow: /
 
@@ -20,7 +19,5 @@ Allow: /
 User-agent: ClaudeBot
 Allow: /
 
-User-agent: anthropic-ai
-Allow: /
-
 Sitemap: https://raghurammrsd.github.io/CODE_GRAPH_MCP/sitemap.xml
+Sitemap: https://raghurammrsd.github.io/CODE_GRAPH_MCP/sitemap.txt
