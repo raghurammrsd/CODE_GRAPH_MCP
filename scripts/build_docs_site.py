@@ -184,8 +184,8 @@ def generate_docs():
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; font-family: var(--font-sans); color: var(--text-body); background: var(--bg); }
-    body { min-height: 100vh; line-height: 1.6; overflow-x: hidden; }
+    html { scroll-behavior: smooth; font-family: var(--font-sans); color: var(--text-body); background: var(--bg); overflow-x: hidden; max-width: 100vw; }
+    body { min-height: 100vh; line-height: 1.6; overflow-x: hidden; width: 100%; max-width: 100vw; }
 
     /* Sticky Universal Header */
     header.book-nav-top {
@@ -194,24 +194,25 @@ def generate_docs():
       backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
       padding: 0 2rem; display: flex; align-items: center; justify-content: space-between;
+      max-width: 100vw; box-sizing: border-box;
     }
-    .header-left-cluster { display: flex; align-items: center; gap: 1.5rem; }
-    .brand-group { display: flex; align-items: center; gap: 0.65rem; text-decoration: none; color: var(--text); }
+    .header-left-cluster { display: flex; align-items: center; gap: 1.25rem; flex-shrink: 0; }
+    .brand-group { display: flex; align-items: center; gap: 0.65rem; text-decoration: none; color: var(--text); flex-shrink: 0; }
     .brand-cube-svg { width: 28px; height: 28px; flex-shrink: 0; transition: transform 0.2s ease; }
     .brand-group:hover .brand-cube-svg { transform: scale(1.04); }
-    .brand-name { font-size: 1.12rem; font-weight: 800; letter-spacing: -0.025em; color: #000000; }
+    .brand-name { font-size: 1.12rem; font-weight: 800; letter-spacing: -0.025em; color: #000000; white-space: nowrap; }
     .badge-ver {
       font-family: var(--font-mono); font-size: 0.68rem; font-weight: 600;
       color: #475569; background: #f1f5f9; border: 1px solid #e2e8f0;
-      padding: 0.12rem 0.5rem; border-radius: 9999px; letter-spacing: 0.01em;
+      padding: 0.12rem 0.5rem; border-radius: 9999px; letter-spacing: 0.01em; flex-shrink: 0;
     }
 
     .search-trigger-btn {
       display: flex; align-items: center; gap: 0.65rem;
       background: #f8fafc; border: 1px solid #e2e8f0;
-      border-radius: 8px; padding: 0 0.85rem; width: 280px; height: 36px; cursor: pointer;
+      border-radius: 8px; padding: 0 0.85rem; width: 240px; height: 36px; cursor: pointer;
       color: #64748b; font-size: 0.82rem; transition: all 0.15s ease;
-      white-space: nowrap; overflow: hidden;
+      white-space: nowrap; overflow: hidden; flex-shrink: 1;
     }
     .search-trigger-btn:hover { border-color: #cbd5e1; background: #ffffff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04); }
     .search-icon-svg { stroke: #64748b; flex-shrink: 0; }
@@ -226,23 +227,23 @@ def generate_docs():
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
     }
 
-    .header-right-cluster { display: flex; align-items: center; gap: 0.35rem; }
+    .header-right-cluster { display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0; }
     .top-links-row { display: flex; align-items: center; gap: 0.25rem; list-style: none; }
     .top-links-row li a {
       color: #475569; text-decoration: none; font-size: 0.85rem; font-weight: 600;
-      padding: 0.4rem 0.7rem; border-radius: 6px; transition: all 0.15s ease;
+      padding: 0.4rem 0.65rem; border-radius: 6px; transition: all 0.15s ease; white-space: nowrap;
     }
     .top-links-row li a:hover { color: #000000; background: #f1f5f9; }
 
     .header-sep-divider {
-      width: 1px; height: 20px; background: var(--border); margin: 0 0.65rem;
+      width: 1px; height: 20px; background: var(--border); margin: 0 0.5rem; flex-shrink: 0;
     }
 
     .github-nav-btn {
       background: #0f172a; color: #ffffff; text-decoration: none;
       padding: 0.38rem 0.8rem; border-radius: 7px;
       font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.45rem;
-      transition: background 0.15s ease;
+      transition: background 0.15s ease; flex-shrink: 0; white-space: nowrap;
     }
     .github-nav-btn:hover { background: #1e293b; color: #ffffff; }
     .gh-star-pill {
@@ -251,19 +252,23 @@ def generate_docs():
       display: inline-flex; align-items: center; gap: 0.2rem;
     }
 
-    @media (max-width: 1140px) {
+    @media (max-width: 1260px) {
       .top-links-row li:nth-child(4),
       .top-links-row li:nth-child(5) { display: none; }
-      .search-trigger-btn { width: 220px; }
+      .search-trigger-btn { width: 210px; }
+      .header-left-cluster { gap: 1rem; }
+      header.book-nav-top { padding: 0 1.25rem; }
     }
-    @media (max-width: 940px) {
+    @media (max-width: 980px) {
       .top-links-row { display: none; }
       .header-sep-divider { display: none; }
-      .search-trigger-btn { width: 190px; }
+      .search-trigger-btn { width: 180px; }
+      header.book-nav-top { padding: 0 1rem; }
     }
     @media (max-width: 640px) {
       .badge-ver { display: none; }
-      header.book-nav-top { padding: 0 1rem; }
+      .search-trigger-btn { width: 140px; }
+      header.book-nav-top { padding: 0 0.75rem; }
     }
 
     /* Landing Section: Split Hero (Compact, desktop-balanced) */
@@ -759,7 +764,7 @@ def generate_docs():
   <!-- Universal Header -->
   <header class="book-nav-top">
     <div class="header-left-cluster">
-      <a href="#" class="brand-group">
+      <a href="./" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); return false;" class="brand-group">
         <!-- 3D Isometric Graph Cube Logo -->
         <svg class="brand-cube-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M16 2L28 9V23L16 30L4 23V9L16 2Z" stroke="#2563eb" stroke-width="2.2" stroke-linejoin="round"/>
