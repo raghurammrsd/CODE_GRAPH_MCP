@@ -22,13 +22,13 @@ def generate_docs():
   
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/">
-  <meta property="og:title" content="CodeGraph MCP — Understand Any Codebase as a Graph">
+  <meta property="og:title" content="CodeGraph MCP — Understand Any Codebase with MCP">
   <meta property="og:description" content="A local-first code-intelligence engine that turns any codebase into a queryable knowledge graph for AI coding agents. 56 verified MCP tools, 13 CLI commands.">
   <meta property="og:image" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/assets/codegraph_logo.jpg">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/">
-  <meta name="twitter:title" content="CodeGraph MCP — Understand Any Codebase as a Graph">
+  <meta name="twitter:title" content="CodeGraph MCP — Understand Any Codebase with MCP">
   <meta name="twitter:description" content="A local-first code-intelligence engine that turns any codebase into a queryable knowledge graph for AI coding agents.">
   <meta name="twitter:image" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/assets/codegraph_logo.jpg">
 
@@ -57,7 +57,7 @@ def generate_docs():
   }
   </script>
 
-  <title>CodeGraph · Understand Any Codebase as a Graph</title>
+  <title>CodeGraph · Understand Any Codebase with MCP</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -471,11 +471,11 @@ def generate_docs():
 
       <h1 class="hero-h1-title">
         Understand any<br>
-        <span class="gradient-codebase">codebase</span> as a graph
+        <span class="gradient-codebase">codebase</span> with MCP
       </h1>
 
       <p class="hero-subtitle-p">
-        A local-first code-intelligence tool that turns any codebase into a queryable knowledge graph for AI coding agents.
+        A local-first code-intelligence tool that turns any codebase into a queryable MCP knowledge server for AI coding agents.
       </p>
 
       <div class="feature-pill-strip">
@@ -528,7 +528,7 @@ def generate_docs():
       <div class="ide-mockup-window">
         <div class="ide-top-bar">
           <div class="ide-view-pills">
-            <button class="ide-pill active">Code Graph</button>
+            <button class="ide-pill active">Codebase MCP</button>
             <button class="ide-pill">Call Graph</button>
             <button class="ide-pill">Dependencies</button>
             <button class="ide-pill">Routes</button>
