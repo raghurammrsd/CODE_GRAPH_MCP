@@ -71,7 +71,7 @@
       "--port, -p <int>: Port for SSE server (default: 8765)"
     ],
     "example": "codegraph serve . --transport sse --port 8765",
-    "output": "CodeGraph MCP server running on http://127.0.0.1:8765/sse (56 tools registered)"
+    "output": "CodeGraph MCP server running on http://127.0.0.1:8765/sse (62 tools registered)"
   },
   {
     "command": "codegraph stop [PATH]",
@@ -161,5 +161,80 @@
     ],
     "example": "codegraph privacy .",
     "output": "Privacy Audit PASSED: 0 sensitive files indexed, 0 exposed secrets found."
+  },
+  {
+    "command": "codegraph git-state [PATH]",
+    "category": "Git Intelligence",
+    "summary": "Track Git branch, HEAD commit, indexed commit, and working-tree modifications.",
+    "problem_solved": "Instantly determines if the CodeGraph index is CLEAN, DIRTY, or STALE relative to working tree and HEAD with sub-millisecond caching.",
+    "flags": [
+      "--repository, -r <path>: Repository path",
+      "--json: Output git state as JSON"
+    ],
+    "example": "codegraph git-state",
+    "output": "Git Repository: /path/to/repo\nBranch:         main\nCurrent HEAD:   3d71eca\nIndexed HEAD:   3d71eca\nFreshness:      CLEAN\nWorking Tree:   0 modified, 0 untracked"
+  },
+  {
+    "command": "codegraph git-diff [base] [head]",
+    "category": "Git Intelligence",
+    "summary": "Compute structural AST-level difference between Git revisions, commits, or branches.",
+    "problem_solved": "Detects added, removed, and modified functions, classes, and parameter signatures—not merely raw textual line diffs.",
+    "flags": [
+      "--branch, -b: Perform hierarchical branch architecture comparison",
+      "--json: Output structural diff as JSON"
+    ],
+    "example": "codegraph git-diff HEAD~1 HEAD",
+    "output": "Structural Git Diff (HEAD~1 -> HEAD):\n  Modified Files: 2\n  Added Symbols:    3 (OrderValidator.validate_currency, ...)\n  Modified Symbols: 1 (PaymentGateway.charge)\n  Affected Routes:  1 (POST /api/v1/orders/pay)"
+  },
+  {
+    "command": "codegraph git-impact [base] [head]",
+    "category": "Git Intelligence",
+    "summary": "Compute deep downstream change impact across callers, callees, framework routes, tests, and DB.",
+    "problem_solved": "Reveals the full blast radius of a Git change before merging, with token-bounded results and an ASCII tree visualization.",
+    "flags": [
+      "--tree, -t: Display visual impact tree",
+      "--depth, -d <int>: Max caller traversal depth (default: 2)",
+      "--max-results, -m <int>: Max items per category (default: 30)",
+      "--json: Output impact as JSON"
+    ],
+    "example": "codegraph git-impact --tree",
+    "output": "Impact Tree for commit 3d71eca:\n└── src/services/auth.py (AuthService.verify_token)\n    ├── [CALLER] api.routes.auth (login_handler)\n    │   └── [ROUTE] POST /api/v1/auth/login\n    ├── [DB_WRITER] models.user (update_last_login)\n    └── [TEST] tests/test_auth.py::test_verify_token"
+  },
+  {
+    "command": "codegraph git-conflicts [base] [head]",
+    "category": "Git Intelligence",
+    "summary": "Detect semantic and contract merge conflicts between branches before merge.",
+    "problem_solved": "Flags silent merge conflicts that standard Git merges miss—such as branch A calling a function or route handler that branch B deleted or altered.",
+    "flags": [
+      "--repository, -r <path>: Repository path",
+      "--json: Output conflicts as JSON"
+    ],
+    "example": "codegraph git-conflicts main feature-payments",
+    "output": "Semantic Conflict Analysis (main <-> feature-payments):\n  [CRITICAL] Branch 'feature-payments' registers route 'POST /api/checkout' pointing to handler 'process_checkout', which was deleted in 'main'."
+  },
+  {
+    "command": "codegraph check-freshness [TASK]",
+    "category": "Git Intelligence",
+    "summary": "Validate whether compiled context remains VALID, PARTIALLY_STALE, or STALE against repository changes.",
+    "problem_solved": "Determines whether an AI agent's previously compiled context is still trustworthy without throwing away context when unrelated files changed.",
+    "flags": [
+      "--repository, -r <path>: Repository path",
+      "--json: Output freshness report as JSON"
+    ],
+    "example": "codegraph check-freshness \"refactor payment flow\"",
+    "output": "{\n  \"status\": \"VALID\",\n  \"head_commit\": \"3d71eca\",\n  \"context_files_changed\": 0,\n  \"unrelated_files_changed\": 2,\n  \"recommendation\": \"SAFE_TO_USE\"\n}"
+  },
+  {
+    "command": "codegraph symbol-history <SYMBOL>",
+    "category": "Git Intelligence",
+    "summary": "Trace deterministic symbol evolution across Git history: introduced, modified, moved, renamed, or deleted.",
+    "problem_solved": "Provides compiler-level provenance for any symbol across the commit log using Git rename metadata and stable symbol hashes.",
+    "flags": [
+      "-f, --file <str>: File path where symbol is located",
+      "-m, --max-commits <int>: Max commits to inspect (default: 15)",
+      "--json: Output symbol history as JSON"
+    ],
+    "example": "codegraph symbol-history resolve_target",
+    "output": "Symbol History: resolve_target\n  - [INTRODUCED] 3d71eca (feat: add TargetResolver for v2.1)\n  - [MODIFIED]   9da7eec (refactor: support Class.method resolution)\n  Confidence: AST_VERIFIED"
   }
 ]

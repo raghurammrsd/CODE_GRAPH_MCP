@@ -9,13 +9,13 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/">
   <meta property="og:title" content="CodeGraph MCP — Deterministic Code Intelligence Engine">
-  <meta property="og:description" content="Official website and documentation for CodeGraph MCP: deterministic local-first code intelligence with runtime telemetry reconciliation, database lineage, and 56 verified MCP tools.">
+  <meta property="og:description" content="Official website and documentation for CodeGraph MCP: deterministic local-first code intelligence with Git-aware diffs, runtime telemetry reconciliation, database lineage, and 62 verified MCP tools.">
   <meta property="og:image" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/assets/codegraph_logo.jpg">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/">
   <meta name="twitter:title" content="CodeGraph MCP — Deterministic Code Intelligence Engine">
-  <meta name="twitter:description" content="Official website and documentation for CodeGraph MCP: runtime telemetry reconciliation, database lineage, and 56 verified tools.">
+  <meta name="twitter:description" content="Official website and documentation for CodeGraph MCP: Git-aware diffs, runtime telemetry reconciliation, database lineage, and 62 verified tools.">
   <meta name="twitter:image" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/assets/codegraph_logo.jpg">
 
   <script type="application/ld+json">
@@ -31,7 +31,7 @@
       "price": "0",
       "priceCurrency": "USD"
     },
-    "description": "Production Model Context Protocol (MCP) server providing runtime telemetry reconciliation, database lineage, and 56 graph analysis tools for AI coding agents.",
+    "description": "Production Model Context Protocol (MCP) server providing Git-aware repository intelligence, runtime telemetry reconciliation, database lineage, and 62 graph analysis tools for AI coding agents.",
     "softwareVersion": "2.3.0",
     "author": {
       "@type": "Person",
@@ -704,7 +704,7 @@
       <!-- Universal Search (Cmd K) -->
       <button class="search-trigger-btn" onclick="openSpotlightModal()" aria-label="Open documentation search">
         <svg class="search-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <span class="search-label-text">Search documentation (56 tools, CLI)...</span>
+        <span class="search-label-text">Search documentation (62 tools, CLI)...</span>
         <kbd class="kbd-shortcut">Cmd K</kbd>
       </button>
     </div>
@@ -714,8 +714,8 @@
       <ul class="top-links-row">
         <li><a href="#features">Features</a></li>
         <li><a href="#next-steps">Documentation</a></li>
-        <li><a href="#tools-database">MCP Tools (56)</a></li>
-        <li><a href="#cli-reference">CLI (13)</a></li>
+        <li><a href="#tools-database">MCP Tools (62)</a></li>
+        <li><a href="#cli-reference">CLI (19)</a></li>
         <li><a href="#benchmarks">Benchmarks</a></li>
       </ul>
       <div class="header-sep-divider"></div>
@@ -732,7 +732,7 @@
     <div>
       <div class="hero-badge-tag">
         <span class="dot-online"></span>
-        <span>v2.3.0 Production · Runtime &amp; Database Verified</span>
+        <span>v2.3.0 Production · Runtime, Database &amp; Git Verified</span>
       </div>
 
       <h1 class="hero-headline-h1">
@@ -741,15 +741,16 @@
       </h1>
 
       <p class="hero-summary-p">
-        CodeGraph MCP maps repository relationships with <strong>runtime telemetry reconciliation</strong> and <strong>database lineage</strong>. AI coding agents resolve call hierarchies, mutating SQL queries, and API routes in <strong>&lt; 50ms</strong> without token waste.
+        CodeGraph MCP maps repository relationships with <strong>Git-aware change intelligence</strong>, <strong>runtime telemetry reconciliation</strong>, and <strong>database lineage</strong>. AI coding agents resolve call hierarchies, mutating SQL queries, and pre-merge contract conflicts in <strong>&lt; 50ms</strong> without token waste.
       </p>
 
       <!-- Tabbed Terminal Box (Elevated above fold for immediate visibility) -->
       <div class="hero-term-box">
         <div class="term-tab-strip">
           <button class="term-tab-item active" onclick="setHeroTermCmd('pip install codegraph-engine[mcp]', this)">Install</button>
+          <button class="term-tab-item" onclick="setHeroTermCmd('codegraph git-impact --tree', this)">Git Impact Tree</button>
+          <button class="term-tab-item" onclick="setHeroTermCmd('codegraph git-conflicts main HEAD', this)">Merge Conflicts</button>
           <button class="term-tab-item" onclick="setHeroTermCmd('codegraph search --database 'users table writes'', this)">Database CLI</button>
-          <button class="term-tab-item" onclick="setHeroTermCmd('codegraph run --record pytest', this)">Runtime Traces</button>
           <button class="term-tab-item" onclick="setHeroTermCmd('from codegraph import get_context', this)">Python API</button>
         </div>
         <div class="term-code-line">
@@ -765,15 +766,16 @@
           <span>Explore Documentation</span>
           <span>&darr;</span>
         </a>
-        <a href="#tools-database" class="btn-cta-secondary">View 56 MCP Tools</a>
+        <a href="#tools-database" class="btn-cta-secondary">View 62 MCP Tools</a>
       </div>
 
       <div class="cap-pills-row">
+        <a href="#git-intelligence-guide" class="cap-pill-btn" style="background:#ecfdf5;color:#059669;border-color:#a7f3d0;">&#10003; Git Intelligence</a>
         <a href="#runtime-telemetry-concept" class="cap-pill-btn rt">&#10003; Runtime Reconciliation</a>
         <a href="#database-lineage-concept" class="cap-pill-btn db">&#9670; Database Lineage</a>
         <a href="#framework-routes-guide" class="cap-pill-btn">Routes &amp; Handlers</a>
         <a href="#how-it-works" class="cap-pill-btn">Deterministic AST</a>
-        <a href="#tools-database" class="cap-pill-btn">56 Verified Tools</a>
+        <a href="#tools-database" class="cap-pill-btn">62 Verified Tools</a>
       </div>
     </div>
 
@@ -856,7 +858,7 @@
         <div class="code-ide-footer">
           <div class="footer-metric-pill"><span class="metric-val">18ms</span> Latency</div>
           <div class="footer-metric-pill"><span class="metric-val green">-94%</span> Agent Tokens</div>
-          <div class="footer-metric-pill"><span class="metric-val">56</span> MCP Tools</div>
+          <div class="footer-metric-pill"><span class="metric-val">62</span> MCP Tools</div>
           <div class="footer-metric-pill"><span class="metric-val blue">0%</span> Hallucinations</div>
         </div>
 
@@ -909,14 +911,14 @@
       <div class="feat-arrow-circle">&rarr;</div>
     </a>
 
-    <!-- Card 4: 56 MCP Tools -->
+    <!-- Card 4: 62 MCP Tools -->
     <a href="#tools-database" class="landing-feature-card">
       <div class="feat-card-left">
         <div class="feat-icon-box blue">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
         </div>
         <div class="feat-card-texts">
-          <h3>56 MCP tools server</h3>
+          <h3>62 MCP tools server</h3>
           <p>Expose the graph to Claude Code, Cursor, Codex, and Antigravity.</p>
         </div>
       </div>
@@ -937,15 +939,15 @@
       <div class="feat-arrow-circle">&rarr;</div>
     </a>
 
-    <!-- Card 6: Impact analysis -->
-    <a href="#tools-graph" class="landing-feature-card">
+    <!-- Card 6: Git Intelligence & Merge Conflicts -->
+    <a href="#git-intelligence-guide" class="landing-feature-card" style="border-top: 3px solid #10b981;">
       <div class="feat-card-left">
-        <div class="feat-icon-box db">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+        <div class="feat-icon-box" style="background:#ecfdf5;color:#10b981;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><path d="M13 6h3a2 2 0 0 1 2 2v7"></path><line x1="6" y1="9" x2="6" y2="21"></line></svg>
         </div>
         <div class="feat-card-texts">
-          <h3>Impact analysis</h3>
-          <p>Trace callers, callees, and potential impact of code modifications.</p>
+          <h3>Git-Aware Intelligence &amp; Conflicts</h3>
+          <p>Structural AST diffs, visual impact trees, and pre-merge semantic contract conflicts.</p>
         </div>
       </div>
       <div class="feat-arrow-circle">&rarr;</div>
@@ -1061,6 +1063,9 @@
             <a href="#reading-graph-browser">Reading Your Graph in the Browser</a> &mdash; <code>codegraph ui</code>: callers, source and callees on one screen.
           </li>
           <li>
+            <a href="#git-intelligence-guide">Git-Aware Intelligence &amp; Merge Conflicts</a> &mdash; AST diffs, impact trees, and pre-merge contract conflicts.
+          </li>
+          <li>
             <a href="#framework-routes-guide">Framework Routes</a> &mdash; link URL patterns to their handlers.
           </li>
           <li>
@@ -1070,7 +1075,7 @@
             <a href="#database-schema-guide">Database Schema &amp; Writers</a> &mdash; find all tables, models, and mutating SQL queries.
           </li>
           <li>
-            <a href="#tools-database">MCP Tools Reference</a> &mdash; 56 verified tools exposed over Model Context Protocol.
+            <a href="#tools-database">MCP Tools Reference</a> &mdash; 62 verified tools exposed over Model Context Protocol.
           </li>
         </ul>
 
@@ -1135,7 +1140,24 @@ codegraph status .</pre>
           <li><strong>Tree-sitter Parsing:</strong> Source files are parsed incrementally into concrete ASTs. Zero LLM hallucinations.</li>
           <li><strong>Relational Graph Storage:</strong> Symbols, calls, imports, and routes are stored in SQLite with foreign-key constraints.</li>
           <li><strong>Deterministic Resolution:</strong> Canonical IDs, qualified names, and route endpoints are resolved with explicit ambiguity states.</li>
-          <li><strong>MCP Tool Serving:</strong> FastMCP stdio server serves 56 verified tools with token-bounded context packets.</li>
+          <li><strong>MCP Tool Serving:</strong> FastMCP stdio/SSE server serves 62 verified tools with token-bounded context packets.</li>
+        </ul>
+
+        <!-- Section: Git-Aware Intelligence (v2.3.0) -->
+        <h2 class="editorial-h2" id="git-intelligence-guide">Git-Aware Repository Intelligence &amp; Merge Conflict Safety (v2.3.0)</h2>
+        <p class="editorial-p">
+          CodeGraph MCP v2.3.0 understands how the repository changed across branches and commits, what those changes affect, and whether previously generated context is still valid.
+        </p>
+        <div class="callout-box git" style="background:#f0fdf4; border-left: 3px solid #10b981; padding: 0.75rem 1rem; border-radius: 6px; margin: 1rem 0;">
+          <strong style="color:#047857;">Pre-Merge Safety:</strong> Standard git merge only checks for textual overlaps. CodeGraph checks for <strong>semantic contract conflicts</strong>&mdash;flagging when branch A invokes functions or route handlers that branch B deleted or modified.
+        </div>
+        <ul class="book-bullet-list">
+          <li><strong>Working-Tree Freshness:</strong> Sub-5ms detection of branch, HEAD, indexed commit, and dirty modifications (<code>codegraph git-state</code>).</li>
+          <li><strong>Structural AST Diff:</strong> Semantic analysis of added, removed, and modified functions, parameters, and routes (<code>codegraph git-diff [base] [head]</code>).</li>
+          <li><strong>Visual Downstream Impact Tree:</strong> ASCII tree visualization mapping affected callers, routes, tests, and database writers (<code>codegraph git-impact --tree</code>).</li>
+          <li><strong>Pre-Merge Semantic Conflict Detection:</strong> Detect contract breaks before pull requests merge (<code>codegraph git-conflicts main HEAD</code>).</li>
+          <li><strong>Context Freshness Validation:</strong> Guarantees that AI agent context packets stay valid when unrelated files change (<code>codegraph check-freshness</code>).</li>
+          <li><strong>Deterministic Symbol History:</strong> Exact commit provenance for symbols across git log (<code>codegraph symbol-history &lt;symbol&gt;</code>).</li>
         </ul>
 
         <!-- Section: Runtime Telemetry -->
@@ -1182,14 +1204,683 @@ codegraph status .</pre>
           Query <code>find_db_tables</code>, <code>find_db_columns</code>, and <code>find_db_writers</code> to audit data flow before performing database refactors.
         </p>
 
-        <!-- Reference: 56 MCP Tools -->
-        <h2 class="editorial-h2" id="tools-reference">MCP Tools Reference (56 Verified Tools)</h2>
+        <!-- Reference: 62 MCP Tools -->
+        <h2 class="editorial-h2" id="tools-reference">MCP Tools Reference (62 Verified Tools)</h2>
         <p class="editorial-p">
-          Every tool exposed by CodeGraph MCP over Model Context Protocol, categorized into Database, Runtime, Graph, Core, Routes, Git, and Tests.
+          Every tool exposed by CodeGraph MCP over Model Context Protocol, categorized into Git Intelligence, Database, Runtime, Graph, Core, Routes, and Tests.
         </p>
 
+        <h3 class="editorial-h3" id="tools-git" style="margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border);">
+          Git-Aware Intelligence &amp; Change Impact Tools (9)
+        </h3>
+        <p class="editorial-p">Working-tree freshness, AST-level git diffs, semantic merge conflicts, symbol history, and blast-radius impact.</p>
+
+        <!-- Tool Entry: get_git_impact -->
+        <section class="tool-doc-card" id="tool-get_git_impact">
+          <div class="tool-doc-head-row">
+            <span class="tool-heading-code">get_git_impact</span>
+            <span class="cat-tag-pill git">GIT</span>
+          </div>
+          <p class="editorial-p">Compute deterministic change impact between Git refs (`base`..`head`), including modified symbols, downstream callers, affected packages, and covering tests. Use for PR review, regression analysis, and pre-commit blast-radius checks. Does not execute tests; reports static test-to-symbol coverage edges.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Finding affected callers, packages, and tests after recent commits or before a refactor
+          </div>
+
+          <div class="tool-mini-title">Parameters Schema</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                
+                    <tr>
+                      <td class="code-font">base</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">HEAD~1</td>
+                      <td>Base</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">head</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">HEAD</td>
+                      <td>Head</td>
+                    </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Client Invocation</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>MCP Client / Agent Call</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
+            </div>
+            <pre class="code-text-pre">get_git_impact(base=&quot;HEAD~1&quot;, head=&quot;HEAD&quot;)</pre>
+          </div>
+
+          <div class="tool-mini-title">Return Model: <code>GitImpactResult</code></div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">status</td><td class="type-font">string</td><td>Status</td></tr><tr><td class="code-font">base</td><td class="type-font">string</td><td>Base</td></tr><tr><td class="code-font">head</td><td class="type-font">string</td><td>Head</td></tr><tr><td class="code-font">changed_files</td><td class="type-font">array</td><td>Changed Files</td></tr><tr><td class="code-font">modified_symbols</td><td class="type-font">array</td><td>Modified Symbols</td></tr><tr><td class="code-font">impacted_callers</td><td class="type-font">array</td><td>Impacted Callers</td></tr><tr><td class="code-font">affected_packages</td><td class="type-font">string</td><td>Affected Packages</td></tr><tr><td class="code-font">related_tests</td><td class="type-font">array</td><td>Related Tests</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ev-boundary-row">
+            <div class="ev-note-card">
+              <strong>Evidence Guarantee</strong>
+              Git diff line mapping intersected with AST symbol spans and graph dependents.
+            </div>
+            <div class="ev-note-card">
+              <strong>Epistemic Boundary</strong>
+              Does not prove whether tests pass or fail at runtime.
+            </div>
+          </div>
+        </section>
+
+        <!-- Tool Entry: get_recent_changes -->
+        <section class="tool-doc-card" id="tool-get_recent_changes">
+          <div class="tool-doc-head-row">
+            <span class="tool-heading-code">get_recent_changes</span>
+            <span class="cat-tag-pill git">GIT</span>
+          </div>
+          <p class="editorial-p">Return repository files modified between two Git refs (`since`..`until`) in a read-only sandboxed query. Use when reviewing recent commits or identifying which files changed before running impact analysis. Does not compute downstream symbol callers; use get_git_impact for symbol-level blast radius.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Listing files touched in the last N commits during debugging or code review
+          </div>
+
+          <div class="tool-mini-title">Parameters Schema</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                
+                    <tr>
+                      <td class="code-font">since</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">HEAD~10</td>
+                      <td>Since</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">until</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">HEAD</td>
+                      <td>Until</td>
+                    </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Client Invocation</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>MCP Client / Agent Call</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
+            </div>
+            <pre class="code-text-pre">get_recent_changes(since=&quot;HEAD~5&quot;, until=&quot;HEAD&quot;)</pre>
+          </div>
+
+          <div class="tool-mini-title">Return Model: <code>GitChangedFilesList</code></div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">path</td><td class="type-font">string</td><td>Path</td></tr><tr><td class="code-font">status</td><td class="type-font">string</td><td>Status</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ev-boundary-row">
+            <div class="ev-note-card">
+              <strong>Evidence Guarantee</strong>
+              Git diff status and relative file paths between refs.
+            </div>
+            <div class="ev-note-card">
+              <strong>Epistemic Boundary</strong>
+              Does not compute symbol-level callers or covering tests (use get_git_impact).
+            </div>
+          </div>
+        </section>
+
+        <!-- Tool Entry: get_file_history -->
+        <section class="tool-doc-card" id="tool-get_file_history">
+          <div class="tool-doc-head-row">
+            <span class="tool-heading-code">get_file_history</span>
+            <span class="cat-tag-pill git">GIT</span>
+          </div>
+          <p class="editorial-p">Return recent Git commits touching a specific repository file (`path`, up to `n` commits). Use when investigating when and why a specific file was recently modified. Does not return full commit diffs or cross-file dependency impact.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Checking recent commit history on a buggy file
+          </div>
+
+          <div class="tool-mini-title">Parameters Schema</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                
+                    <tr>
+                      <td class="code-font">path</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-req">Required</span></td>
+                      <td class="type-font">-</td>
+                      <td>Path</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">n</td>
+                      <td class="type-font">integer</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">10</td>
+                      <td>N</td>
+                    </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Client Invocation</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>MCP Client / Agent Call</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
+            </div>
+            <pre class="code-text-pre">get_file_history(path=&quot;src/auth/service.py&quot;, n=5)</pre>
+          </div>
+
+          <div class="tool-mini-title">Return Model: <code>FileCommitHistoryList</code></div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">commit</td><td class="type-font">string</td><td>Commit</td></tr><tr><td class="code-font">author</td><td class="type-font">string</td><td>Author</td></tr><tr><td class="code-font">date</td><td class="type-font">string</td><td>Date</td></tr><tr><td class="code-font">subject</td><td class="type-font">string</td><td>Subject</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ev-boundary-row">
+            <div class="ev-note-card">
+              <strong>Evidence Guarantee</strong>
+              Commit hashes, authors, timestamps, and commit subjects touching `path`.
+            </div>
+            <div class="ev-note-card">
+              <strong>Epistemic Boundary</strong>
+              Does not prove which specific symbol inside the file caused a regression.
+            </div>
+          </div>
+        </section>
+
+        <!-- Tool Entry: analyze_change_impact -->
+        <section class="tool-doc-card" id="tool-analyze_change_impact">
+          <div class="tool-doc-head-row">
+            <span class="tool-heading-code">analyze_change_impact</span>
+            <span class="cat-tag-pill git">GIT</span>
+          </div>
+          <p class="editorial-p">Analyze changed files, modified symbols, downstream callers, and related tests between Git refs `since` and `until`. Use for commit-range impact analysis when `since`/`until` parameter naming is preferred. Does not execute tests at runtime.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Analyzing blast radius of commits between `since` and `until`
+          </div>
+
+          <div class="tool-mini-title">Parameters Schema</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                
+                    <tr>
+                      <td class="code-font">since</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">HEAD~1</td>
+                      <td>Since</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">until</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">HEAD</td>
+                      <td>Until</td>
+                    </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Client Invocation</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>MCP Client / Agent Call</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
+            </div>
+            <pre class="code-text-pre">analyze_change_impact(since=&quot;HEAD~2&quot;, until=&quot;HEAD&quot;)</pre>
+          </div>
+
+          <div class="tool-mini-title">Return Model: <code>ChangeImpactReport</code></div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">changed_files</td><td class="type-font">array</td><td>Changed Files</td></tr><tr><td class="code-font">modified_symbols</td><td class="type-font">array</td><td>Modified Symbols</td></tr><tr><td class="code-font">callers</td><td class="type-font">array</td><td>Callers</td></tr><tr><td class="code-font">related_tests</td><td class="type-font">array</td><td>Related Tests</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ev-boundary-row">
+            <div class="ev-note-card">
+              <strong>Evidence Guarantee</strong>
+              Git diff mapped to indexed symbols, callers, and related tests.
+            </div>
+            <div class="ev-note-card">
+              <strong>Epistemic Boundary</strong>
+              Does not prove runtime test pass/fail status.
+            </div>
+          </div>
+        </section>
+
+        <!-- Tool Entry: get_git_state -->
+        <section class="tool-doc-card" id="tool-get_git_state">
+          <div class="tool-doc-head-row">
+            <span class="tool-heading-code">get_git_state</span>
+            <span class="cat-tag-pill git">GIT</span>
+          </div>
+          <p class="editorial-p">Track current Git branch, HEAD commit, indexed commit, working tree modifications, staged files, and explicit freshness states (CLEAN, DIRTY, STALE, REINDEXING, ERROR). Use when asking if the index is up to date, which files changed, or what git branch is active. Does not perform a full repository scan when an incremental update is safe.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Checking if repository has uncommitted changes or if re-indexing is required after pulling git commits
+          </div>
+
+          <div class="tool-mini-title">Parameters Schema</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5" style="color:var(--text-dim); font-style:italic;">No arguments required.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Client Invocation</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>MCP Client / Agent Call</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
+            </div>
+            <pre class="code-text-pre">get_git_state()</pre>
+          </div>
+
+          <div class="tool-mini-title">Return Model: <code>GitStateReport</code></div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">is_git</td><td class="type-font">string</td><td>Is Git</td></tr><tr><td class="code-font">branch</td><td class="type-font">string</td><td>Branch</td></tr><tr><td class="code-font">current_head</td><td class="type-font">string</td><td>Current Head</td></tr><tr><td class="code-font">indexed_head</td><td class="type-font">string</td><td>Indexed Head</td></tr><tr><td class="code-font">freshness</td><td class="type-font">boolean</td><td>Freshness</td></tr><tr><td class="code-font">working_tree</td><td class="type-font">string</td><td>Working Tree</td></tr><tr><td class="code-font">reindex_required</td><td class="type-font">string</td><td>Reindex Required</td></tr><tr><td class="code-font">detail</td><td class="type-font">string</td><td>Detail</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ev-boundary-row">
+            <div class="ev-note-card">
+              <strong>Evidence Guarantee</strong>
+              Deterministic Git rev-parse and status porcelain v1 inspection.
+            </div>
+            <div class="ev-note-card">
+              <strong>Epistemic Boundary</strong>
+              Does not prove semantic impact; reports file-level and commit-level freshness.
+            </div>
+          </div>
+        </section>
+
+        <!-- Tool Entry: compare_git -->
+        <section class="tool-doc-card" id="tool-compare_git">
+          <div class="tool-doc-head-row">
+            <span class="tool-heading-code">compare_git</span>
+            <span class="cat-tag-pill git">GIT</span>
+          </div>
+          <p class="editorial-p">Compare two Git revisions, commits, or branches structurally. Detects added/deleted/modified/renamed files, AST symbol changes, relationship diffs, routes, and affected tests. Use when comparing branches or commits structurally. Does not execute repository code.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Understanding structural changes between two branches or commits without parsing raw diff text
+          </div>
+
+          <div class="tool-mini-title">Parameters Schema</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                
+                    <tr>
+                      <td class="code-font">base</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">HEAD~1</td>
+                      <td>Base</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">head</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">HEAD</td>
+                      <td>Head</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">branch_comparison</td>
+                      <td class="type-font">boolean</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">False</td>
+                      <td>Branch Comparison</td>
+                    </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Client Invocation</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>MCP Client / Agent Call</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
+            </div>
+            <pre class="code-text-pre">compare_git(base=&quot;main&quot;, head=&quot;HEAD&quot;, branch_comparison=True)</pre>
+          </div>
+
+          <div class="tool-mini-title">Return Model: <code>StructuralDiffResult</code></div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">base_ref</td><td class="type-font">string</td><td>Base Ref</td></tr><tr><td class="code-font">head_ref</td><td class="type-font">string</td><td>Head Ref</td></tr><tr><td class="code-font">added_files</td><td class="type-font">array</td><td>Added Files</td></tr><tr><td class="code-font">deleted_files</td><td class="type-font">array</td><td>Deleted Files</td></tr><tr><td class="code-font">modified_files</td><td class="type-font">array</td><td>Modified Files</td></tr><tr><td class="code-font">renamed_files</td><td class="type-font">array</td><td>Renamed Files</td></tr><tr><td class="code-font">added_symbols</td><td class="type-font">array</td><td>Added Symbols</td></tr><tr><td class="code-font">removed_symbols</td><td class="type-font">array</td><td>Removed Symbols</td></tr><tr><td class="code-font">changed_symbols</td><td class="type-font">array</td><td>Changed Symbols</td></tr><tr><td class="code-font">changed_routes</td><td class="type-font">array</td><td>Changed Routes</td></tr><tr><td class="code-font">affected_tests</td><td class="type-font">array</td><td>Affected Tests</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ev-boundary-row">
+            <div class="ev-note-card">
+              <strong>Evidence Guarantee</strong>
+              AST parsing of before/after revisions with exact file:line citations and similarity scores.
+            </div>
+            <div class="ev-note-card">
+              <strong>Epistemic Boundary</strong>
+              Does not execute code or run test assertions.
+            </div>
+          </div>
+        </section>
+
+        <!-- Tool Entry: get_change_impact -->
+        <section class="tool-doc-card" id="tool-get_change_impact">
+          <div class="tool-doc-head-row">
+            <span class="tool-heading-code">get_change_impact</span>
+            <span class="cat-tag-pill git">GIT</span>
+          </div>
+          <p class="editorial-p">Compute deep downstream change impact across callers, callees, framework routes, covering tests, mutating database queries, and monorepo packages. Returns ranked entities with explicit confidence (FACT, POSSIBLE, UNKNOWN) and blast radius score. Use when evaluating ripple effects of git commits. Does not execute repository test suites.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Evaluating what code, routes, database writes, and tests will break if git changes are merged
+          </div>
+
+          <div class="tool-mini-title">Parameters Schema</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                
+                    <tr>
+                      <td class="code-font">base</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">HEAD~1</td>
+                      <td>Base</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">head</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">HEAD</td>
+                      <td>Head</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">max_depth</td>
+                      <td class="type-font">integer</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">2</td>
+                      <td>Max Depth</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">max_results</td>
+                      <td class="type-font">integer</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">50</td>
+                      <td>Max Results</td>
+                    </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Client Invocation</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>MCP Client / Agent Call</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
+            </div>
+            <pre class="code-text-pre">get_change_impact(base=&quot;HEAD~1&quot;, head=&quot;HEAD&quot;)</pre>
+          </div>
+
+          <div class="tool-mini-title">Return Model: <code>DeepImpactResult</code></div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">base_ref</td><td class="type-font">string</td><td>Base Ref</td></tr><tr><td class="code-font">head_ref</td><td class="type-font">string</td><td>Head Ref</td></tr><tr><td class="code-font">changed_files</td><td class="type-font">array</td><td>Changed Files</td></tr><tr><td class="code-font">changed_symbols</td><td class="type-font">array</td><td>Changed Symbols</td></tr><tr><td class="code-font">direct_callers</td><td class="type-font">array</td><td>Direct Callers</td></tr><tr><td class="code-font">transitive_callers</td><td class="type-font">array</td><td>Transitive Callers</td></tr><tr><td class="code-font">affected_routes</td><td class="type-font">array</td><td>Affected Routes</td></tr><tr><td class="code-font">affected_tests</td><td class="type-font">array</td><td>Affected Tests</td></tr><tr><td class="code-font">db_writers</td><td class="type-font">array</td><td>Db Writers</td></tr><tr><td class="code-font">blast_radius_score</td><td class="type-font">string</td><td>Blast Radius Score</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ev-boundary-row">
+            <div class="ev-note-card">
+              <strong>Evidence Guarantee</strong>
+              Complete graph traversal connecting modified AST symbols to callers, routes, tests, and DB queries.
+            </div>
+            <div class="ev-note-card">
+              <strong>Epistemic Boundary</strong>
+              Does not prove runtime execution frequencies; reports static graph reachability.
+            </div>
+          </div>
+        </section>
+
+        <!-- Tool Entry: check_context_freshness -->
+        <section class="tool-doc-card" id="tool-check_context_freshness">
+          <div class="tool-doc-head-row">
+            <span class="tool-heading-code">check_context_freshness</span>
+            <span class="cat-tag-pill git">GIT</span>
+          </div>
+          <p class="editorial-p">Validate whether a previously compiled context packet or task context is still VALID, PARTIALLY_STALE, or STALE. Guarantees that changes to unrelated files keep context VALID. Use when checking if previously compiled context remains valid after edits. Does not invalidate context when only unrelated files change.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Checking if previously cached or generated AI context packet is still safe to use after editing files
+          </div>
+
+          <div class="tool-mini-title">Parameters Schema</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                
+                    <tr>
+                      <td class="code-font">task</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font"></td>
+                      <td>Task</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">context_packet</td>
+                      <td class="type-font">any</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">None</td>
+                      <td>Context Packet</td>
+                    </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Client Invocation</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>MCP Client / Agent Call</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
+            </div>
+            <pre class="code-text-pre">check_context_freshness(task=&quot;Fix auth timeout&quot;)</pre>
+          </div>
+
+          <div class="tool-mini-title">Return Model: <code>ContextFreshnessResult</code></div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">status</td><td class="type-font">string</td><td>Status</td></tr><tr><td class="code-font">base_commit</td><td class="type-font">string</td><td>Base Commit</td></tr><tr><td class="code-font">current_head</td><td class="type-font">string</td><td>Current Head</td></tr><tr><td class="code-font">repository_dirty</td><td class="type-font">string</td><td>Repository Dirty</td></tr><tr><td class="code-font">context_files</td><td class="type-font">array</td><td>Context Files</td></tr><tr><td class="code-font">changed_relevant_files</td><td class="type-font">array</td><td>Changed Relevant Files</td></tr><tr><td class="code-font">unrelated_changed_files</td><td class="type-font">array</td><td>Unrelated Changed Files</td></tr><tr><td class="code-font">invalidated_symbols</td><td class="type-font">array</td><td>Invalidated Symbols</td></tr><tr><td class="code-font">reason</td><td class="type-font">string</td><td>Reason</td></tr><tr><td class="code-font">recommended_action</td><td class="type-font">string</td><td>Recommended Action</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ev-boundary-row">
+            <div class="ev-note-card">
+              <strong>Evidence Guarantee</strong>
+              Intersection of Git diff line/file changes against exact symbol and file references in context packet.
+            </div>
+            <div class="ev-note-card">
+              <strong>Epistemic Boundary</strong>
+              Does not recompile context; reports freshness validity and recommended action.
+            </div>
+          </div>
+        </section>
+
+        <!-- Tool Entry: trace_symbol_history -->
+        <section class="tool-doc-card" id="tool-trace_symbol_history">
+          <div class="tool-doc-head-row">
+            <span class="tool-heading-code">trace_symbol_history</span>
+            <span class="cat-tag-pill git">GIT</span>
+          </div>
+          <p class="editorial-p">Trace deterministic symbol evolution across Git history: introduced, modified, moved across files, renamed, or deleted. Uses AST structure and body hashes to differentiate FACT from POSSIBLE/AMBIGUOUS renames. Use when discovering when a symbol was added, moved, or renamed. Does not guess ambiguous renames without evidence.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Tracing when a function was introduced, modified, moved to a different module, or renamed
+          </div>
+
+          <div class="tool-mini-title">Parameters Schema</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                
+                    <tr>
+                      <td class="code-font">symbol</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-req">Required</span></td>
+                      <td class="type-font">-</td>
+                      <td>Symbol</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">path</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font"></td>
+                      <td>Path</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">max_commits</td>
+                      <td class="type-font">integer</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">15</td>
+                      <td>Max Commits</td>
+                    </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Client Invocation</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>MCP Client / Agent Call</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
+            </div>
+            <pre class="code-text-pre">trace_symbol_history(symbol=&quot;AuthService&quot;)</pre>
+          </div>
+
+          <div class="tool-mini-title">Return Model: <code>SymbolHistoryResult</code></div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">symbol</td><td class="type-font">string</td><td>Symbol</td></tr><tr><td class="code-font">current_path</td><td class="type-font">string</td><td>Current Path</td></tr><tr><td class="code-font">events</td><td class="type-font">string</td><td>Events</td></tr><tr><td class="code-font">total_commits_evaluated</td><td class="type-font">string</td><td>Total Commits Evaluated</td></tr><tr><td class="code-font">status</td><td class="type-font">string</td><td>Status</td></tr><tr><td class="code-font">detail</td><td class="type-font">string</td><td>Detail</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ev-boundary-row">
+            <div class="ev-note-card">
+              <strong>Evidence Guarantee</strong>
+              Git log history correlated with AST body hashes and file rename metadata.
+            </div>
+            <div class="ev-note-card">
+              <strong>Epistemic Boundary</strong>
+              Does not guarantee intent behind refactors; reports structural code evolution.
+            </div>
+          </div>
+        </section>
+
         <h3 class="editorial-h3" id="tools-database" style="margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border);">
-          Database Lineage & Schema Tools (11)
+          Database Lineage &amp; Schema Tools (11)
         </h3>
         <p class="editorial-p">Tools for table inspection, column typing, mutating SQL writers, and schema impact analysis.</p>
 
@@ -1978,7 +2669,7 @@ codegraph status .</pre>
         </section>
 
         <h3 class="editorial-h3" id="tools-runtime" style="margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border);">
-          Runtime Telemetry & Reconciliation Tools (6)
+          Runtime Telemetry &amp; Reconciliation Tools (6)
         </h3>
         <p class="editorial-p">Tools for execution trace recording, runtime observation reconciliation, and dynamic call tracing.</p>
 
@@ -2551,7 +3242,7 @@ codegraph status .</pre>
         </section>
 
         <h3 class="editorial-h3" id="tools-graph" style="margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border);">
-          Graph Traversal & Call Hierarchy Tools (8)
+          Graph Traversal &amp; Call Hierarchy Tools (8)
         </h3>
         <p class="editorial-p">Directional call hierarchies, caller/callee graphs, and change impact propagation.</p>
 
@@ -3156,7 +3847,7 @@ codegraph status .</pre>
         </section>
 
         <h3 class="editorial-h3" id="tools-core" style="margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border);">
-          Core Symbol Inspection & Context Tools (23)
+          Core Symbol Inspection &amp; Context Tools (24)
         </h3>
         <p class="editorial-p">Canonical symbol resolution, bounded context packets, file slices, and evidence verification.</p>
 
@@ -5237,677 +5928,8 @@ codegraph status .</pre>
           </div>
         </section>
 
-        <h3 class="editorial-h3" id="tools-git" style="margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border);">
-          Git History & Change Impact Tools (4)
-        </h3>
-        <p class="editorial-p">Recent file commit history, changed files, and git diff impact analysis.</p>
-
-        <!-- Tool Entry: get_git_impact -->
-        <section class="tool-doc-card" id="tool-get_git_impact">
-          <div class="tool-doc-head-row">
-            <span class="tool-heading-code">get_git_impact</span>
-            <span class="cat-tag-pill git">GIT</span>
-          </div>
-          <p class="editorial-p">Compute deterministic change impact between Git refs (`base`..`head`), including modified symbols, downstream callers, affected packages, and covering tests. Use for PR review, regression analysis, and pre-commit blast-radius checks. Does not execute tests; reports static test-to-symbol coverage edges.</p>
-          <div class="tool-prob-note">
-            <strong>Resolves:</strong> Finding affected callers, packages, and tests after recent commits or before a refactor
-          </div>
-
-          <div class="tool-mini-title">Parameters Schema</div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                
-                    <tr>
-                      <td class="code-font">base</td>
-                      <td class="type-font">string</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">HEAD~1</td>
-                      <td>Base</td>
-                    </tr>
-
-                    <tr>
-                      <td class="code-font">head</td>
-                      <td class="type-font">string</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">HEAD</td>
-                      <td>Head</td>
-                    </tr>
-
-              </tbody>
-            </table>
-          </div>
-
-          <div class="tool-mini-title">Client Invocation</div>
-          <div class="code-box-wrapper">
-            <div class="code-box-header">
-              <span>MCP Client / Agent Call</span>
-              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
-            </div>
-            <pre class="code-text-pre">get_git_impact(base=&quot;HEAD~1&quot;, head=&quot;HEAD&quot;)</pre>
-          </div>
-
-          <div class="tool-mini-title">Return Model: <code>GitImpactResult</code></div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                <tr><td class="code-font">status</td><td class="type-font">string</td><td>Status</td></tr><tr><td class="code-font">base</td><td class="type-font">string</td><td>Base</td></tr><tr><td class="code-font">head</td><td class="type-font">string</td><td>Head</td></tr><tr><td class="code-font">changed_files</td><td class="type-font">array</td><td>Changed Files</td></tr><tr><td class="code-font">modified_symbols</td><td class="type-font">array</td><td>Modified Symbols</td></tr><tr><td class="code-font">impacted_callers</td><td class="type-font">array</td><td>Impacted Callers</td></tr><tr><td class="code-font">affected_packages</td><td class="type-font">string</td><td>Affected Packages</td></tr><tr><td class="code-font">related_tests</td><td class="type-font">array</td><td>Related Tests</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="ev-boundary-row">
-            <div class="ev-note-card">
-              <strong>Evidence Guarantee</strong>
-              Git diff line mapping intersected with AST symbol spans and graph dependents.
-            </div>
-            <div class="ev-note-card">
-              <strong>Epistemic Boundary</strong>
-              Does not prove whether tests pass or fail at runtime.
-            </div>
-          </div>
-        </section>
-
-        <!-- Tool Entry: get_recent_changes -->
-        <section class="tool-doc-card" id="tool-get_recent_changes">
-          <div class="tool-doc-head-row">
-            <span class="tool-heading-code">get_recent_changes</span>
-            <span class="cat-tag-pill git">GIT</span>
-          </div>
-          <p class="editorial-p">Return repository files modified between two Git refs (`since`..`until`) in a read-only sandboxed query. Use when reviewing recent commits or identifying which files changed before running impact analysis. Does not compute downstream symbol callers; use get_git_impact for symbol-level blast radius.</p>
-          <div class="tool-prob-note">
-            <strong>Resolves:</strong> Listing files touched in the last N commits during debugging or code review
-          </div>
-
-          <div class="tool-mini-title">Parameters Schema</div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                
-                    <tr>
-                      <td class="code-font">since</td>
-                      <td class="type-font">string</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">HEAD~10</td>
-                      <td>Since</td>
-                    </tr>
-
-                    <tr>
-                      <td class="code-font">until</td>
-                      <td class="type-font">string</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">HEAD</td>
-                      <td>Until</td>
-                    </tr>
-
-              </tbody>
-            </table>
-          </div>
-
-          <div class="tool-mini-title">Client Invocation</div>
-          <div class="code-box-wrapper">
-            <div class="code-box-header">
-              <span>MCP Client / Agent Call</span>
-              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
-            </div>
-            <pre class="code-text-pre">get_recent_changes(since=&quot;HEAD~5&quot;, until=&quot;HEAD&quot;)</pre>
-          </div>
-
-          <div class="tool-mini-title">Return Model: <code>GitChangedFilesList</code></div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                <tr><td class="code-font">path</td><td class="type-font">string</td><td>Path</td></tr><tr><td class="code-font">status</td><td class="type-font">string</td><td>Status</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="ev-boundary-row">
-            <div class="ev-note-card">
-              <strong>Evidence Guarantee</strong>
-              Git diff status and relative file paths between refs.
-            </div>
-            <div class="ev-note-card">
-              <strong>Epistemic Boundary</strong>
-              Does not compute symbol-level callers or covering tests (use get_git_impact).
-            </div>
-          </div>
-        </section>
-
-        <!-- Tool Entry: get_file_history -->
-        <section class="tool-doc-card" id="tool-get_file_history">
-          <div class="tool-doc-head-row">
-            <span class="tool-heading-code">get_file_history</span>
-            <span class="cat-tag-pill git">GIT</span>
-          </div>
-          <p class="editorial-p">Return recent Git commits touching a specific repository file (`path`, up to `n` commits). Use when investigating when and why a specific file was recently modified. Does not return full commit diffs or cross-file dependency impact.</p>
-          <div class="tool-prob-note">
-            <strong>Resolves:</strong> Checking recent commit history on a buggy file
-          </div>
-
-          <div class="tool-mini-title">Parameters Schema</div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                
-                    <tr>
-                      <td class="code-font">path</td>
-                      <td class="type-font">string</td>
-                      <td><span class="tag-req">Required</span></td>
-                      <td class="type-font">-</td>
-                      <td>Path</td>
-                    </tr>
-
-                    <tr>
-                      <td class="code-font">n</td>
-                      <td class="type-font">integer</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">10</td>
-                      <td>N</td>
-                    </tr>
-
-              </tbody>
-            </table>
-          </div>
-
-          <div class="tool-mini-title">Client Invocation</div>
-          <div class="code-box-wrapper">
-            <div class="code-box-header">
-              <span>MCP Client / Agent Call</span>
-              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
-            </div>
-            <pre class="code-text-pre">get_file_history(path=&quot;src/auth/service.py&quot;, n=5)</pre>
-          </div>
-
-          <div class="tool-mini-title">Return Model: <code>FileCommitHistoryList</code></div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                <tr><td class="code-font">commit</td><td class="type-font">string</td><td>Commit</td></tr><tr><td class="code-font">author</td><td class="type-font">string</td><td>Author</td></tr><tr><td class="code-font">date</td><td class="type-font">string</td><td>Date</td></tr><tr><td class="code-font">subject</td><td class="type-font">string</td><td>Subject</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="ev-boundary-row">
-            <div class="ev-note-card">
-              <strong>Evidence Guarantee</strong>
-              Commit hashes, authors, timestamps, and commit subjects touching `path`.
-            </div>
-            <div class="ev-note-card">
-              <strong>Epistemic Boundary</strong>
-              Does not prove which specific symbol inside the file caused a regression.
-            </div>
-          </div>
-        </section>
-
-        <!-- Tool Entry: analyze_change_impact -->
-        <section class="tool-doc-card" id="tool-analyze_change_impact">
-          <div class="tool-doc-head-row">
-            <span class="tool-heading-code">analyze_change_impact</span>
-            <span class="cat-tag-pill git">GIT</span>
-          </div>
-          <p class="editorial-p">Analyze changed files, modified symbols, downstream callers, and related tests between Git refs `since` and `until`. Use for commit-range impact analysis when `since`/`until` parameter naming is preferred. Does not execute tests at runtime.</p>
-          <div class="tool-prob-note">
-            <strong>Resolves:</strong> Analyzing blast radius of commits between `since` and `until`
-          </div>
-
-          <div class="tool-mini-title">Parameters Schema</div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                
-                    <tr>
-                      <td class="code-font">since</td>
-                      <td class="type-font">string</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">HEAD~1</td>
-                      <td>Since</td>
-                    </tr>
-
-                    <tr>
-                      <td class="code-font">until</td>
-                      <td class="type-font">string</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">HEAD</td>
-                      <td>Until</td>
-                    </tr>
-
-              </tbody>
-            </table>
-          </div>
-
-          <div class="tool-mini-title">Client Invocation</div>
-          <div class="code-box-wrapper">
-            <div class="code-box-header">
-              <span>MCP Client / Agent Call</span>
-              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
-            </div>
-            <pre class="code-text-pre">analyze_change_impact(since=&quot;HEAD~2&quot;, until=&quot;HEAD&quot;)</pre>
-          </div>
-
-          <div class="tool-mini-title">Return Model: <code>ChangeImpactReport</code></div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                <tr><td class="code-font">changed_files</td><td class="type-font">array</td><td>Changed Files</td></tr><tr><td class="code-font">modified_symbols</td><td class="type-font">array</td><td>Modified Symbols</td></tr><tr><td class="code-font">callers</td><td class="type-font">array</td><td>Callers</td></tr><tr><td class="code-font">related_tests</td><td class="type-font">array</td><td>Related Tests</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="ev-boundary-row">
-            <div class="ev-note-card">
-              <strong>Evidence Guarantee</strong>
-              Git diff mapped to indexed symbols, callers, and related tests.
-            </div>
-            <div class="ev-note-card">
-              <strong>Epistemic Boundary</strong>
-              Does not prove runtime test pass/fail status.
-            </div>
-          </div>
-        </section>
-
-        <!-- Tool Entry: get_git_state -->
-        <section class="tool-doc-card" id="tool-get_git_state">
-          <div class="tool-doc-head-row">
-            <span class="tool-heading-code">get_git_state</span>
-            <span class="cat-tag-pill git">GIT</span>
-          </div>
-          <p class="editorial-p">Track current Git branch, HEAD commit, indexed commit, working tree modifications, staged files, and explicit freshness states (CLEAN, DIRTY, STALE, REINDEXING, ERROR). Use when asking if the index is up to date, which files changed, or what git branch is active. Does not perform a full repository scan when an incremental update is safe.</p>
-          <div class="tool-prob-note">
-            <strong>Resolves:</strong> Checking if repository has uncommitted changes or if re-indexing is required after pulling git commits
-          </div>
-
-          <div class="tool-mini-title">Parameters Schema</div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                <tr><td colspan="5" style="color:var(--text-dim); font-style:italic;">No arguments required.</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="tool-mini-title">Client Invocation</div>
-          <div class="code-box-wrapper">
-            <div class="code-box-header">
-              <span>MCP Client / Agent Call</span>
-              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
-            </div>
-            <pre class="code-text-pre">get_git_state()</pre>
-          </div>
-
-          <div class="tool-mini-title">Return Model: <code>GitStateReport</code></div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                <tr><td class="code-font">is_git</td><td class="type-font">string</td><td>Is Git</td></tr><tr><td class="code-font">branch</td><td class="type-font">string</td><td>Branch</td></tr><tr><td class="code-font">current_head</td><td class="type-font">string</td><td>Current Head</td></tr><tr><td class="code-font">indexed_head</td><td class="type-font">string</td><td>Indexed Head</td></tr><tr><td class="code-font">freshness</td><td class="type-font">boolean</td><td>Freshness</td></tr><tr><td class="code-font">working_tree</td><td class="type-font">string</td><td>Working Tree</td></tr><tr><td class="code-font">reindex_required</td><td class="type-font">string</td><td>Reindex Required</td></tr><tr><td class="code-font">detail</td><td class="type-font">string</td><td>Detail</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="ev-boundary-row">
-            <div class="ev-note-card">
-              <strong>Evidence Guarantee</strong>
-              Deterministic Git rev-parse and status porcelain v1 inspection.
-            </div>
-            <div class="ev-note-card">
-              <strong>Epistemic Boundary</strong>
-              Does not prove semantic impact; reports file-level and commit-level freshness.
-            </div>
-          </div>
-        </section>
-
-        <!-- Tool Entry: compare_git -->
-        <section class="tool-doc-card" id="tool-compare_git">
-          <div class="tool-doc-head-row">
-            <span class="tool-heading-code">compare_git</span>
-            <span class="cat-tag-pill git">GIT</span>
-          </div>
-          <p class="editorial-p">Compare two Git revisions, commits, or branches structurally. Detects added/deleted/modified/renamed files, AST symbol changes, relationship diffs, routes, and affected tests. Use when comparing branches or commits structurally. Does not execute repository code.</p>
-          <div class="tool-prob-note">
-            <strong>Resolves:</strong> Understanding structural changes between two branches or commits without parsing raw diff text
-          </div>
-
-          <div class="tool-mini-title">Parameters Schema</div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                
-                    <tr>
-                      <td class="code-font">base</td>
-                      <td class="type-font">string</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">HEAD~1</td>
-                      <td>Base</td>
-                    </tr>
-
-                    <tr>
-                      <td class="code-font">head</td>
-                      <td class="type-font">string</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">HEAD</td>
-                      <td>Head</td>
-                    </tr>
-
-                    <tr>
-                      <td class="code-font">branch_comparison</td>
-                      <td class="type-font">boolean</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">False</td>
-                      <td>Branch Comparison</td>
-                    </tr>
-
-              </tbody>
-            </table>
-          </div>
-
-          <div class="tool-mini-title">Client Invocation</div>
-          <div class="code-box-wrapper">
-            <div class="code-box-header">
-              <span>MCP Client / Agent Call</span>
-              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
-            </div>
-            <pre class="code-text-pre">compare_git(base=&quot;main&quot;, head=&quot;HEAD&quot;, branch_comparison=True)</pre>
-          </div>
-
-          <div class="tool-mini-title">Return Model: <code>StructuralDiffResult</code></div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                <tr><td class="code-font">base_ref</td><td class="type-font">string</td><td>Base Ref</td></tr><tr><td class="code-font">head_ref</td><td class="type-font">string</td><td>Head Ref</td></tr><tr><td class="code-font">added_files</td><td class="type-font">array</td><td>Added Files</td></tr><tr><td class="code-font">deleted_files</td><td class="type-font">array</td><td>Deleted Files</td></tr><tr><td class="code-font">modified_files</td><td class="type-font">array</td><td>Modified Files</td></tr><tr><td class="code-font">renamed_files</td><td class="type-font">array</td><td>Renamed Files</td></tr><tr><td class="code-font">added_symbols</td><td class="type-font">array</td><td>Added Symbols</td></tr><tr><td class="code-font">removed_symbols</td><td class="type-font">array</td><td>Removed Symbols</td></tr><tr><td class="code-font">changed_symbols</td><td class="type-font">array</td><td>Changed Symbols</td></tr><tr><td class="code-font">changed_routes</td><td class="type-font">array</td><td>Changed Routes</td></tr><tr><td class="code-font">affected_tests</td><td class="type-font">array</td><td>Affected Tests</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="ev-boundary-row">
-            <div class="ev-note-card">
-              <strong>Evidence Guarantee</strong>
-              AST parsing of before/after revisions with exact file:line citations and similarity scores.
-            </div>
-            <div class="ev-note-card">
-              <strong>Epistemic Boundary</strong>
-              Does not execute code or run test assertions.
-            </div>
-          </div>
-        </section>
-
-        <!-- Tool Entry: get_change_impact -->
-        <section class="tool-doc-card" id="tool-get_change_impact">
-          <div class="tool-doc-head-row">
-            <span class="tool-heading-code">get_change_impact</span>
-            <span class="cat-tag-pill git">GIT</span>
-          </div>
-          <p class="editorial-p">Compute deep downstream change impact across callers, callees, framework routes, covering tests, mutating database queries, and monorepo packages. Returns ranked entities with explicit confidence (FACT, POSSIBLE, UNKNOWN) and blast radius score. Use when evaluating ripple effects of git commits. Does not execute repository test suites.</p>
-          <div class="tool-prob-note">
-            <strong>Resolves:</strong> Evaluating what code, routes, database writes, and tests will break if git changes are merged
-          </div>
-
-          <div class="tool-mini-title">Parameters Schema</div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                
-                    <tr>
-                      <td class="code-font">base</td>
-                      <td class="type-font">string</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">HEAD~1</td>
-                      <td>Base</td>
-                    </tr>
-
-                    <tr>
-                      <td class="code-font">head</td>
-                      <td class="type-font">string</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">HEAD</td>
-                      <td>Head</td>
-                    </tr>
-
-                    <tr>
-                      <td class="code-font">max_depth</td>
-                      <td class="type-font">integer</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">2</td>
-                      <td>Max Depth</td>
-                    </tr>
-
-                    <tr>
-                      <td class="code-font">max_results</td>
-                      <td class="type-font">integer</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">50</td>
-                      <td>Max Results</td>
-                    </tr>
-
-              </tbody>
-            </table>
-          </div>
-
-          <div class="tool-mini-title">Client Invocation</div>
-          <div class="code-box-wrapper">
-            <div class="code-box-header">
-              <span>MCP Client / Agent Call</span>
-              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
-            </div>
-            <pre class="code-text-pre">get_change_impact(base=&quot;HEAD~1&quot;, head=&quot;HEAD&quot;)</pre>
-          </div>
-
-          <div class="tool-mini-title">Return Model: <code>DeepImpactResult</code></div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                <tr><td class="code-font">base_ref</td><td class="type-font">string</td><td>Base Ref</td></tr><tr><td class="code-font">head_ref</td><td class="type-font">string</td><td>Head Ref</td></tr><tr><td class="code-font">changed_files</td><td class="type-font">array</td><td>Changed Files</td></tr><tr><td class="code-font">changed_symbols</td><td class="type-font">array</td><td>Changed Symbols</td></tr><tr><td class="code-font">direct_callers</td><td class="type-font">array</td><td>Direct Callers</td></tr><tr><td class="code-font">transitive_callers</td><td class="type-font">array</td><td>Transitive Callers</td></tr><tr><td class="code-font">affected_routes</td><td class="type-font">array</td><td>Affected Routes</td></tr><tr><td class="code-font">affected_tests</td><td class="type-font">array</td><td>Affected Tests</td></tr><tr><td class="code-font">db_writers</td><td class="type-font">array</td><td>Db Writers</td></tr><tr><td class="code-font">blast_radius_score</td><td class="type-font">string</td><td>Blast Radius Score</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="ev-boundary-row">
-            <div class="ev-note-card">
-              <strong>Evidence Guarantee</strong>
-              Complete graph traversal connecting modified AST symbols to callers, routes, tests, and DB queries.
-            </div>
-            <div class="ev-note-card">
-              <strong>Epistemic Boundary</strong>
-              Does not prove runtime execution frequencies; reports static graph reachability.
-            </div>
-          </div>
-        </section>
-
-        <!-- Tool Entry: check_context_freshness -->
-        <section class="tool-doc-card" id="tool-check_context_freshness">
-          <div class="tool-doc-head-row">
-            <span class="tool-heading-code">check_context_freshness</span>
-            <span class="cat-tag-pill git">GIT</span>
-          </div>
-          <p class="editorial-p">Validate whether a previously compiled context packet or task context is still VALID, PARTIALLY_STALE, or STALE. Guarantees that changes to unrelated files keep context VALID. Use when checking if previously compiled context remains valid after edits. Does not invalidate context when only unrelated files change.</p>
-          <div class="tool-prob-note">
-            <strong>Resolves:</strong> Checking if previously cached or generated AI context packet is still safe to use after editing files
-          </div>
-
-          <div class="tool-mini-title">Parameters Schema</div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                
-                    <tr>
-                      <td class="code-font">task</td>
-                      <td class="type-font">string</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font"></td>
-                      <td>Task</td>
-                    </tr>
-
-                    <tr>
-                      <td class="code-font">context_packet</td>
-                      <td class="type-font">any</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">None</td>
-                      <td>Context Packet</td>
-                    </tr>
-
-              </tbody>
-            </table>
-          </div>
-
-          <div class="tool-mini-title">Client Invocation</div>
-          <div class="code-box-wrapper">
-            <div class="code-box-header">
-              <span>MCP Client / Agent Call</span>
-              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
-            </div>
-            <pre class="code-text-pre">check_context_freshness(task=&quot;Fix auth timeout&quot;)</pre>
-          </div>
-
-          <div class="tool-mini-title">Return Model: <code>ContextFreshnessResult</code></div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                <tr><td class="code-font">status</td><td class="type-font">string</td><td>Status</td></tr><tr><td class="code-font">base_commit</td><td class="type-font">string</td><td>Base Commit</td></tr><tr><td class="code-font">current_head</td><td class="type-font">string</td><td>Current Head</td></tr><tr><td class="code-font">repository_dirty</td><td class="type-font">string</td><td>Repository Dirty</td></tr><tr><td class="code-font">context_files</td><td class="type-font">array</td><td>Context Files</td></tr><tr><td class="code-font">changed_relevant_files</td><td class="type-font">array</td><td>Changed Relevant Files</td></tr><tr><td class="code-font">unrelated_changed_files</td><td class="type-font">array</td><td>Unrelated Changed Files</td></tr><tr><td class="code-font">invalidated_symbols</td><td class="type-font">array</td><td>Invalidated Symbols</td></tr><tr><td class="code-font">reason</td><td class="type-font">string</td><td>Reason</td></tr><tr><td class="code-font">recommended_action</td><td class="type-font">string</td><td>Recommended Action</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="ev-boundary-row">
-            <div class="ev-note-card">
-              <strong>Evidence Guarantee</strong>
-              Intersection of Git diff line/file changes against exact symbol and file references in context packet.
-            </div>
-            <div class="ev-note-card">
-              <strong>Epistemic Boundary</strong>
-              Does not recompile context; reports freshness validity and recommended action.
-            </div>
-          </div>
-        </section>
-
-        <!-- Tool Entry: trace_symbol_history -->
-        <section class="tool-doc-card" id="tool-trace_symbol_history">
-          <div class="tool-doc-head-row">
-            <span class="tool-heading-code">trace_symbol_history</span>
-            <span class="cat-tag-pill git">GIT</span>
-          </div>
-          <p class="editorial-p">Trace deterministic symbol evolution across Git history: introduced, modified, moved across files, renamed, or deleted. Uses AST structure and body hashes to differentiate FACT from POSSIBLE/AMBIGUOUS renames. Use when discovering when a symbol was added, moved, or renamed. Does not guess ambiguous renames without evidence.</p>
-          <div class="tool-prob-note">
-            <strong>Resolves:</strong> Tracing when a function was introduced, modified, moved to a different module, or renamed
-          </div>
-
-          <div class="tool-mini-title">Parameters Schema</div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                
-                    <tr>
-                      <td class="code-font">symbol</td>
-                      <td class="type-font">string</td>
-                      <td><span class="tag-req">Required</span></td>
-                      <td class="type-font">-</td>
-                      <td>Symbol</td>
-                    </tr>
-
-                    <tr>
-                      <td class="code-font">path</td>
-                      <td class="type-font">string</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font"></td>
-                      <td>Path</td>
-                    </tr>
-
-                    <tr>
-                      <td class="code-font">max_commits</td>
-                      <td class="type-font">integer</td>
-                      <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">15</td>
-                      <td>Max Commits</td>
-                    </tr>
-
-              </tbody>
-            </table>
-          </div>
-
-          <div class="tool-mini-title">Client Invocation</div>
-          <div class="code-box-wrapper">
-            <div class="code-box-header">
-              <span>MCP Client / Agent Call</span>
-              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
-            </div>
-            <pre class="code-text-pre">trace_symbol_history(symbol=&quot;AuthService&quot;)</pre>
-          </div>
-
-          <div class="tool-mini-title">Return Model: <code>SymbolHistoryResult</code></div>
-          <div class="table-container">
-            <table class="data-table-clean">
-              <thead>
-                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
-              </thead>
-              <tbody>
-                <tr><td class="code-font">symbol</td><td class="type-font">string</td><td>Symbol</td></tr><tr><td class="code-font">current_path</td><td class="type-font">string</td><td>Current Path</td></tr><tr><td class="code-font">events</td><td class="type-font">string</td><td>Events</td></tr><tr><td class="code-font">total_commits_evaluated</td><td class="type-font">string</td><td>Total Commits Evaluated</td></tr><tr><td class="code-font">status</td><td class="type-font">string</td><td>Status</td></tr><tr><td class="code-font">detail</td><td class="type-font">string</td><td>Detail</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="ev-boundary-row">
-            <div class="ev-note-card">
-              <strong>Evidence Guarantee</strong>
-              Git log history correlated with AST body hashes and file rename metadata.
-            </div>
-            <div class="ev-note-card">
-              <strong>Epistemic Boundary</strong>
-              Does not guarantee intent behind refactors; reports structural code evolution.
-            </div>
-          </div>
-        </section>
-
         <h3 class="editorial-h3" id="tools-tests" style="margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border);">
-          Test Discovery & Coverage Tools (2)
+          Test Discovery &amp; Coverage Tools (2)
         </h3>
         <p class="editorial-p">Deterministic symbol-to-test suite mapping.</p>
 
@@ -6329,7 +6351,7 @@ codegraph run uvicorn main:app --reload</pre>
             <div class="code-box-header">
               <span>Deterministic Output</span>
             </div>
-            <pre class="code-text-pre">CodeGraph MCP server running on http://127.0.0.1:8765/sse (56 tools registered)</pre>
+            <pre class="code-text-pre">CodeGraph MCP server running on http://127.0.0.1:8765/sse (62 tools registered)</pre>
           </div>
         </section>
 
@@ -6629,6 +6651,270 @@ Configured Antigravity (.agents/mcp_config.json, AGENTS.md)</pre>
           </div>
         </section>
 
+        <!-- CLI Entry: codegraph git-state [PATH] -->
+        <section class="cli-doc-card" id="cli-codegraph-git-state-PATH">
+          <div class="tool-doc-head-row">
+            <span class="cli-cmd-heading">codegraph git-state [PATH]</span>
+            <span class="cat-tag-pill core">GIT INTELLIGENCE</span>
+          </div>
+          <p class="editorial-p">Track Git branch, HEAD commit, indexed commit, and working-tree modifications.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Instantly determines if the CodeGraph index is CLEAN, DIRTY, or STALE relative to working tree and HEAD with sub-millisecond caching.
+          </div>
+
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Terminal Command</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy</button>
+            </div>
+            <pre class="code-text-pre">codegraph git-state</pre>
+          </div>
+
+          <div class="tool-mini-title">Flags &amp; Options</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Flag</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">--repository, -r &lt;path&gt;</td><td>Repository path</td></tr><tr><td class="code-font">--json</td><td>Output git state as JSON</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Terminal Output</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Deterministic Output</span>
+            </div>
+            <pre class="code-text-pre">Git Repository: /path/to/repo
+Branch:         main
+Current HEAD:   3d71eca
+Indexed HEAD:   3d71eca
+Freshness:      CLEAN
+Working Tree:   0 modified, 0 untracked</pre>
+          </div>
+        </section>
+
+        <!-- CLI Entry: codegraph git-diff [base] [head] -->
+        <section class="cli-doc-card" id="cli-codegraph-git-diff-base-head">
+          <div class="tool-doc-head-row">
+            <span class="cli-cmd-heading">codegraph git-diff [base] [head]</span>
+            <span class="cat-tag-pill core">GIT INTELLIGENCE</span>
+          </div>
+          <p class="editorial-p">Compute structural AST-level difference between Git revisions, commits, or branches.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Detects added, removed, and modified functions, classes, and parameter signatures—not merely raw textual line diffs.
+          </div>
+
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Terminal Command</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy</button>
+            </div>
+            <pre class="code-text-pre">codegraph git-diff HEAD~1 HEAD</pre>
+          </div>
+
+          <div class="tool-mini-title">Flags &amp; Options</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Flag</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">--branch, -b</td><td>Perform hierarchical branch architecture comparison</td></tr><tr><td class="code-font">--json</td><td>Output structural diff as JSON</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Terminal Output</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Deterministic Output</span>
+            </div>
+            <pre class="code-text-pre">Structural Git Diff (HEAD~1 -&gt; HEAD):
+  Modified Files: 2
+  Added Symbols:    3 (OrderValidator.validate_currency, ...)
+  Modified Symbols: 1 (PaymentGateway.charge)
+  Affected Routes:  1 (POST /api/v1/orders/pay)</pre>
+          </div>
+        </section>
+
+        <!-- CLI Entry: codegraph git-impact [base] [head] -->
+        <section class="cli-doc-card" id="cli-codegraph-git-impact-base-head">
+          <div class="tool-doc-head-row">
+            <span class="cli-cmd-heading">codegraph git-impact [base] [head]</span>
+            <span class="cat-tag-pill core">GIT INTELLIGENCE</span>
+          </div>
+          <p class="editorial-p">Compute deep downstream change impact across callers, callees, framework routes, tests, and DB.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Reveals the full blast radius of a Git change before merging, with token-bounded results and an ASCII tree visualization.
+          </div>
+
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Terminal Command</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy</button>
+            </div>
+            <pre class="code-text-pre">codegraph git-impact --tree</pre>
+          </div>
+
+          <div class="tool-mini-title">Flags &amp; Options</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Flag</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">--tree, -t</td><td>Display visual impact tree</td></tr><tr><td class="code-font">--depth, -d &lt;int&gt;</td><td>Max caller traversal depth (default: 2)</td></tr><tr><td class="code-font">--max-results, -m &lt;int&gt;</td><td>Max items per category (default: 30)</td></tr><tr><td class="code-font">--json</td><td>Output impact as JSON</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Terminal Output</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Deterministic Output</span>
+            </div>
+            <pre class="code-text-pre">Impact Tree for commit 3d71eca:
+└── src/services/auth.py (AuthService.verify_token)
+    ├── [CALLER] api.routes.auth (login_handler)
+    │   └── [ROUTE] POST /api/v1/auth/login
+    ├── [DB_WRITER] models.user (update_last_login)
+    └── [TEST] tests/test_auth.py::test_verify_token</pre>
+          </div>
+        </section>
+
+        <!-- CLI Entry: codegraph git-conflicts [base] [head] -->
+        <section class="cli-doc-card" id="cli-codegraph-git-conflicts-base-head">
+          <div class="tool-doc-head-row">
+            <span class="cli-cmd-heading">codegraph git-conflicts [base] [head]</span>
+            <span class="cat-tag-pill core">GIT INTELLIGENCE</span>
+          </div>
+          <p class="editorial-p">Detect semantic and contract merge conflicts between branches before merge.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Flags silent merge conflicts that standard Git merges miss—such as branch A calling a function or route handler that branch B deleted or altered.
+          </div>
+
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Terminal Command</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy</button>
+            </div>
+            <pre class="code-text-pre">codegraph git-conflicts main feature-payments</pre>
+          </div>
+
+          <div class="tool-mini-title">Flags &amp; Options</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Flag</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">--repository, -r &lt;path&gt;</td><td>Repository path</td></tr><tr><td class="code-font">--json</td><td>Output conflicts as JSON</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Terminal Output</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Deterministic Output</span>
+            </div>
+            <pre class="code-text-pre">Semantic Conflict Analysis (main &lt;-&gt; feature-payments):
+  [CRITICAL] Branch &#x27;feature-payments&#x27; registers route &#x27;POST /api/checkout&#x27; pointing to handler &#x27;process_checkout&#x27;, which was deleted in &#x27;main&#x27;.</pre>
+          </div>
+        </section>
+
+        <!-- CLI Entry: codegraph check-freshness [TASK] -->
+        <section class="cli-doc-card" id="cli-codegraph-check-freshness-TASK">
+          <div class="tool-doc-head-row">
+            <span class="cli-cmd-heading">codegraph check-freshness [TASK]</span>
+            <span class="cat-tag-pill core">GIT INTELLIGENCE</span>
+          </div>
+          <p class="editorial-p">Validate whether compiled context remains VALID, PARTIALLY_STALE, or STALE against repository changes.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Determines whether an AI agent&#x27;s previously compiled context is still trustworthy without throwing away context when unrelated files changed.
+          </div>
+
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Terminal Command</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy</button>
+            </div>
+            <pre class="code-text-pre">codegraph check-freshness &quot;refactor payment flow&quot;</pre>
+          </div>
+
+          <div class="tool-mini-title">Flags &amp; Options</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Flag</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">--repository, -r &lt;path&gt;</td><td>Repository path</td></tr><tr><td class="code-font">--json</td><td>Output freshness report as JSON</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Terminal Output</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Deterministic Output</span>
+            </div>
+            <pre class="code-text-pre">{
+  &quot;status&quot;: &quot;VALID&quot;,
+  &quot;head_commit&quot;: &quot;3d71eca&quot;,
+  &quot;context_files_changed&quot;: 0,
+  &quot;unrelated_files_changed&quot;: 2,
+  &quot;recommendation&quot;: &quot;SAFE_TO_USE&quot;
+}</pre>
+          </div>
+        </section>
+
+        <!-- CLI Entry: codegraph symbol-history &lt;SYMBOL&gt; -->
+        <section class="cli-doc-card" id="cli-codegraph-symbol-history-&lt;SYMBOL&gt;">
+          <div class="tool-doc-head-row">
+            <span class="cli-cmd-heading">codegraph symbol-history &lt;SYMBOL&gt;</span>
+            <span class="cat-tag-pill core">GIT INTELLIGENCE</span>
+          </div>
+          <p class="editorial-p">Trace deterministic symbol evolution across Git history: introduced, modified, moved, renamed, or deleted.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Provides compiler-level provenance for any symbol across the commit log using Git rename metadata and stable symbol hashes.
+          </div>
+
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Terminal Command</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy</button>
+            </div>
+            <pre class="code-text-pre">codegraph symbol-history resolve_target</pre>
+          </div>
+
+          <div class="tool-mini-title">Flags &amp; Options</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Flag</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">-f, --file &lt;str&gt;</td><td>File path where symbol is located</td></tr><tr><td class="code-font">-m, --max-commits &lt;int&gt;</td><td>Max commits to inspect (default: 15)</td></tr><tr><td class="code-font">--json</td><td>Output symbol history as JSON</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Terminal Output</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Deterministic Output</span>
+            </div>
+            <pre class="code-text-pre">Symbol History: resolve_target
+  - [INTRODUCED] 3d71eca (feat: add TargetResolver for v2.1)
+  - [MODIFIED]   9da7eec (refactor: support Class.method resolution)
+  Confidence: AST_VERIFIED</pre>
+          </div>
+        </section>
+
         <!-- Chapter: Benchmarks -->
         <h2 class="editorial-h2" id="benchmarks">Scaling Benchmarks</h2>
         <p class="editorial-p">
@@ -6711,7 +6997,7 @@ Configured Antigravity (.agents/mcp_config.json, AGENTS.md)</pre>
     <div class="spotlight-box">
       <div class="spotlight-input-bar">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="text" id="spotlightInput" class="spotlight-input" placeholder="Search documentation, 56 tools, CLI commands..." oninput="handleSpotlightSearch(this.value)">
+        <input type="text" id="spotlightInput" class="spotlight-input" placeholder="Search documentation, 62 tools, CLI commands..." oninput="handleSpotlightSearch(this.value)">
       </div>
       <div class="spotlight-results-scroll" id="spotlightResults"></div>
       <div class="spotlight-bottom-bar">
@@ -6847,6 +7133,12 @@ Configured Antigravity (.agents/mcp_config.json, AGENTS.md)</pre>
       { title: "codegraph trace <SYMBOL>", sub: "CLI Command &bull; Trace a symbol definition, callers, and callees with ex...", url: "#cli-codegraph-trace-SYMBOL" },
       { title: "codegraph context <QUERY>", sub: "CLI Command &bull; Compile token-budgeted ContextPacket for an AI agent ta...", url: "#cli-codegraph-context-QUERY" },
       { title: "codegraph privacy [PATH]", sub: "CLI Command &bull; Verify repository privacy boundaries and ensure no sens...", url: "#cli-codegraph-privacy-PATH" },
+      { title: "codegraph git-state [PATH]", sub: "CLI Command &bull; Track Git branch, HEAD commit, indexed commit, and work...", url: "#cli-codegraph-git-state-PATH" },
+      { title: "codegraph git-diff [base] [head]", sub: "CLI Command &bull; Compute structural AST-level difference between Git rev...", url: "#cli-codegraph-git-diff-base-head" },
+      { title: "codegraph git-impact [base] [head]", sub: "CLI Command &bull; Compute deep downstream change impact across callers, c...", url: "#cli-codegraph-git-impact-base-head" },
+      { title: "codegraph git-conflicts [base] [head]", sub: "CLI Command &bull; Detect semantic and contract merge conflicts between br...", url: "#cli-codegraph-git-conflicts-base-head" },
+      { title: "codegraph check-freshness [TASK]", sub: "CLI Command &bull; Validate whether compiled context remains VALID, PARTIA...", url: "#cli-codegraph-check-freshness-TASK" },
+      { title: "codegraph symbol-history <SYMBOL>", sub: "CLI Command &bull; Trace deterministic symbol evolution across Git history...", url: "#cli-codegraph-symbol-history-SYMBOL" },
     ];
 
     function toggleNavGroup(el) {

@@ -116,13 +116,13 @@ def generate_docs():
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/">
   <meta property="og:title" content="CodeGraph MCP — Deterministic Code Intelligence Engine">
-  <meta property="og:description" content="Official website and documentation for CodeGraph MCP: deterministic local-first code intelligence with runtime telemetry reconciliation, database lineage, and 56 verified MCP tools.">
+  <meta property="og:description" content="Official website and documentation for CodeGraph MCP: deterministic local-first code intelligence with Git-aware diffs, runtime telemetry reconciliation, database lineage, and 62 verified MCP tools.">
   <meta property="og:image" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/assets/codegraph_logo.jpg">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/">
   <meta name="twitter:title" content="CodeGraph MCP — Deterministic Code Intelligence Engine">
-  <meta name="twitter:description" content="Official website and documentation for CodeGraph MCP: runtime telemetry reconciliation, database lineage, and 56 verified tools.">
+  <meta name="twitter:description" content="Official website and documentation for CodeGraph MCP: Git-aware diffs, runtime telemetry reconciliation, database lineage, and 62 verified tools.">
   <meta name="twitter:image" content="https://raghurammrsd.github.io/CODE_GRAPH_MCP/assets/codegraph_logo.jpg">
 
   <script type="application/ld+json">
@@ -138,7 +138,7 @@ def generate_docs():
       "price": "0",
       "priceCurrency": "USD"
     },
-    "description": "Production Model Context Protocol (MCP) server providing runtime telemetry reconciliation, database lineage, and 56 graph analysis tools for AI coding agents.",
+    "description": "Production Model Context Protocol (MCP) server providing Git-aware repository intelligence, runtime telemetry reconciliation, database lineage, and 62 graph analysis tools for AI coding agents.",
     "softwareVersion": "2.3.0",
     "author": {
       "@type": "Person",
@@ -811,7 +811,7 @@ def generate_docs():
       <!-- Universal Search (Cmd K) -->
       <button class="search-trigger-btn" onclick="openSpotlightModal()" aria-label="Open documentation search">
         <svg class="search-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <span class="search-label-text">Search documentation (56 tools, CLI)...</span>
+        <span class="search-label-text">Search documentation (62 tools, CLI)...</span>
         <kbd class="kbd-shortcut">Cmd K</kbd>
       </button>
     </div>
@@ -821,8 +821,8 @@ def generate_docs():
       <ul class="top-links-row">
         <li><a href="#features">Features</a></li>
         <li><a href="#next-steps">Documentation</a></li>
-        <li><a href="#tools-database">MCP Tools (56)</a></li>
-        <li><a href="#cli-reference">CLI (13)</a></li>
+        <li><a href="#tools-database">MCP Tools (62)</a></li>
+        <li><a href="#cli-reference">CLI (19)</a></li>
         <li><a href="#benchmarks">Benchmarks</a></li>
       </ul>
       <div class="header-sep-divider"></div>
@@ -839,7 +839,7 @@ def generate_docs():
     <div>
       <div class="hero-badge-tag">
         <span class="dot-online"></span>
-        <span>v2.3.0 Production · Runtime &amp; Database Verified</span>
+        <span>v2.3.0 Production · Runtime, Database &amp; Git Verified</span>
       </div>
 
       <h1 class="hero-headline-h1">
@@ -848,15 +848,16 @@ def generate_docs():
       </h1>
 
       <p class="hero-summary-p">
-        CodeGraph MCP maps repository relationships with <strong>runtime telemetry reconciliation</strong> and <strong>database lineage</strong>. AI coding agents resolve call hierarchies, mutating SQL queries, and API routes in <strong>&lt; 50ms</strong> without token waste.
+        CodeGraph MCP maps repository relationships with <strong>Git-aware change intelligence</strong>, <strong>runtime telemetry reconciliation</strong>, and <strong>database lineage</strong>. AI coding agents resolve call hierarchies, mutating SQL queries, and pre-merge contract conflicts in <strong>&lt; 50ms</strong> without token waste.
       </p>
 
       <!-- Tabbed Terminal Box (Elevated above fold for immediate visibility) -->
       <div class="hero-term-box">
         <div class="term-tab-strip">
           <button class="term-tab-item active" onclick="setHeroTermCmd('pip install codegraph-engine[mcp]', this)">Install</button>
+          <button class="term-tab-item" onclick="setHeroTermCmd('codegraph git-impact --tree', this)">Git Impact Tree</button>
+          <button class="term-tab-item" onclick="setHeroTermCmd('codegraph git-conflicts main HEAD', this)">Merge Conflicts</button>
           <button class="term-tab-item" onclick="setHeroTermCmd('codegraph search --database \'users table writes\'', this)">Database CLI</button>
-          <button class="term-tab-item" onclick="setHeroTermCmd('codegraph run --record pytest', this)">Runtime Traces</button>
           <button class="term-tab-item" onclick="setHeroTermCmd('from codegraph import get_context', this)">Python API</button>
         </div>
         <div class="term-code-line">
@@ -872,15 +873,16 @@ def generate_docs():
           <span>Explore Documentation</span>
           <span>&darr;</span>
         </a>
-        <a href="#tools-database" class="btn-cta-secondary">View 56 MCP Tools</a>
+        <a href="#tools-database" class="btn-cta-secondary">View 62 MCP Tools</a>
       </div>
 
       <div class="cap-pills-row">
+        <a href="#git-intelligence-guide" class="cap-pill-btn" style="background:#ecfdf5;color:#059669;border-color:#a7f3d0;">&#10003; Git Intelligence</a>
         <a href="#runtime-telemetry-concept" class="cap-pill-btn rt">&#10003; Runtime Reconciliation</a>
         <a href="#database-lineage-concept" class="cap-pill-btn db">&#9670; Database Lineage</a>
         <a href="#framework-routes-guide" class="cap-pill-btn">Routes &amp; Handlers</a>
         <a href="#how-it-works" class="cap-pill-btn">Deterministic AST</a>
-        <a href="#tools-database" class="cap-pill-btn">56 Verified Tools</a>
+        <a href="#tools-database" class="cap-pill-btn">62 Verified Tools</a>
       </div>
     </div>
 
@@ -963,7 +965,7 @@ def generate_docs():
         <div class="code-ide-footer">
           <div class="footer-metric-pill"><span class="metric-val">18ms</span> Latency</div>
           <div class="footer-metric-pill"><span class="metric-val green">-94%</span> Agent Tokens</div>
-          <div class="footer-metric-pill"><span class="metric-val">56</span> MCP Tools</div>
+          <div class="footer-metric-pill"><span class="metric-val">62</span> MCP Tools</div>
           <div class="footer-metric-pill"><span class="metric-val blue">0%</span> Hallucinations</div>
         </div>
 
@@ -1016,14 +1018,14 @@ def generate_docs():
       <div class="feat-arrow-circle">&rarr;</div>
     </a>
 
-    <!-- Card 4: 56 MCP Tools -->
+    <!-- Card 4: 62 MCP Tools -->
     <a href="#tools-database" class="landing-feature-card">
       <div class="feat-card-left">
         <div class="feat-icon-box blue">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
         </div>
         <div class="feat-card-texts">
-          <h3>56 MCP tools server</h3>
+          <h3>62 MCP tools server</h3>
           <p>Expose the graph to Claude Code, Cursor, Codex, and Antigravity.</p>
         </div>
       </div>
@@ -1044,15 +1046,15 @@ def generate_docs():
       <div class="feat-arrow-circle">&rarr;</div>
     </a>
 
-    <!-- Card 6: Impact analysis -->
-    <a href="#tools-graph" class="landing-feature-card">
+    <!-- Card 6: Git Intelligence & Merge Conflicts -->
+    <a href="#git-intelligence-guide" class="landing-feature-card" style="border-top: 3px solid #10b981;">
       <div class="feat-card-left">
-        <div class="feat-icon-box db">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+        <div class="feat-icon-box" style="background:#ecfdf5;color:#10b981;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><path d="M13 6h3a2 2 0 0 1 2 2v7"></path><line x1="6" y1="9" x2="6" y2="21"></line></svg>
         </div>
         <div class="feat-card-texts">
-          <h3>Impact analysis</h3>
-          <p>Trace callers, callees, and potential impact of code modifications.</p>
+          <h3>Git-Aware Intelligence &amp; Conflicts</h3>
+          <p>Structural AST diffs, visual impact trees, and pre-merge semantic contract conflicts.</p>
         </div>
       </div>
       <div class="feat-arrow-circle">&rarr;</div>
@@ -1168,6 +1170,9 @@ def generate_docs():
             <a href="#reading-graph-browser">Reading Your Graph in the Browser</a> &mdash; <code>codegraph ui</code>: callers, source and callees on one screen.
           </li>
           <li>
+            <a href="#git-intelligence-guide">Git-Aware Intelligence &amp; Merge Conflicts</a> &mdash; AST diffs, impact trees, and pre-merge contract conflicts.
+          </li>
+          <li>
             <a href="#framework-routes-guide">Framework Routes</a> &mdash; link URL patterns to their handlers.
           </li>
           <li>
@@ -1177,7 +1182,7 @@ def generate_docs():
             <a href="#database-schema-guide">Database Schema &amp; Writers</a> &mdash; find all tables, models, and mutating SQL queries.
           </li>
           <li>
-            <a href="#tools-database">MCP Tools Reference</a> &mdash; 56 verified tools exposed over Model Context Protocol.
+            <a href="#tools-database">MCP Tools Reference</a> &mdash; 62 verified tools exposed over Model Context Protocol.
           </li>
         </ul>
 
@@ -1242,7 +1247,24 @@ codegraph status .</pre>
           <li><strong>Tree-sitter Parsing:</strong> Source files are parsed incrementally into concrete ASTs. Zero LLM hallucinations.</li>
           <li><strong>Relational Graph Storage:</strong> Symbols, calls, imports, and routes are stored in SQLite with foreign-key constraints.</li>
           <li><strong>Deterministic Resolution:</strong> Canonical IDs, qualified names, and route endpoints are resolved with explicit ambiguity states.</li>
-          <li><strong>MCP Tool Serving:</strong> FastMCP stdio server serves 56 verified tools with token-bounded context packets.</li>
+          <li><strong>MCP Tool Serving:</strong> FastMCP stdio/SSE server serves 62 verified tools with token-bounded context packets.</li>
+        </ul>
+
+        <!-- Section: Git-Aware Intelligence (v2.3.0) -->
+        <h2 class="editorial-h2" id="git-intelligence-guide">Git-Aware Repository Intelligence &amp; Merge Conflict Safety (v2.3.0)</h2>
+        <p class="editorial-p">
+          CodeGraph MCP v2.3.0 understands how the repository changed across branches and commits, what those changes affect, and whether previously generated context is still valid.
+        </p>
+        <div class="callout-box git" style="background:#f0fdf4; border-left: 3px solid #10b981; padding: 0.75rem 1rem; border-radius: 6px; margin: 1rem 0;">
+          <strong style="color:#047857;">Pre-Merge Safety:</strong> Standard git merge only checks for textual overlaps. CodeGraph checks for <strong>semantic contract conflicts</strong>&mdash;flagging when branch A invokes functions or route handlers that branch B deleted or modified.
+        </div>
+        <ul class="book-bullet-list">
+          <li><strong>Working-Tree Freshness:</strong> Sub-5ms detection of branch, HEAD, indexed commit, and dirty modifications (<code>codegraph git-state</code>).</li>
+          <li><strong>Structural AST Diff:</strong> Semantic analysis of added, removed, and modified functions, parameters, and routes (<code>codegraph git-diff [base] [head]</code>).</li>
+          <li><strong>Visual Downstream Impact Tree:</strong> ASCII tree visualization mapping affected callers, routes, tests, and database writers (<code>codegraph git-impact --tree</code>).</li>
+          <li><strong>Pre-Merge Semantic Conflict Detection:</strong> Detect contract breaks before pull requests merge (<code>codegraph git-conflicts main HEAD</code>).</li>
+          <li><strong>Context Freshness Validation:</strong> Guarantees that AI agent context packets stay valid when unrelated files change (<code>codegraph check-freshness</code>).</li>
+          <li><strong>Deterministic Symbol History:</strong> Exact commit provenance for symbols across git log (<code>codegraph symbol-history &lt;symbol&gt;</code>).</li>
         </ul>
 
         <!-- Section: Runtime Telemetry -->
@@ -1289,21 +1311,25 @@ codegraph status .</pre>
           Query <code>find_db_tables</code>, <code>find_db_columns</code>, and <code>find_db_writers</code> to audit data flow before performing database refactors.
         </p>
 
-        <!-- Reference: 56 MCP Tools -->
-        <h2 class="editorial-h2" id="tools-reference">MCP Tools Reference (56 Verified Tools)</h2>
+        <!-- Reference: 62 MCP Tools -->
+        <h2 class="editorial-h2" id="tools-reference">MCP Tools Reference (62 Verified Tools)</h2>
         <p class="editorial-p">
-          Every tool exposed by CodeGraph MCP over Model Context Protocol, categorized into Database, Runtime, Graph, Core, Routes, Git, and Tests.
+          Every tool exposed by CodeGraph MCP over Model Context Protocol, categorized into Git Intelligence, Database, Runtime, Graph, Core, Routes, and Tests.
         </p>
 ''')
 
+    cat_counts = {}
+    for t in tools:
+        cat_counts[t['category']] = cat_counts.get(t['category'], 0) + 1
+
     cat_headings = {
-        "database": ("Database Lineage & Schema Tools (11)", "tools-database", "Tools for table inspection, column typing, mutating SQL writers, and schema impact analysis."),
-        "runtime": ("Runtime Telemetry & Reconciliation Tools (6)", "tools-runtime", "Tools for execution trace recording, runtime observation reconciliation, and dynamic call tracing."),
-        "graph": ("Graph Traversal & Call Hierarchy Tools (8)", "tools-graph", "Directional call hierarchies, caller/callee graphs, and change impact propagation."),
-        "core": ("Core Symbol Inspection & Context Tools (23)", "tools-core", "Canonical symbol resolution, bounded context packets, file slices, and evidence verification."),
-        "routes": ("Framework Route Discovery Tools (2)", "tools-routes", "Framework-aware HTTP route mapping for FastAPI, Flask, Django, and Express."),
-        "git": ("Git History & Change Impact Tools (4)", "tools-git", "Recent file commit history, changed files, and git diff impact analysis."),
-        "tests": ("Test Discovery & Coverage Tools (2)", "tools-tests", "Deterministic symbol-to-test suite mapping."),
+        "git": (f"Git-Aware Intelligence &amp; Change Impact Tools ({cat_counts.get('git', 0)})", "tools-git", "Working-tree freshness, AST-level git diffs, semantic merge conflicts, symbol history, and blast-radius impact."),
+        "database": (f"Database Lineage &amp; Schema Tools ({cat_counts.get('database', 0)})", "tools-database", "Tools for table inspection, column typing, mutating SQL writers, and schema impact analysis."),
+        "runtime": (f"Runtime Telemetry &amp; Reconciliation Tools ({cat_counts.get('runtime', 0)})", "tools-runtime", "Tools for execution trace recording, runtime observation reconciliation, and dynamic call tracing."),
+        "graph": (f"Graph Traversal &amp; Call Hierarchy Tools ({cat_counts.get('graph', 0)})", "tools-graph", "Directional call hierarchies, caller/callee graphs, and change impact propagation."),
+        "core": (f"Core Symbol Inspection &amp; Context Tools ({cat_counts.get('core', 0)})", "tools-core", "Canonical symbol resolution, bounded context packets, file slices, and evidence verification."),
+        "routes": (f"Framework Route Discovery Tools ({cat_counts.get('routes', 0)})", "tools-routes", "Framework-aware HTTP route mapping for FastAPI, Flask, Django, and Express."),
+        "tests": (f"Test Discovery &amp; Coverage Tools ({cat_counts.get('tests', 0)})", "tools-tests", "Deterministic symbol-to-test suite mapping."),
     }
 
     for cat_k, (cat_title, cat_anchor, cat_desc) in cat_headings.items():
@@ -1569,7 +1595,7 @@ codegraph status .</pre>
     <div class="spotlight-box">
       <div class="spotlight-input-bar">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="text" id="spotlightInput" class="spotlight-input" placeholder="Search documentation, 56 tools, CLI commands..." oninput="handleSpotlightSearch(this.value)">
+        <input type="text" id="spotlightInput" class="spotlight-input" placeholder="Search documentation, 62 tools, CLI commands..." oninput="handleSpotlightSearch(this.value)">
       </div>
       <div class="spotlight-results-scroll" id="spotlightResults"></div>
       <div class="spotlight-bottom-bar">

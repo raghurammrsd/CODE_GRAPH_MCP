@@ -543,11 +543,12 @@ CodeGraph MCP works **alongside** your editor's language server (LSP), `ripgrep`
 
 Legend: `✓` supported • `◐` partial / workflow-dependent • `—` not supported
 
-| Capability | CodeGraph MCP (`v2.2.1`) | Editor LSP | Structural AST (`ast-grep`) | Lexical Search (`ripgrep`) | Remote Code Search (`Sourcegraph`) |
+| Capability | CodeGraph MCP (`v2.3.0`) | Editor LSP | Structural AST (`ast-grep`) | Lexical Search (`ripgrep`) | Remote Code Search (`Sourcegraph`) |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **100% Local-First & Offline Operation** | ✓ | ✓ | ✓ | ✓ | — |
-| **Native MCP Server for AI Agents** | ✓ (14 default / 56 full) | — | ◐ | — | ✓ |
+| **Native MCP Server for AI Agents** | ✓ (14 default / 62 full) | — | ◐ | — | ✓ |
 | **Multi-Transport Support (stdio + SSE HTTP)** | ✓ | — | — | — | ◐ |
+| **Git-Aware AST Diffs & Freshness** | ✓ (6 Git tools) | — | — | — | ◐ |
 | **Zero-Friction Runtime Interceptor (`codegraph run`)** | ✓ | — | — | — | — |
 | **Semantic Symbol Graph (Callers / Callees)** | ✓ | ◐ (Position-based) | ◐ (Pattern-based) | — | ✓ (SCIP) |
 | **Framework Route, Mount & DI Graph** | ✓ (`FastAPI`/`Flask`/`Django`/`Express`) | — | ◐ (Custom rules) | — | — |
@@ -579,9 +580,9 @@ Run `codegraph privacy .` at any time to audit the local database and verify tha
 
 ---
 
-## 12. MCP Tooling & Profiles (14 Default / 56 Full)
+## 12. MCP Tooling & Profiles (14 Default / 62 Full)
 
-By default, `create_server()` exposes the **14-tool `agent` profile** so AI coding agents receive a focused, non-overlapping tool surface. All 56 tools are available under `--profile full`.
+By default, `create_server()` exposes the **14-tool `agent` profile** so AI coding agents receive a focused, non-overlapping tool surface. All 62 tools are available under `--profile full`.
 
 ### Default `agent` Profile (14 High-Signal Tools)
 
@@ -611,7 +612,7 @@ By default, `create_server()` exposes the **14-tool `agent` profile** so AI codi
 | **`graph`** | **17** | Call-graph traversal, blast-radius impact (`analyze_impact`), and test discovery. |
 | **`minimal`** | **21** | Core interrogation plus `get_context`, `search_code`, `read_file`, and `verify_evidence`. |
 | **`developer`** | **34** | Interactive development with Git history (`get_file_history`, `get_recent_changes`) and retrieval planning. |
-| **`full`** | **56** | Complete capability surface including **11 Database tools** (`get_db_schema`, `get_db_table`, `find_db_tables`, `find_db_columns`, `find_db_models`, `find_db_queries`, `find_db_readers`, `find_db_writers`, `find_db_callers`, `find_db_relationships`, `get_db_impact`) and **3 Runtime tools** (`ingest_runtime_traces`, `get_runtime_trace`, `reconcile_static_runtime`). |
+| **`full`** | **62** | Complete capability surface including **11 Database tools**, **3 Runtime tools**, and **6 Git Intelligence tools** (`get_git_state`, `compare_git`, `get_change_impact`, `check_context_freshness`, `trace_symbol_history`, `detect_semantic_conflicts`). |
 
 ---
 
@@ -626,6 +627,14 @@ codegraph install --yes --target auto --location local     # Non-interactive loc
 codegraph install --print-config claude                    # Print MCP JSON + rules for an agent
 codegraph install --dry-run                                # Preview planned file changes
 codegraph uninstall --yes                                  # Remove CodeGraph MCP agent integrations
+
+# Git-Aware Repository Intelligence (v2.3.0)
+codegraph git-state .                                      # Track HEAD, working tree, and freshness (CLEAN/DIRTY/STALE)
+codegraph git-diff HEAD~1 HEAD                             # Semantic AST diff across commits or branches
+codegraph git-impact --tree                                # Deep downstream change impact with visual ASCII tree
+codegraph git-conflicts main HEAD                          # Detect pre-merge semantic & contract conflicts
+codegraph check-freshness "audit auth flow"                # Validate if compiled context is VALID or STALE
+codegraph symbol-history resolve_target                    # Trace deterministic symbol lifecycle across commits
 
 # Zero-Friction Runtime Interceptor (v2.2.1)
 codegraph run npm run dev                                  # Wrap Node/Express/Next.js dev server
@@ -648,7 +657,7 @@ codegraph doctor --processes                               # Inspect active MCP 
 codegraph status .                                         # Show index freshness (sub-50ms Git fast path)
 codegraph doctor . --database --processes                  # Verify SQLite integrity, FKs, FTS, and memory
 codegraph privacy .                                        # Verify zero sensitive files indexed
-codegraph version                                          # Print CodeGraph MCP version (2.2.1)
+codegraph version                                          # Print CodeGraph MCP version (2.3.0)
 
 # Code, Graph, Routes & Context Interrogation
 codegraph search "authenticate" -r .                       # Search indexed symbols and text chunks
@@ -662,7 +671,7 @@ codegraph context "trace /api/v1/auth/login" -r .          # Compile token-budge
 
 # MCP Server Subcommands
 codegraph serve .                                          # Start stdio MCP server (14 default tools)
-codegraph serve . --profile full                           # Start stdio MCP server with all 56 tools
+codegraph serve . --profile full                           # Start stdio MCP server with all 62 tools
 codegraph serve . --transport sse --port 8765              # Start SSE HTTP server on port 8765
 codegraph mcp serve . --transport sse                      # Alias for SSE MCP server
 codegraph mcp stop                                         # Stop active MCP processes
@@ -672,7 +681,7 @@ codegraph mcp stop                                         # Stop active MCP pro
 
 ## 14. Documentation Map
 
-- **Deep Agent Brain & 56-Tool Reference**: [`docs/agent-brain.md`](docs/agent-brain.md)
+- **Deep Agent Brain & 62-Tool Reference**: [`docs/agent-brain.md`](docs/agent-brain.md)
 - **Compact Tool Capabilities Summary**: [`agent-rules/tool-capabilities-summary.md`](agent-rules/tool-capabilities-summary.md)
 - **Detailed Multi-Tool Capability Comparison**: [`docs/tool-comparison.md`](docs/tool-comparison.md)
 - **Antigravity Skill (`SKILL.md`)**: [`.agents/skills/codegraph/SKILL.md`](.agents/skills/codegraph/SKILL.md)
