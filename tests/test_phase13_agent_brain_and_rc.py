@@ -49,8 +49,8 @@ def test_p13_01_all_39_mcp_tools_registered_in_capability_registry(tmp_path: Pat
     """Every tool exposed by `create_server(profile='full')` is present in `TOOL_CAPABILITY_REGISTRY`."""
     srv = create_server(tmp_path, profile="full")
     mcp_tools = srv._tool_manager._tools
-    assert len(mcp_tools) == 56
-    assert len(TOOL_CAPABILITY_REGISTRY) == 56
+    assert len(mcp_tools) == len(TOOL_CAPABILITY_REGISTRY)
+    assert len(TOOL_CAPABILITY_REGISTRY) == 62
 
     reg_names = {spec.tool_name for spec in TOOL_CAPABILITY_REGISTRY}
     assert reg_names == set(mcp_tools.keys())
@@ -73,7 +73,7 @@ def test_p13_02_every_documented_parameter_matches_mcp_tool_signature(tmp_path: 
 def test_p13_03_all_39_tools_pass_description_quality_audit() -> None:
     """All 56 tools in `TOOL_CAPABILITY_REGISTRY` pass the description quality audit."""
     audit = audit_tool_descriptions()
-    assert audit["total_tools_audited"] == 56
+    assert audit["total_tools_audited"] == len(TOOL_CAPABILITY_REGISTRY)
     assert audit["all_passed"] is True
     assert audit["issues"] == []
 
@@ -141,7 +141,7 @@ def test_p13_07_deep_agent_brain_contains_all_39_tool_reference_sections() -> No
         "#### Common mistakes",
         "#### Example",
     ):
-        assert brain.count(subheading) == 56
+        assert brain.count(subheading) == len(TOOL_CAPABILITY_REGISTRY)
 
 
 def test_p13_08_detailed_skill_file_contains_10_steps_and_matrices() -> None:
@@ -185,7 +185,7 @@ def test_p13_10_automated_documentation_validator_passes_on_repository() -> None
     """`validate_agent_documentation(REPO_ROOT)` passes with 0 errors and verifies on-disk synchronization."""
     res = validate_agent_documentation(REPO_ROOT)
     assert res["valid"] is True, f"Documentation validation errors: {res['errors']}"
-    assert res["tools_documented"] == 56
+    assert res["tools_documented"] == len(TOOL_CAPABILITY_REGISTRY)
     assert res["task_categories_documented"] == 13
     assert res["relationships_documented"] == len(ALLOWED_RELATIONSHIP_EVIDENCE_MATRIX)
     assert res["evidence_classes_documented"] == len(ALLOWED_EVIDENCE_CLASSES)

@@ -2,7 +2,7 @@
   <img src="docs/assets/codegraph_logo.jpg" alt="CodeGraph MCP — Deep Deterministic Repository Intelligence for AI Coding Agents" width="500" />
 </p>
 
-<h1 align="center">CodeGraph MCP Engine (v2.2.1)</h1>
+<h1 align="center">CodeGraph MCP Engine (v2.3.0)</h1>
 
 <p align="center">
   <strong>Deterministic Codebase Intelligence for AI Coding Agents.</strong><br>
@@ -10,27 +10,28 @@
 </p>
 
 <p align="center">
-  <a href="https://pypi.org/project/codegraph-engine/2.2.1/"><img src="https://img.shields.io/badge/pypi-codegraph--engine%20v2.2.1-blue.svg" alt="PyPI: codegraph-engine v2.2.1" /></a>
+  <a href="https://pypi.org/project/codegraph-engine/2.3.0/"><img src="https://img.shields.io/badge/pypi-codegraph--engine%20v2.3.0-blue.svg" alt="PyPI: codegraph-engine v2.3.0" /></a>
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/python-3.12%20%7C%203.13-3776AB.svg" alt="Python 3.12 | 3.13" /></a>
-  <a href="src/codegraph/mcp/server.py"><img src="https://img.shields.io/badge/MCP-14%20default%20%7C%2056%20full%20tools-2ea043.svg" alt="MCP Tools: 14 default | 56 full" /></a>
-  <a href="tests/"><img src="https://img.shields.io/badge/pytest-861%20passed-brightgreen.svg" alt="Tests: 861 passed" /></a>
+  <a href="src/codegraph/mcp/server.py"><img src="https://img.shields.io/badge/MCP-14%20default%20%7C%2062%20full%20tools-2ea043.svg" alt="MCP Tools: 14 default | 62 full" /></a>
+  <a href="tests/"><img src="https://img.shields.io/badge/pytest-871%20passed-brightgreen.svg" alt="Tests: 871 passed" /></a>
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/ruff-0%20errors-success.svg" alt="Ruff: 0 errors" /></a>
-  <a href="src/codegraph/"><img src="https://img.shields.io/badge/mypy-0%20issues%20(80%20files)-blue.svg" alt="Mypy: strict" /></a>
+  <a href="src/codegraph/"><img src="https://img.shields.io/badge/mypy-0%20issues%20(87%20files)-blue.svg" alt="Mypy: strict" /></a>
   <a href="https://raghurammrsd.github.io/CODE_GRAPH_MCP/"><img src="https://img.shields.io/badge/docs-GitHub%20Pages-0969da.svg" alt="Documentation: GitHub Pages" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
 </p>
 
 <p align="center">
   <a href="https://raghurammrsd.github.io/CODE_GRAPH_MCP/"><strong>Documentation Site</strong></a> •
-  <a href="https://pypi.org/project/codegraph-engine/2.2.1/"><strong>PyPI Package</strong></a> •
+  <a href="https://pypi.org/project/codegraph-engine/2.3.0/"><strong>PyPI Package</strong></a> •
   <a href="#overview"><strong>Overview</strong></a> •
-  <a href="#1-whats-new-in-v221"><strong>What's New in v2.2.1</strong></a> •
+  <a href="#1-whats-new-in-v230-git-aware-intelligence"><strong>What's New in v2.3.0</strong></a> •
   <a href="#2-quickstart-30-second-setup"><strong>Quickstart</strong></a> •
   <a href="#4-real-world-cli-outputs"><strong>CLI Outputs</strong></a> •
   <a href="#6-database-intelligence"><strong>Database Intelligence</strong></a> •
   <a href="#7-zero-friction-runtime-intelligence--static-reconciliation"><strong>Runtime Evidence</strong></a> •
-  <a href="#9-measured-performance-and-scaling-benchmarks"><strong>Benchmarks</strong></a> •
-  <a href="docs/agent-brain.md"><strong>56-Tool Reference</strong></a> •
+  <a href="#8-git-aware-repository-intelligence"><strong>Git Intelligence</strong></a> •
+  <a href="#10-measured-performance-and-scaling-benchmarks"><strong>Benchmarks</strong></a> •
+  <a href="docs/agent-brain.md"><strong>62-Tool Reference</strong></a> •
   <a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP"><strong>GitHub</strong></a>
 </p>
 
@@ -81,9 +82,24 @@ When AI coding agents (such as Claude Code, Cursor, or Antigravity) explore comp
 
 ---
 
-## 1. What's New in v2.2.1
+## 1. What's New in v2.3.0 (Git-Aware Intelligence)
 
-Version `2.2.1` solves the core operational, concurrency, context saturation, and developer friction bottlenecks in the Agent-MCP ecosystem:
+Version `2.3.0` introduces compiler-grade **Git-Aware Repository Intelligence**, allowing AI agents and CI/CD pipelines to understand how code evolves across branches, commits, and working tree edits:
+
+| Capability | CLI Command | MCP Tool | How It Solves Agent Failure Modes |
+| :--- | :--- | :--- | :--- |
+| **Working-Tree Freshness** | `codegraph git-state` | `get_git_state` | Tracks branch, HEAD vs indexed commit, modified/staged files with sub-millisecond status caching. Surfaces `CLEAN`, `DIRTY`, `STALE`, `REINDEXING`, `ERROR`. |
+| **Structural AST Diff** | `codegraph git-diff [base] [head]` | `compare_git` | Semantic diff across Git revisions: identifies added/removed/modified functions, changed parameter signatures, and affected routes—not merely raw line diffs. |
+| **Deep Impact & Visual Tree** | `codegraph git-impact --tree` | `get_change_impact` | Traverses downstream callers, callees, framework routes, DB writers, and affected test suites with token-bounded ranking and terminal ASCII tree visualization. |
+| **Semantic Merge Conflicts** | `codegraph git-conflicts [base] [head]` | `detect_semantic_conflicts` | Detects silent contract breaks before merge: invoking functions or route handlers that were deleted or modified on the target branch. |
+| **Context Freshness Gate** | `codegraph check-freshness [task]` | `check_context_freshness` | Determines whether previously compiled context remains `VALID`, `PARTIALLY_STALE`, or `STALE` without re-running full graph queries if unrelated files changed. |
+| **Deterministic Symbol History** | `codegraph symbol-history <sym>` | `trace_symbol_history` | Reconstructs the exact commit lifecycle of any symbol (introduced, modified, moved, renamed, or deleted) with confidence labels. |
+
+---
+
+## 1.1 What's New in v2.2.1
+
+Version `2.2.1` introduced runtime telemetry reconciliation, SQLite WAL concurrency, and multi-transport SSE resilience:
 
 | Bottleneck Solved | How It Worked Before | CodeGraph MCP v2.2.1 Solution | Impact |
 | :--- | :--- | :--- | :--- |
@@ -404,6 +420,60 @@ UNRESOLVED_REFERENCE / POSSIBLE_CALLS (status = "UNKNOWN" | "POSSIBLE")
 | **`AMBIGUOUS`** | `AMBIGUOUS` | Multiple symbols or database tables match the bare identifier across modules or dialects; returns sorted `candidates`. |
 | **`UNKNOWN`** | `UNKNOWN`, `RUNTIME_UNOBSERVED` | Target cannot be statically proven (dynamic reflection, external dependency, or `reason="resolution_budget_exceeded"`). |
 | **`CONFLICT`** | Static vs. Runtime / Multi-Source | Static analysis and runtime observation (or competing definitions) disagree. |
+
+---
+
+## 8. Git-Aware Repository Intelligence & Merge Conflict Safety
+
+CodeGraph MCP v2.3.0 tracks the exact evolution of repository code across commits, branches, and working tree changes:
+
+```text
+Repository state
+    ↓
+Git change detection (CLEAN / DIRTY / STALE)
+    ↓
+Structural AST diff (functions, parameters, routes)
+    ↓
+Downstream impact analysis (callers, callees, tests, DB)
+    ↓
+Context freshness validation (VALID / PARTIALLY_STALE / STALE)
+    ↓
+Evidence-backed answer
+```
+
+### 1. Working Tree & Index Freshness (`codegraph git-state`)
+Tracks current branch, current HEAD commit, indexed commit, and modified/staged files with sub-millisecond status caching:
+```bash
+codegraph git-state
+```
+Never silently serves stale repository facts. Explicitly reports `CLEAN`, `DIRTY`, `STALE`, `REINDEXING`, or `ERROR`.
+
+### 2. Deep Visual Downstream Impact Tree (`codegraph git-impact --tree`)
+Traverses affected callers, routes, tests, and DB writers with token-bounded results and visual ASCII hierarchy:
+```bash
+codegraph git-impact --tree
+```
+
+### 3. Semantic & Contract Merge Conflicts (`codegraph git-conflicts`)
+Detects silent merge conflicts before git merge or pull request landing—such as branch A invoking a function or route handler that branch B deleted or altered:
+```bash
+codegraph git-conflicts main HEAD
+```
+
+### 4. Structural AST Diff (`codegraph git-diff`)
+Computes semantic AST differences between Git revisions (added/removed/modified symbols, changed parameter signatures):
+```bash
+codegraph git-diff HEAD~1 HEAD
+```
+
+### 5. Deterministic Symbol History (`codegraph symbol-history`)
+Traces symbol lifecycle across commits (introduced, modified, moved, renamed, or deleted):
+```bash
+codegraph symbol-history resolve_target
+```
+
+### 6. GitHub Action for Pull Request Impact
+Automate change impact directly in your CI pipeline with `.github/workflows/codegraph-pr-impact.yml` and `.github/actions/codegraph-impact/action.yml`.
 
 ---
 

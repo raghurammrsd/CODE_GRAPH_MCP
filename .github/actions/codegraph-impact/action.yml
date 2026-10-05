@@ -1,0 +1,55 @@
+name: 'CodeGraph Impact Analysis'
+description: 'Analyze PR blast radius, affected routes, callers, and tests with deterministic repository intelligence'
+inputs:
+  base-ref:
+    description: 'Base Git revision (e.g. origin/main)'
+    required: false
+    default: 'origin/main'
+  head-ref:
+    description: 'Head Git revision (e.g. HEAD)'
+    required: false
+    default: 'HEAD'
+  fail-on-conflicts:
+    description: 'Fail step if semantic merge conflicts are detected'
+    required: false
+    default: 'false'
+outputs:
+  blast-radius:
+    description: 'Blast radius score (0-100)'
+    value: ${{ steps.analyze.outputs.blast_radius }}
+  total-impacted:
+    description: 'Total number of impacted repository entities'
+    value: ${{ steps.analyze.outputs.total_impacted }}
+  has-conflicts:
+    description: 'Whether semantic merge conflicts were detected'
+    value: ${{ steps.conflicts.outputs.has_conflicts }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run CodeGraph Impact Analysis
+      id: analyze
+      shell: bash
+      run: |
+        echo "Running CodeGraph Deep Change Impact..."
+        IMPACT_JSON=$(codegraph git-impact ${{ inputs.base-ref }} ${{ inputs.head-ref }} --json)
+        SCORE=$(echo "$IMPACT_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin).get('blast_radius_score', 0))")
+        TOTAL=$(echo "$IMPACT_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin).get('total_impacted_count', 0))")
+        echo "blast_radius=$SCORE" >> $GITHUB_OUTPUT
+        echo "total_impacted=$TOTAL" >> $GITHUB_OUTPUT
+        echo "Blast Radius: $SCORE / 100"
+        echo "Total Impacted Entities: $TOTAL"
+
+    - name: Run CodeGraph Semantic Conflict Check
+      id: conflicts
+      shell: bash
+      run: |
+        echo "Checking for semantic merge conflicts..."
+        CONFLICT_JSON=$(codegraph git-conflicts ${{ inputs.base-ref }} ${{ inputs.head-ref }} --json)
+        HAS_CONF=$(echo "$CONFLICT_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin).get('has_conflicts', False))")
+        COUNT=$(echo "$CONFLICT_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin).get('total_conflicts', 0))")
+        echo "has_conflicts=$HAS_CONF" >> $GITHUB_OUTPUT
+        if [ "$HAS_CONF" = "True" ] && [ "${{ inputs.fail-on-conflicts }}" = "true" ]; then
+          echo "::error::Detected $COUNT semantic merge conflict(s) between ${{ inputs.base-ref }} and ${{ inputs.head-ref }}!"
+          exit 1
+        fi

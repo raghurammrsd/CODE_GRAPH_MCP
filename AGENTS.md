@@ -29,7 +29,11 @@ Target environment: `agents`. CodeGraph MCP (`codegraph mcp serve`) provides det
 | **Which HTTP route reaches handler Y?** (`ROUTE_DISCOVERY` / `TRACE`) | `find_routes` / `list_routes` -> `resolve_symbol` -> `trace_path` |
 | **How does this bug / DI chain work?** (`DEBUG`) | `resolve_symbol` -> `get_context(query=..., intent="DEBUG")` |
 | **What tests cover symbol X?** (`TEST_DISCOVERY`) | `find_tests(symbol=...)` or `find_related_tests(symbol=...)` |
-| **What breaks if X or git diff changes?** (`CHANGE_IMPACT`) | `get_git_impact` or `analyze_impact(symbol=...)` -> `find_tests` |
+| **What breaks if X or git diff changes?** (`CHANGE_IMPACT`) | `get_change_impact` or `get_git_impact` -> `find_tests` |
+| **What changed structurally between commits / branches?** (`GIT_DIFF`) | `compare_git(base=..., head=..., branch_comparison=...)` -> `get_change_impact` |
+| **Is repository index up to date with Git?** (`GIT_FRESHNESS`) | `get_git_state()` |
+| **Is my compiled context still valid?** (`CONTEXT_FRESHNESS`) | `check_context_freshness(task=... or context_packet=...)` |
+| **When was symbol X renamed / moved / introduced?** (`SYMBOL_HISTORY`) | `trace_symbol_history(symbol=..., path=...)` |
 | **How are packages / modules structured?** (`ARCHITECTURE` / `PACKAGE`) | `get_architecture()` -> `get_context(query=..., intent="ARCHITECTURE")` |
 | **Which database tables / columns / writers exist?** (`DATABASE`) | `find_db_tables` / `get_db_table` / `find_db_writers` / `get_db_impact` |
 | **What happened at runtime vs static analysis?** (`RUNTIME`) | `get_runtime_trace` -> `reconcile_static_runtime` |

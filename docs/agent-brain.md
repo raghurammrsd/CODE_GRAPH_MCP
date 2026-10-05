@@ -1,8 +1,8 @@
-# CodeGraph Deep Agent Brain & Operating Manual (v2.2.1)
+# CodeGraph Deep Agent Brain & Operating Manual (v2.3.0)
 
 > **Canonical Reference (`docs/agent-brain.md`)**
 > Generated deterministically from `src/codegraph/agent_capabilities.py`, `src/codegraph/evidence_contract.py`, `src/codegraph/retrieval_policy.py`, and `src/codegraph/mcp/server.py`.
-> Package: `codegraph-engine` (`v2.2.1`) | CLI: `codegraph` | MCP Command: `codegraph mcp serve`
+> Package: `codegraph-engine` (`v2.3.0`) | CLI: `codegraph` | MCP Command: `codegraph mcp serve`
 
 ---
 
@@ -695,7 +695,7 @@ CodeGraph classifies developer requests into 13 canonical `AgentTaskCategory` va
 | `RELATIONSHIP` | `True` | `get_callers` | `resolve_symbol` -> `get_callers` | Use find_callers/get_callers, find_callees/get_callees, or find_references/get_references to retrieve AST/framework-verified relationships. |
 | `TRACE` | `True` | `trace_path` | `list_routes` -> `resolve_symbol` -> `trace_path` | Use trace_path (or find_routes/list_routes -> resolve_symbol -> trace_path) to prove multi-hop execution chains. |
 | `DEBUG` | `True` | `get_context` | `resolve_symbol` -> `get_context` | Use get_context (intent='DEBUG') to gather target, callers, callees, DI providers, and related tests in one bounded packet. |
-| `CHANGE_IMPACT` | `True` | `get_git_impact` | `resolve_symbol` -> `get_git_impact` | Use get_git_impact or analyze_impact to deterministically compute affected callers, packages, and tests. |
+| `CHANGE_IMPACT` | `True` | `get_git_impact` | `get_git_state` -> `compare_git` -> `get_change_impact` | Use get_git_state, compare_git, and get_change_impact to deterministically compute structural diffs, affected callers, routes, packages, and tests. |
 | `TEST_DISCOVERY` | `True` | `find_related_tests` | `resolve_symbol` -> `find_related_tests` | Use find_tests/find_related_tests or get_context(intent='TEST') to locate statically linked test functions. |
 | `ROUTE_DISCOVERY` | `True` | `list_routes` | `list_routes` -> `resolve_symbol` | Use find_routes/list_routes to discover HTTP endpoints, mounted router prefixes, and handler symbols. |
 | `DIAGNOSTIC` | `True` | `get_repository_status` | `get_repository_status` | Use get_repository_status to check index freshness, symbol counts, and database health. |
@@ -1087,7 +1087,7 @@ CodeGraph supports six deterministic tool profiles (`codegraph mcp serve --profi
 | `graph` | `17` | Tracing, change-impact, test discovery, and architecture sessions | `analyze_impact`, `find_related_tests`, `get_architecture`, `get_call_graph`, `get_callees`, `get_callers`, `get_context`, `get_dependents`, `get_file`, `get_git_impact`, `get_imports`, `get_references`, `get_symbol`, `list_routes`, `resolve_symbol`, `search_symbols`, `trace_path` |
 | `minimal` | `21` | Context-heavy coding sessions needing core interrogation plus get_context and read_file | `compile_task`, `find_symbol`, `get_architecture`, `get_callees`, `get_callers`, `get_context`, `get_dependents`, `get_file`, `get_git_impact`, `get_imports`, `get_references`, `get_repository_status`, `get_resource_status`, `get_symbol`, `list_routes`, `read_file`, `resolve_symbol`, `search_code`, `search_symbols`, `trace_path`, `verify_evidence` |
 | `developer` | `34` | Full interactive development with impact analysis, test linking, and git history | `analyze_change_impact`, `analyze_impact`, `compile_task`, `find_callees`, `find_callers`, `find_references`, `find_related_tests`, `find_symbol`, `get_architecture`, `get_call_graph`, `get_callees`, `get_callers`, `get_context`, `get_dependents`, `get_evidence`, `get_file`, `get_file_history`, `get_git_impact`, `get_graph`, `get_imports`, `get_recent_changes`, `get_references`, `get_repository_status`, `get_resource_status`, `get_symbol`, `list_routes`, `plan_retrieval`, `read_file`, `resolve_symbol`, `search_code`, `search_symbols`, `trace_call`, `trace_path`, `verify_evidence` |
-| `full` | `56` | Complete diagnostic, database intelligence, runtime reconciliation, benchmark, and repository administration sessions | `analyze_change_impact`, `analyze_impact`, `compile_task`, `find_callees`, `find_callers`, `find_db_callers`, `find_db_columns`, `find_db_models`, `find_db_queries`, `find_db_readers`, `find_db_relationships`, `find_db_tables`, `find_db_writers`, `find_references`, `find_related_tests`, `find_routes`, `find_symbol`, `find_tests`, `get_architecture`, `get_call_graph`, `get_callees`, `get_callers`, `get_context`, `get_db_impact`, `get_db_schema`, `get_db_table`, `get_dependencies`, `get_dependency_graph`, `get_dependents`, `get_evidence`, `get_file`, `get_file_history`, `get_file_symbols`, `get_git_impact`, `get_graph`, `get_imports`, `get_project_structure`, `get_recent_changes`, `get_references`, `get_repository_status`, `get_resource_status`, `get_runtime_trace`, `get_symbol`, `ingest_runtime_traces`, `list_routes`, `plan_retrieval`, `read_file`, `reconcile_static_runtime`, `resolve_symbol`, `search_code`, `search_memory`, `search_symbols`, `trace_call`, `trace_flow`, `trace_path`, `verify_evidence` |
+| `full` | `62` | Complete diagnostic, database intelligence, runtime reconciliation, benchmark, and repository administration sessions | `analyze_change_impact`, `analyze_impact`, `check_context_freshness`, `compare_git`, `compile_task`, `detect_semantic_conflicts`, `find_callees`, `find_callers`, `find_db_callers`, `find_db_columns`, `find_db_models`, `find_db_queries`, `find_db_readers`, `find_db_relationships`, `find_db_tables`, `find_db_writers`, `find_references`, `find_related_tests`, `find_routes`, `find_symbol`, `find_tests`, `get_architecture`, `get_call_graph`, `get_callees`, `get_callers`, `get_change_impact`, `get_context`, `get_db_impact`, `get_db_schema`, `get_db_table`, `get_dependencies`, `get_dependency_graph`, `get_dependents`, `get_evidence`, `get_file`, `get_file_history`, `get_file_symbols`, `get_git_impact`, `get_git_state`, `get_graph`, `get_imports`, `get_project_structure`, `get_recent_changes`, `get_references`, `get_repository_status`, `get_resource_status`, `get_runtime_trace`, `get_symbol`, `ingest_runtime_traces`, `list_routes`, `plan_retrieval`, `read_file`, `reconcile_static_runtime`, `resolve_symbol`, `search_code`, `search_memory`, `search_symbols`, `trace_call`, `trace_flow`, `trace_path`, `trace_symbol_history`, `verify_evidence` |
 
 ---
 
@@ -1480,7 +1480,7 @@ Every tool chain has an explicit **STOP condition**:
 
 ---
 
-## 41. Complete Tool Reference (All 56 Exposed MCP Tools)
+## 41. Complete Tool Reference (All 62 Exposed MCP Tools)
 
 ### `analyze_change_impact`
 
@@ -1588,6 +1588,112 @@ find_related_tests or read_file on direct_callers
 - **Call**: `analyze_impact(symbol="DatabasePool.acquire", max_depth=3)`
 - **Interpretation**: Review direct_callers, transitive_callers, affected_routes, and related_tests.
 
+### `check_context_freshness`
+
+- **Capability**: `context_freshness_validation`
+- **Profiles**: `full`
+- **Task Categories**: `DIAGNOSTIC`, `CHANGE_IMPACT`
+
+#### Purpose
+Validate whether a previously compiled context packet or task context is still VALID, PARTIALLY_STALE, or STALE. Guarantees that changes to unrelated files keep context VALID. Use when checking if previously compiled context remains valid after edits. Does not invalidate context when only unrelated files change.
+
+#### Use when
+- Checking if previously cached or generated AI context packet is still safe to use after editing files
+
+#### Avoid when
+- Compiling brand-new context from scratch for an initial prompt
+
+#### Required inputs
+None
+
+#### Optional inputs
+`task`, `context_packet`
+
+#### Minimal invocation
+```python
+check_context_freshness(task="Fix auth timeout")
+```
+
+#### Advanced invocation
+```python
+check_context_freshness(context_packet=my_packet)
+```
+
+#### Result interpretation
+- **Output Type**: `ContextFreshnessResult`
+- **Key Fields**: `status`, `base_commit`, `current_head`, `repository_dirty`, `context_files`, `changed_relevant_files`, `unrelated_changed_files`, `invalidated_symbols`, `reason`, `recommended_action`
+- **Relationships Emitted**: None (non-edge output)
+
+#### Evidence meaning
+Intersection of Git diff line/file changes against exact symbol and file references in context packet.
+
+#### Non-guarantees
+Does not recompile context; reports freshness validity and recommended action.
+
+#### Typical follow-up
+get_context if status is STALE or PARTIALLY_STALE
+
+#### Common mistakes
+- Assuming any file change invalidates context; unrelated changes leave context VALID
+
+#### Example
+- **Developer request**: "Is my current context packet still valid after my recent git modifications?"
+- **Call**: `check_context_freshness(task="Fix auth timeout")`
+- **Interpretation**: Inspect status: VALID means safe to proceed, STALE means recompile required.
+
+### `compare_git`
+
+- **Capability**: `structural_git_diff`
+- **Profiles**: `full`
+- **Task Categories**: `CHANGE_IMPACT`, `ARCHITECTURE`
+
+#### Purpose
+Compare two Git revisions, commits, or branches structurally. Detects added/deleted/modified/renamed files, AST symbol changes, relationship diffs, routes, and affected tests. Use when comparing branches or commits structurally. Does not execute repository code.
+
+#### Use when
+- Understanding structural changes between two branches or commits without parsing raw diff text
+
+#### Avoid when
+- You only need high-level commit log summaries without AST symbol diffs
+
+#### Required inputs
+None
+
+#### Optional inputs
+`base`, `head`, `branch_comparison`
+
+#### Minimal invocation
+```python
+compare_git(base="HEAD~1", head="HEAD")
+```
+
+#### Advanced invocation
+```python
+compare_git(base="main", head="my-feature", branch_comparison=True)
+```
+
+#### Result interpretation
+- **Output Type**: `StructuralDiffResult`
+- **Key Fields**: `base_ref`, `head_ref`, `added_files`, `deleted_files`, `modified_files`, `renamed_files`, `added_symbols`, `removed_symbols`, `changed_symbols`, `changed_routes`, `affected_tests`
+- **Relationships Emitted**: `CALLS`, `IMPORTS`, `ROUTES_TO`, `TESTS`
+
+#### Evidence meaning
+AST parsing of before/after revisions with exact file:line citations and similarity scores.
+
+#### Non-guarantees
+Does not execute code or run test assertions.
+
+#### Typical follow-up
+get_change_impact to find downstream callers of changed symbols
+
+#### Common mistakes
+- Expecting compare_git to format unified diff text; it outputs AST and structural symbol objects
+
+#### Example
+- **Developer request**: "What symbols, routes, and tests changed structurally between main and this branch?"
+- **Call**: `compare_git(base="main", head="HEAD", branch_comparison=True)`
+- **Interpretation**: Inspect packages, modules, changed_symbols, and changed_routes.
+
 ### `compile_task`
 
 - **Capability**: `task_normalization_and_planning`
@@ -1640,6 +1746,60 @@ get_context(query=..., plan=retrieval_plan)
 - **Developer request**: "Compile a retrieval plan for debugging AuthService."
 - **Call**: `compile_task(query="Debug AuthService")`
 - **Interpretation**: Check ambiguities and entry_points, then pass the query or plan to get_context.
+
+### `detect_semantic_conflicts`
+
+- **Capability**: `semantic_merge_conflict_detection`
+- **Profiles**: `full`
+- **Task Categories**: `CHANGE_IMPACT`, `ARCHITECTURE`, `DEBUG`
+
+#### Purpose
+Detect semantic and contract conflicts between Git branches (calling deleted symbols, broken call signatures, or missing route handlers). Use when verifying whether branches can be safely merged without semantic breakage. Does not report false conflicts when branches are structurally compatible.
+
+#### Use when
+- Checking if a feature branch introduces calls to symbols deleted or modified on main
+- Pre-merge validation before merging PRs to prevent semantic regression
+
+#### Avoid when
+- Branches are known to be identical or when checking working tree cleanliness
+
+#### Required inputs
+None
+
+#### Optional inputs
+`base_branch`, `head_branch`
+
+#### Minimal invocation
+```python
+detect_semantic_conflicts(base_branch="main", head_branch="feature")
+```
+
+#### Advanced invocation
+```python
+detect_semantic_conflicts(base_branch="main", head_branch="HEAD")
+```
+
+#### Result interpretation
+- **Output Type**: `SemanticConflictResult`
+- **Key Fields**: `base_branch`, `head_branch`, `has_conflicts`, `total_conflicts`, `conflicts`, `summary`
+- **Relationships Emitted**: `CALLS`, `IMPORTS`, `ROUTES_TO`
+
+#### Evidence meaning
+Deterministic cross-branch AST call-site and definition verification.
+
+#### Non-guarantees
+Does not execute code; reports contract incompatibility between revisions.
+
+#### Typical follow-up
+get_file or get_symbol on conflicted symbols
+
+#### Common mistakes
+- Assuming Git text merge passes mean no semantic conflicts; semantic conflicts occur even with 0 text conflicts
+
+#### Example
+- **Developer request**: "Are there any semantic merge conflicts between main and this branch?"
+- **Call**: `detect_semantic_conflicts(base_branch="main", head_branch="HEAD")`
+- **Interpretation**: Inspect has_conflicts and conflicts list for DELETED_SYMBOL_REFERENCED or CALL_SIGNATURE_MISMATCH.
 
 ### `find_callees`
 
@@ -2654,6 +2814,59 @@ stop if callers list answers the question, or read_file on specific call sites
 - **Call**: `get_callers(symbol="verify_password")`
 - **Interpretation**: Inspect callers list; verified callers carry relationship='CALLS' and evidence_class='AST_VERIFIED' or 'DATAFLOW_VERIFIED'.
 
+### `get_change_impact`
+
+- **Capability**: `deep_change_impact_analysis`
+- **Profiles**: `full`
+- **Task Categories**: `CHANGE_IMPACT`, `TEST_DISCOVERY`, `DEBUG`
+
+#### Purpose
+Compute deep downstream change impact across callers, callees, framework routes, covering tests, mutating database queries, and monorepo packages. Returns ranked entities with explicit confidence (FACT, POSSIBLE, UNKNOWN) and blast radius score. Use when evaluating ripple effects of git commits. Does not execute repository test suites.
+
+#### Use when
+- Evaluating what code, routes, database writes, and tests will break if git changes are merged
+
+#### Avoid when
+- No git changes exist and you are analyzing a single untouched function
+
+#### Required inputs
+None
+
+#### Optional inputs
+`base`, `head`, `max_depth`, `max_results`
+
+#### Minimal invocation
+```python
+get_change_impact()
+```
+
+#### Advanced invocation
+```python
+get_change_impact(base="HEAD~3", head="HEAD", max_depth=2, max_results=50)
+```
+
+#### Result interpretation
+- **Output Type**: `DeepImpactResult`
+- **Key Fields**: `base_ref`, `head_ref`, `changed_files`, `changed_symbols`, `direct_callers`, `transitive_callers`, `affected_routes`, `affected_tests`, `db_writers`, `blast_radius_score`
+- **Relationships Emitted**: `CALLS`, `CALLED_BY`, `ROUTES_TO`, `TESTS`, `WRITES_TABLE`, `READS_TABLE`, `DEPENDS_ON`
+
+#### Evidence meaning
+Complete graph traversal connecting modified AST symbols to callers, routes, tests, and DB queries.
+
+#### Non-guarantees
+Does not prove runtime execution frequencies; reports static graph reachability.
+
+#### Typical follow-up
+find_tests or get_file on affected_routes / direct_callers
+
+#### Common mistakes
+- Relying solely on textual search instead of graph reachability for blast radius analysis
+
+#### Example
+- **Developer request**: "What is the blast radius and which routes, callers, and tests are affected by my branch?"
+- **Call**: `get_change_impact(base="HEAD~1", head="HEAD")`
+- **Interpretation**: Inspect blast_radius_score, direct_callers, affected_routes, and affected_tests.
+
 ### `get_context`
 
 - **Capability**: `bounded_repository_context`
@@ -3292,6 +3505,59 @@ find_tests or get_file on modified symbols
 - **Developer request**: "What symbols, packages, and tests are impacted by the latest commit?"
 - **Call**: `get_git_impact(base="HEAD~1", head="HEAD")`
 - **Interpretation**: Inspect modified_symbols, impacted_callers, affected_packages, and related_tests.
+
+### `get_git_state`
+
+- **Capability**: `git_state_tracking`
+- **Profiles**: `full`
+- **Task Categories**: `DIAGNOSTIC`, `CHANGE_IMPACT`
+
+#### Purpose
+Track current Git branch, HEAD commit, indexed commit, working tree modifications, staged files, and explicit freshness states (CLEAN, DIRTY, STALE, REINDEXING, ERROR). Use when asking if the index is up to date, which files changed, or what git branch is active. Does not perform a full repository scan when an incremental update is safe.
+
+#### Use when
+- Checking if repository has uncommitted changes or if re-indexing is required after pulling git commits
+
+#### Avoid when
+- You need symbol-level blast radius rather than repository freshness status
+
+#### Required inputs
+None
+
+#### Optional inputs
+None
+
+#### Minimal invocation
+```python
+get_git_state()
+```
+
+#### Advanced invocation
+```python
+get_git_state()
+```
+
+#### Result interpretation
+- **Output Type**: `GitStateReport`
+- **Key Fields**: `is_git`, `branch`, `current_head`, `indexed_head`, `freshness`, `working_tree`, `reindex_required`, `detail`
+- **Relationships Emitted**: None (non-edge output)
+
+#### Evidence meaning
+Deterministic Git rev-parse and status porcelain v1 inspection.
+
+#### Non-guarantees
+Does not prove semantic impact; reports file-level and commit-level freshness.
+
+#### Typical follow-up
+compare_git or get_change_impact if files were modified
+
+#### Common mistakes
+- Assuming CLEAN means all tests pass; CLEAN only indicates index matches working tree and HEAD
+
+#### Example
+- **Developer request**: "Is my CodeGraph index currently up to date with Git HEAD?"
+- **Call**: `get_git_state()`
+- **Interpretation**: Inspect freshness (CLEAN, DIRTY, or STALE) and working_tree.modified_files.
 
 ### `get_graph`
 
@@ -4418,6 +4684,59 @@ get_file on specific hop lines if branch logic must be verified
 - **Developer request**: "How does login_endpoint reach UserRepository.find_by_email?"
 - **Call**: `trace_path(from_symbol="login_endpoint", to_symbol="find_by_email", max_depth=4)`
 - **Interpretation**: Inspect the ordered hops in path/paths and verify each hop's relationship and evidence_class.
+
+### `trace_symbol_history`
+
+- **Capability**: `symbol_history_tracing`
+- **Profiles**: `full`
+- **Task Categories**: `SYMBOL_LOOKUP`, `CHANGE_IMPACT`
+
+#### Purpose
+Trace deterministic symbol evolution across Git history: introduced, modified, moved across files, renamed, or deleted. Uses AST structure and body hashes to differentiate FACT from POSSIBLE/AMBIGUOUS renames. Use when discovering when a symbol was added, moved, or renamed. Does not guess ambiguous renames without evidence.
+
+#### Use when
+- Tracing when a function was introduced, modified, moved to a different module, or renamed
+
+#### Avoid when
+- You only need current static callers and callees in the working tree
+
+#### Required inputs
+`symbol`
+
+#### Optional inputs
+`path`, `max_commits`
+
+#### Minimal invocation
+```python
+trace_symbol_history(symbol="AuthService")
+```
+
+#### Advanced invocation
+```python
+trace_symbol_history(symbol="AuthService", path="src/auth.py", max_commits=20)
+```
+
+#### Result interpretation
+- **Output Type**: `SymbolHistoryResult`
+- **Key Fields**: `symbol`, `current_path`, `events`, `total_commits_evaluated`, `status`, `detail`
+- **Relationships Emitted**: None (non-edge output)
+
+#### Evidence meaning
+Git log history correlated with AST body hashes and file rename metadata.
+
+#### Non-guarantees
+Does not guarantee intent behind refactors; reports structural code evolution.
+
+#### Typical follow-up
+get_symbol or get_file on historical commit
+
+#### Common mistakes
+- Assuming all renames are FACT; ambiguous renames are explicitly flagged as AMBIGUOUS or POSSIBLE
+
+#### Example
+- **Developer request**: "Trace the history and renames of AuthService across git commits."
+- **Call**: `trace_symbol_history(symbol="AuthService")`
+- **Interpretation**: Inspect events list for INTRODUCED, MODIFIED, MOVED, or RENAMED occurrences.
 
 ### `verify_evidence`
 

@@ -956,6 +956,65 @@ def create_server(
         with indexer.session() as con:
             return runtime_reconcile_static_runtime(con, indexer.repository, symbol=symbol, route=route, table=table)
 
+    # -----------------------------------------------------------------------
+    # Git Intelligence Tools (5 Unified Capabilities)
+    # -----------------------------------------------------------------------
+
+    def get_git_state() -> dict[str, Any]:
+        """Track current branch, HEAD, indexed HEAD, working-tree modifications, staged files, and explicit freshness states (CLEAN, DIRTY, STALE, REINDEXING, ERROR). Use when asking if the index is up to date or what uncommitted changes exist. Does not perform a full repository scan when an incremental update is safe."""
+        from codegraph.git_state import get_git_state as impl_get_git_state
+        with indexer.session() as con:
+            return impl_get_git_state(indexer.repository, con=con).as_dict()
+
+    def compare_git(base: str = "HEAD~1", head: str = "HEAD", branch_comparison: bool = False) -> dict[str, Any]:
+        """Compare two Git revisions, commits, or branches structurally. Detects added/deleted/modified/renamed files, AST symbol changes, relationship diffs, routes, and affected tests. Use when comparing branches or commits structurally. Does not execute repository code."""
+        if branch_comparison:
+            from codegraph.branch_comparison import compare_branch_architecture
+            with indexer.session() as con:
+                return compare_branch_architecture(indexer.repository, base_branch=base, head_branch=head, con=con).as_dict()
+        else:
+            from codegraph.structural_diff import compare_revisions
+            with indexer.session() as con:
+                return compare_revisions(indexer.repository, base=base, head=head, con=con).as_dict()
+
+    def get_change_impact(base: str = "HEAD~1", head: str = "HEAD", max_depth: int = 2, max_results: int = 50) -> dict[str, Any]:
+        """Compute deep downstream change impact across callers, callees, framework routes, covering tests, mutating database queries, and monorepo packages. Use when analyzing blast radius and ripple effects of git commits. Does not assume unobserved runtime paths are impossible."""
+        from codegraph.change_impact import get_deep_change_impact
+        with indexer.session() as con:
+            return get_deep_change_impact(indexer.repository, con, base=base, head=head, max_depth=max_depth, max_results=max_results).as_dict()
+
+    def check_context_freshness(task: str = "", context_packet: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Validate whether a previously compiled context packet or task context is still VALID, PARTIALLY_STALE, or STALE. Use when checking if cached context is valid after edits. Does not invalidate context when only unrelated files change."""
+        from codegraph.context_freshness import (
+            check_context_freshness as impl_check_context_freshness,
+        )
+        with indexer.session() as con:
+            target_packet = context_packet
+            if target_packet is None and task:
+                from codegraph.context import get_context as ctx_compile
+                target_packet = ctx_compile(con, indexer.repository, task, mode="FAST").model_dump()
+            if target_packet is None:
+                return {
+                    "status": "UNKNOWN",
+                    "reason": "Neither context_packet nor task prompt was provided.",
+                    "recommended_action": "RECOMPILE_CONTEXT",
+                }
+            return impl_check_context_freshness(target_packet, indexer.repository, con=con).as_dict()
+
+    def trace_symbol_history(symbol: str, path: str = "", max_commits: int = 15) -> dict[str, Any]:
+        """Trace deterministic symbol evolution across Git history: introduced, modified, moved across files, renamed, or deleted. Use when discovering when a symbol was added, moved, or renamed. Does not guess ambiguous renames without evidence."""
+        from codegraph.symbol_history import trace_symbol_history as impl_trace_symbol_history
+        with indexer.session() as con:
+            return impl_trace_symbol_history(indexer.repository, symbol=symbol, path=path or None, con=con, max_commits=max_commits).as_dict()
+
+    def detect_semantic_conflicts(base_branch: str = "main", head_branch: str = "HEAD") -> dict[str, Any]:
+        """Detect semantic and contract conflicts between Git branches (calling deleted symbols, broken call signatures, or missing route handlers). Use when verifying whether branches can be safely merged without semantic breakage. Does not report false conflicts when branches are compatible."""
+        from codegraph.semantic_conflicts import (
+            detect_semantic_conflicts as impl_detect_semantic_conflicts,
+        )
+        with indexer.session() as con:
+            return impl_detect_semantic_conflicts(indexer.repository, base_branch=base_branch, head_branch=head_branch, con=con).as_dict()
+
     core_tools: dict[str, Any] = {
         "resolve_symbol": resolve_symbol,
         "search_symbols": search_symbols,
@@ -972,9 +1031,19 @@ def create_server(
         "get_git_impact": get_git_impact,
     }
 
+    git_intelligence_tools: dict[str, Any] = {
+        "get_git_state": get_git_state,
+        "compare_git": compare_git,
+        "get_change_impact": get_change_impact,
+        "check_context_freshness": check_context_freshness,
+        "trace_symbol_history": trace_symbol_history,
+        "detect_semantic_conflicts": detect_semantic_conflicts,
+    }
+
     # Map of all available tools
     all_tools: dict[str, Any] = {
         **core_tools,
+        **git_intelligence_tools,
         "search_code": search_code,
         "read_file": read_file,
         "find_symbol": find_symbol,

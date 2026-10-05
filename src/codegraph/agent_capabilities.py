@@ -152,6 +152,12 @@ ROUTING_MANIFEST: dict[str, str] = {
     "runtime_ingest": "ingest_runtime_traces",
     "runtime_trace": "get_runtime_trace",
     "runtime_reconcile": "reconcile_static_runtime",
+    "git_state": "get_git_state",
+    "git_diff": "compare_git",
+    "change_impact_deep": "get_change_impact",
+    "context_freshness": "check_context_freshness",
+    "symbol_history": "trace_symbol_history",
+    "semantic_conflicts": "detect_semantic_conflicts",
 }
 
 DEFAULT_AGENT_PROFILE_TOOLS: tuple[str, ...] = (
@@ -2390,6 +2396,235 @@ TOOL_CAPABILITY_REGISTRY: tuple[ToolCapabilitySpec, ...] = (
         example_call='reconcile_static_runtime(route="/api/scan-bill")',
         example_interpretation="Inspect confirmed_runtime_paths, static_runtime_conflicts, not_observed_at_runtime, and runtime_only_observed.",
     ),
+    # 57. get_git_state
+    ToolCapabilitySpec(
+        tool_name="get_git_state",
+        capability="git_state_tracking",
+        description=(
+            "Track current Git branch, HEAD commit, indexed commit, working tree modifications, staged files, and explicit freshness states (CLEAN, DIRTY, STALE, REINDEXING, ERROR). "
+            "Use when asking if the index is up to date, which files changed, or what git branch is active. "
+            "Does not perform a full repository scan when an incremental update is safe."
+        ),
+        task_types=(
+            AgentTaskCategory.DIAGNOSTIC.value,
+            AgentTaskCategory.CHANGE_IMPACT.value,
+        ),
+        required_inputs=(),
+        optional_inputs=(),
+        expected_output_type="GitStateReport",
+        relationship_types_returned=(),
+        evidence_guarantees="Deterministic Git rev-parse and status porcelain v1 inspection.",
+        does_not_prove="Does not prove semantic impact; reports file-level and commit-level freshness.",
+        useful_situations=(
+            "Checking if repository has uncommitted changes or if re-indexing is required after pulling git commits",
+        ),
+        avoid_when=(
+            "You need symbol-level blast radius rather than repository freshness status",
+        ),
+        profiles=("full",),
+        minimal_invocation="get_git_state()",
+        advanced_invocation="get_git_state()",
+        result_fields=("is_git", "branch", "current_head", "indexed_head", "freshness", "working_tree", "reindex_required", "detail"),
+        typical_followup="compare_git or get_change_impact if files were modified",
+        common_mistakes=(
+            "Assuming CLEAN means all tests pass; CLEAN only indicates index matches working tree and HEAD",
+        ),
+        example_request="Is my CodeGraph index currently up to date with Git HEAD?",
+        example_call="get_git_state()",
+        example_interpretation="Inspect freshness (CLEAN, DIRTY, or STALE) and working_tree.modified_files.",
+    ),
+    # 58. compare_git
+    ToolCapabilitySpec(
+        tool_name="compare_git",
+        capability="structural_git_diff",
+        description=(
+            "Compare two Git revisions, commits, or branches structurally. "
+            "Detects added/deleted/modified/renamed files, AST symbol changes, relationship diffs, routes, and affected tests. "
+            "Use when comparing branches or commits structurally. "
+            "Does not execute repository code."
+        ),
+        task_types=(
+            AgentTaskCategory.CHANGE_IMPACT.value,
+            AgentTaskCategory.ARCHITECTURE.value,
+        ),
+        required_inputs=(),
+        optional_inputs=("base", "head", "branch_comparison"),
+        expected_output_type="StructuralDiffResult",
+        relationship_types_returned=("CALLS", "IMPORTS", "ROUTES_TO", "TESTS"),
+        evidence_guarantees="AST parsing of before/after revisions with exact file:line citations and similarity scores.",
+        does_not_prove="Does not execute code or run test assertions.",
+        useful_situations=(
+            "Understanding structural changes between two branches or commits without parsing raw diff text",
+        ),
+        avoid_when=(
+            "You only need high-level commit log summaries without AST symbol diffs",
+        ),
+        profiles=("full",),
+        minimal_invocation='compare_git(base="HEAD~1", head="HEAD")',
+        advanced_invocation='compare_git(base="main", head="my-feature", branch_comparison=True)',
+        result_fields=("base_ref", "head_ref", "added_files", "deleted_files", "modified_files", "renamed_files", "added_symbols", "removed_symbols", "changed_symbols", "changed_routes", "affected_tests"),
+        typical_followup="get_change_impact to find downstream callers of changed symbols",
+        common_mistakes=(
+            "Expecting compare_git to format unified diff text; it outputs AST and structural symbol objects",
+        ),
+        example_request="What symbols, routes, and tests changed structurally between main and this branch?",
+        example_call='compare_git(base="main", head="HEAD", branch_comparison=True)',
+        example_interpretation="Inspect packages, modules, changed_symbols, and changed_routes.",
+    ),
+    # 59. get_change_impact
+    ToolCapabilitySpec(
+        tool_name="get_change_impact",
+        capability="deep_change_impact_analysis",
+        description=(
+            "Compute deep downstream change impact across callers, callees, framework routes, covering tests, mutating database queries, and monorepo packages. "
+            "Returns ranked entities with explicit confidence (FACT, POSSIBLE, UNKNOWN) and blast radius score. "
+            "Use when evaluating ripple effects of git commits. "
+            "Does not execute repository test suites."
+        ),
+        task_types=(
+            AgentTaskCategory.CHANGE_IMPACT.value,
+            AgentTaskCategory.TEST_DISCOVERY.value,
+            AgentTaskCategory.DEBUG.value,
+        ),
+        required_inputs=(),
+        optional_inputs=("base", "head", "max_depth", "max_results"),
+        expected_output_type="DeepImpactResult",
+        relationship_types_returned=("CALLS", "CALLED_BY", "ROUTES_TO", "TESTS", "WRITES_TABLE", "READS_TABLE", "DEPENDS_ON"),
+        evidence_guarantees="Complete graph traversal connecting modified AST symbols to callers, routes, tests, and DB queries.",
+        does_not_prove="Does not prove runtime execution frequencies; reports static graph reachability.",
+        useful_situations=(
+            "Evaluating what code, routes, database writes, and tests will break if git changes are merged",
+        ),
+        avoid_when=(
+            "No git changes exist and you are analyzing a single untouched function",
+        ),
+        profiles=("full",),
+        minimal_invocation="get_change_impact()",
+        advanced_invocation='get_change_impact(base="HEAD~3", head="HEAD", max_depth=2, max_results=50)',
+        result_fields=("base_ref", "head_ref", "changed_files", "changed_symbols", "direct_callers", "transitive_callers", "affected_routes", "affected_tests", "db_writers", "blast_radius_score"),
+        typical_followup="find_tests or get_file on affected_routes / direct_callers",
+        common_mistakes=(
+            "Relying solely on textual search instead of graph reachability for blast radius analysis",
+        ),
+        example_request="What is the blast radius and which routes, callers, and tests are affected by my branch?",
+        example_call='get_change_impact(base="HEAD~1", head="HEAD")',
+        example_interpretation="Inspect blast_radius_score, direct_callers, affected_routes, and affected_tests.",
+    ),
+    # 60. check_context_freshness
+    ToolCapabilitySpec(
+        tool_name="check_context_freshness",
+        capability="context_freshness_validation",
+        description=(
+            "Validate whether a previously compiled context packet or task context is still VALID, PARTIALLY_STALE, or STALE. "
+            "Guarantees that changes to unrelated files keep context VALID. "
+            "Use when checking if previously compiled context remains valid after edits. "
+            "Does not invalidate context when only unrelated files change."
+        ),
+        task_types=(
+            AgentTaskCategory.DIAGNOSTIC.value,
+            AgentTaskCategory.CHANGE_IMPACT.value,
+        ),
+        required_inputs=(),
+        optional_inputs=("task", "context_packet"),
+        expected_output_type="ContextFreshnessResult",
+        relationship_types_returned=(),
+        evidence_guarantees="Intersection of Git diff line/file changes against exact symbol and file references in context packet.",
+        does_not_prove="Does not recompile context; reports freshness validity and recommended action.",
+        useful_situations=(
+            "Checking if previously cached or generated AI context packet is still safe to use after editing files",
+        ),
+        avoid_when=(
+            "Compiling brand-new context from scratch for an initial prompt",
+        ),
+        profiles=("full",),
+        minimal_invocation='check_context_freshness(task="Fix auth timeout")',
+        advanced_invocation="check_context_freshness(context_packet=my_packet)",
+        result_fields=("status", "base_commit", "current_head", "repository_dirty", "context_files", "changed_relevant_files", "unrelated_changed_files", "invalidated_symbols", "reason", "recommended_action"),
+        typical_followup="get_context if status is STALE or PARTIALLY_STALE",
+        common_mistakes=(
+            "Assuming any file change invalidates context; unrelated changes leave context VALID",
+        ),
+        example_request="Is my current context packet still valid after my recent git modifications?",
+        example_call='check_context_freshness(task="Fix auth timeout")',
+        example_interpretation="Inspect status: VALID means safe to proceed, STALE means recompile required.",
+    ),
+    # 61. trace_symbol_history
+    ToolCapabilitySpec(
+        tool_name="trace_symbol_history",
+        capability="symbol_history_tracing",
+        description=(
+            "Trace deterministic symbol evolution across Git history: introduced, modified, moved across files, renamed, or deleted. "
+            "Uses AST structure and body hashes to differentiate FACT from POSSIBLE/AMBIGUOUS renames. "
+            "Use when discovering when a symbol was added, moved, or renamed. "
+            "Does not guess ambiguous renames without evidence."
+        ),
+        task_types=(
+            AgentTaskCategory.SYMBOL_LOOKUP.value,
+            AgentTaskCategory.CHANGE_IMPACT.value,
+        ),
+        required_inputs=("symbol",),
+        optional_inputs=("path", "max_commits"),
+        expected_output_type="SymbolHistoryResult",
+        relationship_types_returned=(),
+        evidence_guarantees="Git log history correlated with AST body hashes and file rename metadata.",
+        does_not_prove="Does not guarantee intent behind refactors; reports structural code evolution.",
+        useful_situations=(
+            "Tracing when a function was introduced, modified, moved to a different module, or renamed",
+        ),
+        avoid_when=(
+            "You only need current static callers and callees in the working tree",
+        ),
+        profiles=("full",),
+        minimal_invocation='trace_symbol_history(symbol="AuthService")',
+        advanced_invocation='trace_symbol_history(symbol="AuthService", path="src/auth.py", max_commits=20)',
+        result_fields=("symbol", "current_path", "events", "total_commits_evaluated", "status", "detail"),
+        typical_followup="get_symbol or get_file on historical commit",
+        common_mistakes=(
+            "Assuming all renames are FACT; ambiguous renames are explicitly flagged as AMBIGUOUS or POSSIBLE",
+        ),
+        example_request="Trace the history and renames of AuthService across git commits.",
+        example_call='trace_symbol_history(symbol="AuthService")',
+        example_interpretation="Inspect events list for INTRODUCED, MODIFIED, MOVED, or RENAMED occurrences.",
+    ),
+    # 62. detect_semantic_conflicts
+    ToolCapabilitySpec(
+        tool_name="detect_semantic_conflicts",
+        capability="semantic_merge_conflict_detection",
+        description=(
+            "Detect semantic and contract conflicts between Git branches (calling deleted symbols, broken call signatures, or missing route handlers). "
+            "Use when verifying whether branches can be safely merged without semantic breakage. "
+            "Does not report false conflicts when branches are structurally compatible."
+        ),
+        task_types=(
+            AgentTaskCategory.CHANGE_IMPACT.value,
+            AgentTaskCategory.ARCHITECTURE.value,
+            AgentTaskCategory.DEBUG.value,
+        ),
+        required_inputs=(),
+        optional_inputs=("base_branch", "head_branch"),
+        expected_output_type="SemanticConflictResult",
+        relationship_types_returned=("CALLS", "IMPORTS", "ROUTES_TO"),
+        evidence_guarantees="Deterministic cross-branch AST call-site and definition verification.",
+        does_not_prove="Does not execute code; reports contract incompatibility between revisions.",
+        useful_situations=(
+            "Checking if a feature branch introduces calls to symbols deleted or modified on main",
+            "Pre-merge validation before merging PRs to prevent semantic regression",
+        ),
+        avoid_when=(
+            "Branches are known to be identical or when checking working tree cleanliness",
+        ),
+        profiles=("full",),
+        minimal_invocation='detect_semantic_conflicts(base_branch="main", head_branch="feature")',
+        advanced_invocation='detect_semantic_conflicts(base_branch="main", head_branch="HEAD")',
+        result_fields=("base_branch", "head_branch", "has_conflicts", "total_conflicts", "conflicts", "summary"),
+        typical_followup="get_file or get_symbol on conflicted symbols",
+        common_mistakes=(
+            "Assuming Git text merge passes mean no semantic conflicts; semantic conflicts occur even with 0 text conflicts",
+        ),
+        example_request="Are there any semantic merge conflicts between main and this branch?",
+        example_call='detect_semantic_conflicts(base_branch="main", head_branch="HEAD")',
+        example_interpretation="Inspect has_conflicts and conflicts list for DELETED_SYMBOL_REFERENCED or CALL_SIGNATURE_MISMATCH.",
+    ),
 )
 
 _TOOL_BY_NAME: dict[str, ToolCapabilitySpec] = {t.tool_name: t for t in TOOL_CAPABILITY_REGISTRY}
@@ -2449,10 +2684,10 @@ CAPABILITY_MATRIX: dict[AgentTaskCategory, TaskCapabilityRule] = {
         category=AgentTaskCategory.CHANGE_IMPACT,
         should_use_codegraph=True,
         primary_tool="get_git_impact",
-        acceptable_tools=("get_git_impact", "analyze_impact", "analyze_change_impact", "get_dependents", "get_callers", "find_related_tests", "find_tests", "get_context"),
-        recommended_sequence=("resolve_symbol", "get_git_impact"),
+        acceptable_tools=("get_git_impact", "get_change_impact", "compare_git", "get_git_state", "check_context_freshness", "trace_symbol_history", "analyze_impact", "analyze_change_impact", "get_dependents", "get_callers", "find_related_tests", "find_tests", "get_context"),
+        recommended_sequence=("get_git_state", "compare_git", "get_change_impact"),
         direct_inspection_acceptable=False,
-        rationale="Use get_git_impact or analyze_impact to deterministically compute affected callers, packages, and tests.",
+        rationale="Use get_git_state, compare_git, and get_change_impact to deterministically compute structural diffs, affected callers, routes, packages, and tests.",
     ),
     AgentTaskCategory.TEST_DISCOVERY: TaskCapabilityRule(
         category=AgentTaskCategory.TEST_DISCOVERY,
@@ -2696,12 +2931,15 @@ MCP_PROFILE_RECOMMENDATIONS: dict[str, dict[str, object]] = {
     },
     "full": {
         "profile": "full",
-        "tool_count": 56,
+        "tool_count": 62,
         "recommended_for": "Complete diagnostic, database intelligence, runtime reconciliation, benchmark, and repository administration sessions",
         "included_tools": [
             "analyze_change_impact",
             "analyze_impact",
+            "check_context_freshness",
+            "compare_git",
             "compile_task",
+            "detect_semantic_conflicts",
             "find_callees",
             "find_callers",
             "find_db_callers",
@@ -2721,6 +2959,7 @@ MCP_PROFILE_RECOMMENDATIONS: dict[str, dict[str, object]] = {
             "get_call_graph",
             "get_callees",
             "get_callers",
+            "get_change_impact",
             "get_context",
             "get_db_impact",
             "get_db_schema",
@@ -2733,6 +2972,7 @@ MCP_PROFILE_RECOMMENDATIONS: dict[str, dict[str, object]] = {
             "get_file_history",
             "get_file_symbols",
             "get_git_impact",
+            "get_git_state",
             "get_graph",
             "get_imports",
             "get_project_structure",
@@ -2754,6 +2994,7 @@ MCP_PROFILE_RECOMMENDATIONS: dict[str, dict[str, object]] = {
             "trace_call",
             "trace_flow",
             "trace_path",
+            "trace_symbol_history",
             "verify_evidence",
         ],
     },

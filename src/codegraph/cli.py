@@ -1313,5 +1313,243 @@ def uninit(
         cli_echo(report.format_human())
 
 
+@app.command("git-state")
+def git_state_cmd(
+    path: Annotated[Path | None, typer.Argument(help="Repository path (default: current directory)")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    sync: Annotated[bool, typer.Option("--sync", help="Incrementally synchronize affected graph state if dirty/stale")] = False,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON format")] = False,
+) -> None:
+    """Track current Git branch, HEAD, indexed commit, working-tree modifications, and freshness states (CLEAN, DIRTY, STALE, REINDEXING, ERROR)."""
+    from codegraph.git_state import get_git_state, incremental_git_sync
+
+    repo = _resolve_repo(path, repository)
+    indexer = _indexer(repo)
+
+    if sync:
+        with indexer.session() as con:
+            res = incremental_git_sync(repo, con=con)
+            if json_output:
+                cli_echo(json.dumps(res.as_dict(), indent=2), json_mode=True)
+            else:
+                cli_echo(f"Incremental Sync: {res.status.upper()} ({res.duration_ms:.1f}ms) - {res.detail}")
+            return
+
+    with indexer.session() as con:
+        rep = get_git_state(repo, con=con)
+
+    if json_output:
+        cli_echo(json.dumps(rep.as_dict(), indent=2), json_mode=True)
+    else:
+        cli_echo(f"Git Repository: {repo}")
+        cli_echo(f"Branch:         {rep.branch or 'N/A'}")
+        cli_echo(f"Current HEAD:   {rep.current_head[:8] if rep.current_head else 'N/A'}")
+        cli_echo(f"Indexed HEAD:   {rep.indexed_head[:8] if rep.indexed_head else 'Not indexed'}")
+        cli_echo(f"Freshness:      {rep.freshness.value}")
+        cli_echo(f"Status Detail:  {rep.detail}")
+        if rep.working_tree.is_dirty:
+            cli_echo("\nWorking Tree Changes:")
+            if rep.working_tree.modified_files:
+                cli_echo(f"  Modified:   {len(rep.working_tree.modified_files)} files ({', '.join(rep.working_tree.modified_files[:3])}...)")
+            if rep.working_tree.staged_files:
+                cli_echo(f"  Staged:     {len(rep.working_tree.staged_files)} files ({', '.join(rep.working_tree.staged_files[:3])}...)")
+            if rep.working_tree.untracked_files:
+                cli_echo(f"  Untracked:  {len(rep.working_tree.untracked_files)} files ({', '.join(rep.working_tree.untracked_files[:3])}...)")
+            if rep.working_tree.deleted_files:
+                cli_echo(f"  Deleted:    {len(rep.working_tree.deleted_files)} files")
+
+
+@app.command("git-diff")
+def git_diff_cmd(
+    base: Annotated[str, typer.Argument(help="Base Git ref or commit (default: HEAD~1)")] = "HEAD~1",
+    head: Annotated[str, typer.Argument(help="Head Git ref, commit, or branch (default: HEAD)")] = "HEAD",
+    path: Annotated[Path | None, typer.Option("--path", "-p", help="Repository path")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    branch_comparison: Annotated[bool, typer.Option("--branch", "-b", help="Perform hierarchical branch architecture comparison")] = False,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON format")] = False,
+) -> None:
+    """Compute structural AST-level difference between Git revisions, commits, or branches."""
+    repo = _resolve_repo(path, repository)
+    indexer = _indexer(repo)
+
+    if branch_comparison:
+        from codegraph.branch_comparison import compare_branch_architecture
+        with indexer.session() as con:
+            b_rep = compare_branch_architecture(repo, base_branch=base, head_branch=head, con=con)
+        if json_output:
+            cli_echo(json.dumps(b_rep.as_dict(), indent=2), json_mode=True)
+        else:
+            cli_echo(f"Branch Architecture Comparison: {base} -> {head}")
+            cli_echo(f"Packages: {b_rep.total_packages} | Symbols: {b_rep.total_symbols} (~{b_rep.estimated_tokens} tokens)")
+            for pkg in b_rep.packages:
+                cli_echo(f"\nPackage: {pkg.package_id}")
+                for mod in pkg.modules:
+                    cli_echo(f"  Module: {mod.module} ({mod.file_path})")
+                    for s in mod.symbols:
+                        cli_echo(f"    [{s.change_type}] {s.kind} {s.name}")
+                        for rel in s.relationships:
+                            cli_echo(f"      -> {rel}")
+        return
+
+    from codegraph.structural_diff import compare_revisions
+    with indexer.session() as con:
+        s_rep = compare_revisions(repo, base=base, head=head, con=con)
+
+    if json_output:
+        cli_echo(json.dumps(s_rep.as_dict(), indent=2), json_mode=True)
+    else:
+        cli_echo(f"Structural Diff: {base} -> {head}")
+        cli_echo(f"Files Changed:   {s_rep.total_file_changes} (Added: {len(s_rep.added_files)}, Modified: {len(s_rep.modified_files)}, Deleted: {len(s_rep.deleted_files)}, Renamed: {len(s_rep.renamed_files)})")
+        cli_echo(f"Symbols Changed: {s_rep.total_symbol_changes} (Added: {len(s_rep.added_symbols)}, Modified: {len(s_rep.changed_symbols)}, Removed: {len(s_rep.removed_symbols)})")
+        if s_rep.changed_routes:
+            cli_echo(f"Changed Routes:  {len(s_rep.changed_routes)}")
+            for r in s_rep.changed_routes:
+                cli_echo(f"  [{r.change_type}] {r.method} {r.path} -> {r.handler}")
+        if s_rep.affected_tests:
+            cli_echo(f"Affected Tests:  {len(s_rep.affected_tests)} ({', '.join(s_rep.affected_tests[:5])})")
+
+
+@app.command("git-impact")
+def git_impact_cmd(
+    base: Annotated[str, typer.Argument(help="Base Git ref (default: HEAD~1)")] = "HEAD~1",
+    head: Annotated[str, typer.Argument(help="Head Git ref (default: HEAD)")] = "HEAD",
+    depth: Annotated[int, typer.Option("--depth", "-d", help="Max caller traversal depth")] = 2,
+    max_results: Annotated[int, typer.Option("--max-results", "-m", help="Max items per category")] = 30,
+    tree: Annotated[bool, typer.Option("--tree", "-t", help="Display visual impact tree")] = False,
+    path: Annotated[Path | None, typer.Option("--path", "-p", help="Repository path")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON format")] = False,
+) -> None:
+    """Compute deep downstream change impact across callers, callees, framework routes, tests, and DB."""
+    from codegraph.change_impact import get_deep_change_impact
+
+    repo = _resolve_repo(path, repository)
+    indexer = _indexer(repo)
+
+    with indexer.session() as con:
+        imp = get_deep_change_impact(repo, con, base=base, head=head, max_depth=depth, max_results=max_results)
+
+    if json_output:
+        cli_echo(json.dumps(imp.as_dict(), indent=2), json_mode=True)
+    else:
+        cli_echo(f"Deep Change Impact Analysis: {base} -> {head}")
+        cli_echo(f"Blast Radius Score:   {imp.blast_radius_score} / 100")
+        cli_echo(f"Total Impacted Items: {imp.total_impacted_count}")
+        cli_echo(f"Direct Callers:       {len(imp.direct_callers)}")
+        cli_echo(f"Transitive Callers:   {len(imp.transitive_callers)}")
+        cli_echo(f"Affected Routes:      {len(imp.affected_routes)}")
+        cli_echo(f"Covering Tests:       {len(imp.affected_tests)}")
+        cli_echo(f"DB Writers:           {len(imp.db_writers)}")
+        cli_echo(f"Monorepo Packages:    {len(imp.affected_packages)}")
+
+        if tree or imp.total_impacted_count > 0:
+            cli_echo("\nImpact Tree:")
+            for s in imp.changed_symbols[:10]:
+                cli_echo(f"  └── 📄 [{s.get('change_type', 'MODIFIED')}] {s.get('path', '')}::{s.get('name', '')}")
+            for c in imp.direct_callers[:8]:
+                cli_echo(f"      ├── 📞 CALLER: {c.file}::{c.name} (depth 1)")
+            for r in imp.affected_routes[:5]:
+                cli_echo(f"      ├── 🌐 ROUTE: {r.name} -> {r.file}")
+            for t in imp.affected_tests[:5]:
+                cli_echo(f"      ├── 🧪 TEST: {t.file}::{t.name}")
+            for db in imp.db_writers[:5]:
+                cli_echo(f"      └── 💾 DB: {db.relationship} {db.name} in {db.file}")
+
+
+@app.command("git-conflicts")
+def git_conflicts_cmd(
+    base: Annotated[str, typer.Argument(help="Base Git branch (default: main)")] = "main",
+    head: Annotated[str, typer.Argument(help="Head Git branch (default: HEAD)")] = "HEAD",
+    path: Annotated[Path | None, typer.Option("--path", "-p", help="Repository path")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON format")] = False,
+) -> None:
+    """Detect semantic and contract merge conflicts between branches (calling deleted symbols, broken call signatures, or missing route handlers)."""
+    from codegraph.semantic_conflicts import detect_semantic_conflicts
+
+    repo = _resolve_repo(path, repository)
+    indexer = _indexer(repo)
+
+    with indexer.session() as con:
+        rep = detect_semantic_conflicts(repo, base_branch=base, head_branch=head, con=con)
+
+    if json_output:
+        cli_echo(json.dumps(rep.as_dict(), indent=2), json_mode=True)
+    else:
+        cli_echo(f"Semantic Conflict Analysis: {base} <-> {head}")
+        cli_echo(f"Status:          {'⚠️ CONFLICTS DETECTED' if rep.has_conflicts else '✅ CLEAN (0 conflicts)'}")
+        cli_echo(f"Total Conflicts: {rep.total_conflicts}")
+        cli_echo(f"Summary:         {rep.summary}")
+        if rep.conflicts:
+            cli_echo("\nDetected Semantic Conflicts:")
+            for c in rep.conflicts:
+                cli_echo(f"\n  [{c.severity.value}] {c.conflict_type.value}: {c.symbol}")
+                cli_echo(f"    Description: {c.description}")
+                cli_echo(f"    Base ({base}): {c.base_file} ({c.base_evidence})")
+                cli_echo(f"    Head ({head}): {c.head_file} ({c.head_evidence})")
+
+
+@app.command("check-freshness")
+def check_freshness_cli_cmd(
+    task: Annotated[str, typer.Argument(help="Task prompt to verify context freshness for")] = "",
+    path: Annotated[Path | None, typer.Option("--path", "-p", help="Repository path")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON format")] = False,
+) -> None:
+    """Validate whether compiled context remains VALID, PARTIALLY_STALE, or STALE against repository changes."""
+    from codegraph.context import get_context
+    from codegraph.context_freshness import check_context_freshness
+
+    repo = _resolve_repo(path, repository)
+    indexer = _indexer(repo)
+
+    with indexer.session() as con:
+        # Generate baseline context if task provided
+        ctx = get_context(con, repo, task or "general repository overview", mode="FAST")
+        rep = check_context_freshness(ctx, repo, con=con)
+
+    if json_output:
+        cli_echo(json.dumps(rep.as_dict(), indent=2), json_mode=True)
+    else:
+        cli_echo(f"Context Freshness Status: {rep.status.value}")
+        cli_echo(f"Reason:                  {rep.reason}")
+        cli_echo(f"Recommended Action:      {rep.recommended_action}")
+        if rep.changed_relevant_files:
+            cli_echo(f"Changed Relevant Files:  {', '.join(rep.changed_relevant_files)}")
+        if rep.unrelated_changed_files:
+            cli_echo(f"Unrelated Changed Files: {len(rep.unrelated_changed_files)} file(s)")
+
+
+@app.command("symbol-history")
+def symbol_history_cli_cmd(
+    symbol: Annotated[str, typer.Argument(help="Symbol name to trace across Git history")],
+    file_path: Annotated[str | None, typer.Option("--file", "-f", help="File path where symbol is located")] = None,
+    max_commits: Annotated[int, typer.Option("--max-commits", "-m", help="Max commits to inspect")] = 15,
+    path: Annotated[Path | None, typer.Option("--path", "-p", help="Repository path")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON format")] = False,
+) -> None:
+    """Trace deterministic symbol evolution across Git history: introduced, modified, moved, renamed, or deleted."""
+    from codegraph.symbol_history import trace_symbol_history
+
+    repo = _resolve_repo(path, repository)
+    indexer = _indexer(repo)
+
+    with indexer.session() as con:
+        rep = trace_symbol_history(repo, symbol=symbol, path=file_path, con=con, max_commits=max_commits)
+
+    if json_output:
+        cli_echo(json.dumps(rep.as_dict(), indent=2), json_mode=True)
+    else:
+        cli_echo(f"Symbol History: {symbol}")
+        cli_echo(f"Status:         {rep.status} ({rep.detail})")
+        for ev in rep.events:
+            cli_echo(f"\n  [{ev.event_type}] Commit {ev.commit_sha[:8]} on {ev.date} by {ev.author}")
+            cli_echo(f"    Message:  {ev.message}")
+            cli_echo(f"    Location: {ev.path}")
+            cli_echo(f"    Evidence: {ev.evidence} (confidence: {ev.confidence})")
+
+
+
 if __name__ == "__main__":
     app()

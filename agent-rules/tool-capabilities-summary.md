@@ -1,4 +1,4 @@
-# CodeGraph MCP — Tool Capabilities Summary (v2.2.1)
+# CodeGraph MCP — Tool Capabilities Summary (v2.3.0)
 
 > Compact task-to-tool routing table derived from `src/codegraph/agent_capabilities.py` (`ROUTING_MANIFEST`) and `src/codegraph/evidence_contract.py`.
 

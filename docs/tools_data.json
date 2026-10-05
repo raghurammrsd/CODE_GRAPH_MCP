@@ -4512,5 +4512,488 @@
     "advanced_invocation": "reconcile_static_runtime(route=\"/api/scan-bill\", table=\"bills\")",
     "evidence": "Explicit four-bucket reconciliation preserving both static evidence classes and RUNTIME_OBSERVED / RUNTIME_UNOBSERVED states.",
     "does_not_prove": "Never overwrites static AST_VERIFIED edges and never treats NOT_OBSERVED_AT_RUNTIME as dead-code proof."
+  },
+  {
+    "name": "get_git_state",
+    "category": "git",
+    "capability": "git_state_tracking",
+    "description": "Track current Git branch, HEAD commit, indexed commit, working tree modifications, staged files, and explicit freshness states (CLEAN, DIRTY, STALE, REINDEXING, ERROR). Use when asking if the index is up to date, which files changed, or what git branch is active. Does not perform a full repository scan when an incremental update is safe.",
+    "problem_solved": "Checking if repository has uncommitted changes or if re-indexing is required after pulling git commits",
+    "profiles": [
+      "full"
+    ],
+    "required_inputs": [],
+    "optional_inputs": [],
+    "parameters_schema": {
+      "properties": {},
+      "title": "get_git_stateArguments",
+      "type": "object"
+    },
+    "return_schema": {
+      "title": "GitStateReport",
+      "type": "object",
+      "properties": {
+        "is_git": {
+          "type": "string",
+          "title": "Is Git"
+        },
+        "branch": {
+          "type": "string",
+          "title": "Branch"
+        },
+        "current_head": {
+          "type": "string",
+          "title": "Current Head"
+        },
+        "indexed_head": {
+          "type": "string",
+          "title": "Indexed Head"
+        },
+        "freshness": {
+          "type": "boolean",
+          "title": "Freshness"
+        },
+        "working_tree": {
+          "type": "string",
+          "title": "Working Tree"
+        },
+        "reindex_required": {
+          "type": "string",
+          "title": "Reindex Required"
+        },
+        "detail": {
+          "type": "string",
+          "title": "Detail"
+        }
+      }
+    },
+    "returns": "GitStateReport",
+    "example_invocation": "get_git_state()",
+    "minimal_invocation": "get_git_state()",
+    "advanced_invocation": "get_git_state()",
+    "evidence": "Deterministic Git rev-parse and status porcelain v1 inspection.",
+    "does_not_prove": "Does not prove semantic impact; reports file-level and commit-level freshness."
+  },
+  {
+    "name": "compare_git",
+    "category": "git",
+    "capability": "structural_git_diff",
+    "description": "Compare two Git revisions, commits, or branches structurally. Detects added/deleted/modified/renamed files, AST symbol changes, relationship diffs, routes, and affected tests. Use when comparing branches or commits structurally. Does not execute repository code.",
+    "problem_solved": "Understanding structural changes between two branches or commits without parsing raw diff text",
+    "profiles": [
+      "full"
+    ],
+    "required_inputs": [],
+    "optional_inputs": [
+      "base",
+      "head",
+      "branch_comparison"
+    ],
+    "parameters_schema": {
+      "properties": {
+        "base": {
+          "default": "HEAD~1",
+          "title": "Base",
+          "type": "string"
+        },
+        "head": {
+          "default": "HEAD",
+          "title": "Head",
+          "type": "string"
+        },
+        "branch_comparison": {
+          "default": false,
+          "title": "Branch Comparison",
+          "type": "boolean"
+        }
+      },
+      "title": "compare_gitArguments",
+      "type": "object"
+    },
+    "return_schema": {
+      "title": "StructuralDiffResult",
+      "type": "object",
+      "properties": {
+        "base_ref": {
+          "type": "string",
+          "title": "Base Ref"
+        },
+        "head_ref": {
+          "type": "string",
+          "title": "Head Ref"
+        },
+        "added_files": {
+          "type": "array",
+          "title": "Added Files"
+        },
+        "deleted_files": {
+          "type": "array",
+          "title": "Deleted Files"
+        },
+        "modified_files": {
+          "type": "array",
+          "title": "Modified Files"
+        },
+        "renamed_files": {
+          "type": "array",
+          "title": "Renamed Files"
+        },
+        "added_symbols": {
+          "type": "array",
+          "title": "Added Symbols"
+        },
+        "removed_symbols": {
+          "type": "array",
+          "title": "Removed Symbols"
+        },
+        "changed_symbols": {
+          "type": "array",
+          "title": "Changed Symbols"
+        },
+        "changed_routes": {
+          "type": "array",
+          "title": "Changed Routes"
+        },
+        "affected_tests": {
+          "type": "array",
+          "title": "Affected Tests"
+        }
+      }
+    },
+    "returns": "StructuralDiffResult",
+    "example_invocation": "compare_git(base=\"main\", head=\"HEAD\", branch_comparison=True)",
+    "minimal_invocation": "compare_git(base=\"HEAD~1\", head=\"HEAD\")",
+    "advanced_invocation": "compare_git(base=\"main\", head=\"my-feature\", branch_comparison=True)",
+    "evidence": "AST parsing of before/after revisions with exact file:line citations and similarity scores.",
+    "does_not_prove": "Does not execute code or run test assertions."
+  },
+  {
+    "name": "get_change_impact",
+    "category": "git",
+    "capability": "deep_change_impact_analysis",
+    "description": "Compute deep downstream change impact across callers, callees, framework routes, covering tests, mutating database queries, and monorepo packages. Returns ranked entities with explicit confidence (FACT, POSSIBLE, UNKNOWN) and blast radius score. Use when evaluating ripple effects of git commits. Does not execute repository test suites.",
+    "problem_solved": "Evaluating what code, routes, database writes, and tests will break if git changes are merged",
+    "profiles": [
+      "full"
+    ],
+    "required_inputs": [],
+    "optional_inputs": [
+      "base",
+      "head",
+      "max_depth",
+      "max_results"
+    ],
+    "parameters_schema": {
+      "properties": {
+        "base": {
+          "default": "HEAD~1",
+          "title": "Base",
+          "type": "string"
+        },
+        "head": {
+          "default": "HEAD",
+          "title": "Head",
+          "type": "string"
+        },
+        "max_depth": {
+          "default": 2,
+          "title": "Max Depth",
+          "type": "integer"
+        },
+        "max_results": {
+          "default": 50,
+          "title": "Max Results",
+          "type": "integer"
+        }
+      },
+      "title": "get_change_impactArguments",
+      "type": "object"
+    },
+    "return_schema": {
+      "title": "DeepImpactResult",
+      "type": "object",
+      "properties": {
+        "base_ref": {
+          "type": "string",
+          "title": "Base Ref"
+        },
+        "head_ref": {
+          "type": "string",
+          "title": "Head Ref"
+        },
+        "changed_files": {
+          "type": "array",
+          "title": "Changed Files"
+        },
+        "changed_symbols": {
+          "type": "array",
+          "title": "Changed Symbols"
+        },
+        "direct_callers": {
+          "type": "array",
+          "title": "Direct Callers"
+        },
+        "transitive_callers": {
+          "type": "array",
+          "title": "Transitive Callers"
+        },
+        "affected_routes": {
+          "type": "array",
+          "title": "Affected Routes"
+        },
+        "affected_tests": {
+          "type": "array",
+          "title": "Affected Tests"
+        },
+        "db_writers": {
+          "type": "array",
+          "title": "Db Writers"
+        },
+        "blast_radius_score": {
+          "type": "string",
+          "title": "Blast Radius Score"
+        }
+      }
+    },
+    "returns": "DeepImpactResult",
+    "example_invocation": "get_change_impact(base=\"HEAD~1\", head=\"HEAD\")",
+    "minimal_invocation": "get_change_impact()",
+    "advanced_invocation": "get_change_impact(base=\"HEAD~3\", head=\"HEAD\", max_depth=2, max_results=50)",
+    "evidence": "Complete graph traversal connecting modified AST symbols to callers, routes, tests, and DB queries.",
+    "does_not_prove": "Does not prove runtime execution frequencies; reports static graph reachability."
+  },
+  {
+    "name": "check_context_freshness",
+    "category": "git",
+    "capability": "context_freshness_validation",
+    "description": "Validate whether a previously compiled context packet or task context is still VALID, PARTIALLY_STALE, or STALE. Guarantees that changes to unrelated files keep context VALID. Use when checking if previously compiled context remains valid after edits. Does not invalidate context when only unrelated files change.",
+    "problem_solved": "Checking if previously cached or generated AI context packet is still safe to use after editing files",
+    "profiles": [
+      "full"
+    ],
+    "required_inputs": [],
+    "optional_inputs": [
+      "task",
+      "context_packet"
+    ],
+    "parameters_schema": {
+      "properties": {
+        "task": {
+          "default": "",
+          "title": "Task",
+          "type": "string"
+        },
+        "context_packet": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Context Packet"
+        }
+      },
+      "title": "check_context_freshnessArguments",
+      "type": "object"
+    },
+    "return_schema": {
+      "title": "ContextFreshnessResult",
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "title": "Status"
+        },
+        "base_commit": {
+          "type": "string",
+          "title": "Base Commit"
+        },
+        "current_head": {
+          "type": "string",
+          "title": "Current Head"
+        },
+        "repository_dirty": {
+          "type": "string",
+          "title": "Repository Dirty"
+        },
+        "context_files": {
+          "type": "array",
+          "title": "Context Files"
+        },
+        "changed_relevant_files": {
+          "type": "array",
+          "title": "Changed Relevant Files"
+        },
+        "unrelated_changed_files": {
+          "type": "array",
+          "title": "Unrelated Changed Files"
+        },
+        "invalidated_symbols": {
+          "type": "array",
+          "title": "Invalidated Symbols"
+        },
+        "reason": {
+          "type": "string",
+          "title": "Reason"
+        },
+        "recommended_action": {
+          "type": "string",
+          "title": "Recommended Action"
+        }
+      }
+    },
+    "returns": "ContextFreshnessResult",
+    "example_invocation": "check_context_freshness(task=\"Fix auth timeout\")",
+    "minimal_invocation": "check_context_freshness(task=\"Fix auth timeout\")",
+    "advanced_invocation": "check_context_freshness(context_packet=my_packet)",
+    "evidence": "Intersection of Git diff line/file changes against exact symbol and file references in context packet.",
+    "does_not_prove": "Does not recompile context; reports freshness validity and recommended action."
+  },
+  {
+    "name": "trace_symbol_history",
+    "category": "git",
+    "capability": "symbol_history_tracing",
+    "description": "Trace deterministic symbol evolution across Git history: introduced, modified, moved across files, renamed, or deleted. Uses AST structure and body hashes to differentiate FACT from POSSIBLE/AMBIGUOUS renames. Use when discovering when a symbol was added, moved, or renamed. Does not guess ambiguous renames without evidence.",
+    "problem_solved": "Tracing when a function was introduced, modified, moved to a different module, or renamed",
+    "profiles": [
+      "full"
+    ],
+    "required_inputs": [
+      "symbol"
+    ],
+    "optional_inputs": [
+      "path",
+      "max_commits"
+    ],
+    "parameters_schema": {
+      "properties": {
+        "symbol": {
+          "title": "Symbol",
+          "type": "string"
+        },
+        "path": {
+          "default": "",
+          "title": "Path",
+          "type": "string"
+        },
+        "max_commits": {
+          "default": 15,
+          "title": "Max Commits",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "symbol"
+      ],
+      "title": "trace_symbol_historyArguments",
+      "type": "object"
+    },
+    "return_schema": {
+      "title": "SymbolHistoryResult",
+      "type": "object",
+      "properties": {
+        "symbol": {
+          "type": "string",
+          "title": "Symbol"
+        },
+        "current_path": {
+          "type": "string",
+          "title": "Current Path"
+        },
+        "events": {
+          "type": "string",
+          "title": "Events"
+        },
+        "total_commits_evaluated": {
+          "type": "string",
+          "title": "Total Commits Evaluated"
+        },
+        "status": {
+          "type": "string",
+          "title": "Status"
+        },
+        "detail": {
+          "type": "string",
+          "title": "Detail"
+        }
+      }
+    },
+    "returns": "SymbolHistoryResult",
+    "example_invocation": "trace_symbol_history(symbol=\"AuthService\")",
+    "minimal_invocation": "trace_symbol_history(symbol=\"AuthService\")",
+    "advanced_invocation": "trace_symbol_history(symbol=\"AuthService\", path=\"src/auth.py\", max_commits=20)",
+    "evidence": "Git log history correlated with AST body hashes and file rename metadata.",
+    "does_not_prove": "Does not guarantee intent behind refactors; reports structural code evolution."
+  },
+  {
+    "name": "detect_semantic_conflicts",
+    "category": "core",
+    "capability": "semantic_merge_conflict_detection",
+    "description": "Detect semantic and contract conflicts between Git branches (calling deleted symbols, broken call signatures, or missing route handlers). Use when verifying whether branches can be safely merged without semantic breakage. Does not report false conflicts when branches are structurally compatible.",
+    "problem_solved": "Checking if a feature branch introduces calls to symbols deleted or modified on main",
+    "profiles": [
+      "full"
+    ],
+    "required_inputs": [],
+    "optional_inputs": [
+      "base_branch",
+      "head_branch"
+    ],
+    "parameters_schema": {
+      "properties": {
+        "base_branch": {
+          "default": "main",
+          "title": "Base Branch",
+          "type": "string"
+        },
+        "head_branch": {
+          "default": "HEAD",
+          "title": "Head Branch",
+          "type": "string"
+        }
+      },
+      "title": "detect_semantic_conflictsArguments",
+      "type": "object"
+    },
+    "return_schema": {
+      "title": "SemanticConflictResult",
+      "type": "object",
+      "properties": {
+        "base_branch": {
+          "type": "string",
+          "title": "Base Branch"
+        },
+        "head_branch": {
+          "type": "string",
+          "title": "Head Branch"
+        },
+        "has_conflicts": {
+          "type": "string",
+          "title": "Has Conflicts"
+        },
+        "total_conflicts": {
+          "type": "string",
+          "title": "Total Conflicts"
+        },
+        "conflicts": {
+          "type": "string",
+          "title": "Conflicts"
+        },
+        "summary": {
+          "type": "string",
+          "title": "Summary"
+        }
+      }
+    },
+    "returns": "SemanticConflictResult",
+    "example_invocation": "detect_semantic_conflicts(base_branch=\"main\", head_branch=\"HEAD\")",
+    "minimal_invocation": "detect_semantic_conflicts(base_branch=\"main\", head_branch=\"feature\")",
+    "advanced_invocation": "detect_semantic_conflicts(base_branch=\"main\", head_branch=\"HEAD\")",
+    "evidence": "Deterministic cross-branch AST call-site and definition verification.",
+    "does_not_prove": "Does not execute code; reports contract incompatibility between revisions."
   }
 ]

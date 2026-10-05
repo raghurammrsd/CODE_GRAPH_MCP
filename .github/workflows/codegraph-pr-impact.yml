@@ -1,0 +1,68 @@
+name: CodeGraph PR Impact & Conflict Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  impact-review:
+    name: CodeGraph Blast Radius & Semantic Conflicts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install CodeGraph Engine
+        run: |
+          pip install --upgrade pip
+          pip install .
+
+      - name: Build CodeGraph Index
+        run: |
+          codegraph init
+
+      - name: Analyze PR Blast Radius & Semantic Conflicts
+        id: codegraph
+        uses: ./.github/actions/codegraph-impact
+        with:
+          base-ref: "origin/${{ github.base_ref }}"
+          head-ref: "HEAD"
+          fail-on-conflicts: "false"
+
+      - name: Post PR Summary Comment
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const blastRadius = "${{ steps.codegraph.outputs.blast-radius }}";
+            const totalImpacted = "${{ steps.codegraph.outputs.total-impacted }}";
+            const hasConflicts = "${{ steps.codegraph.outputs.has-conflicts }}";
+            
+            const body = `### 🔍 CodeGraph Pull Request Intelligence
+            
+            | Metric | Result |
+            | :--- | :--- |
+            | **Blast Radius Score** | \`${blastRadius} / 100\` |
+            | **Total Impacted Entities** | \`${totalImpacted}\` |
+            | **Semantic Conflicts** | \`${hasConflicts === 'True' ? '⚠️ Detected' : '✅ 0 Conflicts'}\` |
+            
+            > Deterministic analysis powered by [CodeGraph MCP](https://github.com/raghurammrsd/CODE_GRAPH_MCP).
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

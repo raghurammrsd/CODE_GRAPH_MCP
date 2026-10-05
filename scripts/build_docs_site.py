@@ -17,7 +17,7 @@ def sync_tools_data() -> list[dict]:
             return "runtime"
         if "route" in name:
             return "routes"
-        if "git" in name or "history" in name or "recent_changes" in name or "change_impact" in name:
+        if "git" in name or "history" in name or "recent_changes" in name or "change_impact" in name or "freshness" in name:
             return "git"
         if "test" in name:
             return "tests"
@@ -139,13 +139,13 @@ def generate_docs():
       "priceCurrency": "USD"
     },
     "description": "Production Model Context Protocol (MCP) server providing runtime telemetry reconciliation, database lineage, and 56 graph analysis tools for AI coding agents.",
-    "softwareVersion": "2.2.1",
+    "softwareVersion": "2.3.0",
     "author": {
       "@type": "Person",
       "name": "Raghuram",
       "url": "https://github.com/raghurammrsd"
     },
-    "downloadUrl": "https://pypi.org/project/codegraph-engine/2.2.1/",
+    "downloadUrl": "https://pypi.org/project/codegraph-engine/2.3.0/",
     "codeRepository": "https://github.com/raghurammrsd/CODE_GRAPH_MCP"
   }
   </script>
@@ -805,7 +805,7 @@ def generate_docs():
           <circle cx="16" cy="16" r="3" fill="#2563eb"/>
         </svg>
         <span class="brand-name">CodeGraph MCP</span>
-        <span class="badge-ver">v2.2.1</span>
+        <span class="badge-ver">v2.3.0</span>
       </a>
 
       <!-- Universal Search (Cmd K) -->
@@ -839,7 +839,7 @@ def generate_docs():
     <div>
       <div class="hero-badge-tag">
         <span class="dot-online"></span>
-        <span>v2.2.1 Production · Runtime &amp; Database Verified</span>
+        <span>v2.3.0 Production · Runtime &amp; Database Verified</span>
       </div>
 
       <h1 class="hero-headline-h1">
@@ -1528,10 +1528,10 @@ codegraph status .</pre>
         <!-- Book Page Footer -->
         <footer class="book-page-footer">
           <div>
-            &copy; 2026 CodeGraph MCP &bull; MIT License &bull; v2.2.1 Production
+            &copy; 2026 CodeGraph MCP &bull; MIT License &bull; v2.3.0 Production
           </div>
           <div style="display:flex; gap:1.25rem;">
-            <a href="https://pypi.org/project/codegraph-engine/2.2.1/" target="_blank">PyPI Package</a>
+            <a href="https://pypi.org/project/codegraph-engine/2.3.0/" target="_blank">PyPI Package</a>
             <a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP" target="_blank">GitHub Repository</a>
             <a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP/issues" target="_blank">Issue Tracker</a>
           </div>
