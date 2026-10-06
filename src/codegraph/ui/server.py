@@ -493,7 +493,7 @@ def _get_html_dashboard() -> str:
         });
       }
 
-      setInterval(tick, 30);
+      setInterval(() => { if (document.getElementById("view-graph").style.display !== "none") tick(); }, 30);
     }
 
     canvas = document.getElementById('graph-canvas');
@@ -544,6 +544,10 @@ class CodeGraphUIRequestHandler(BaseHTTPRequestHandler):
             self._handle_api_status()
             return
 
+        if path == "/api/drift":
+            self._handle_api_drift()
+            return
+
         if path == "/api/routes":
             self._handle_api_routes()
             return
@@ -560,6 +564,16 @@ class CodeGraphUIRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b"Not Found")
 
+    def _handle_api_drift(self) -> None:
+        try:
+            from codegraph.api_drift import detect_api_contract_drift
+
+            with self.indexer.session() as con:
+                drift_report = detect_api_contract_drift(con, self.indexer.repository)
+                self._send_json(drift_report.as_dict())
+        except Exception as e:
+            self._send_json({"drifts": [], "error": str(e)})
+
     def _handle_api_status(self) -> None:
         try:
             with self.indexer.session() as con:
@@ -569,6 +583,10 @@ class CodeGraphUIRequestHandler(BaseHTTPRequestHandler):
                 grow = con.execute("SELECT value FROM metadata WHERE key='index_generation'").fetchone()
                 gen = int(grow[0]) if grow and grow[0] else 1
 
+                tables_raw = con.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+                tables = [t[0] for t in tables_raw]
+
+
             payload = {
                 "repository": str(self.indexer.repository),
                 "files": file_count,
@@ -576,6 +594,7 @@ class CodeGraphUIRequestHandler(BaseHTTPRequestHandler):
                 "edges": edge_count,
                 "generation": gen,
                 "status": "synchronized",
+                "tables": [{"name": t} for t in tables],
             }
         except Exception as exc:
             payload = {"error": str(exc), "status": "error"}
@@ -591,13 +610,13 @@ class CodeGraphUIRequestHandler(BaseHTTPRequestHandler):
                 ).fetchall()
                 routes = [
                     {
-                        "endpoint_id": str(r["endpoint_id"]),
+                        "id": str(r["endpoint_id"]),
                         "framework": str(r["framework"]),
-                        "http_method": str(r["http_method"]),
-                        "route_path": str(r["route_path"]),
+                        "method": str(r["http_method"]),
+                        "path": str(r["route_path"]),
                         "normalized_route": str(r["normalized_route"]),
-                        "handler_name": str(r["handler_name"]),
-                        "file_path": str(r["file_path"]),
+                        "handler": str(r["handler_name"]),
+                        "filePath": str(r["file_path"]),
                         "line": int(r["line"]),
                     }
                     for r in rows
@@ -605,14 +624,17 @@ class CodeGraphUIRequestHandler(BaseHTTPRequestHandler):
         except Exception:
             routes = []
 
-        self._send_json(routes)
+        self._send_json({"routes": routes})
 
     def _handle_api_impact(self) -> None:
         try:
             from codegraph.change_impact import get_deep_change_impact
 
+            query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            target = query.get("target", [None])[0]
+
             with self.indexer.session() as con:
-                report = get_deep_change_impact(self.indexer.repository, con)
+                report = get_deep_change_impact(self.indexer.repository, con, symbol=target)
                 payload = report.as_dict()
         except Exception:
             payload = {
@@ -626,9 +648,12 @@ class CodeGraphUIRequestHandler(BaseHTTPRequestHandler):
 
     def _handle_api_graph(self) -> None:
         try:
+            import urllib.parse
+            query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            limit = int(query.get("max_nodes", [150])[0])
             with self.indexer.session() as con:
                 sym_rows = con.execute(
-                    "SELECT id, name, kind, path, start_line FROM symbols LIMIT 150"
+                    f"SELECT id, name, kind, path, start_line FROM symbols LIMIT {limit}"
                 ).fetchall()
                 node_map: dict[str, int] = {}
                 nodes = []
@@ -677,6 +702,7 @@ class CodeGraphUIRequestHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(body)
 

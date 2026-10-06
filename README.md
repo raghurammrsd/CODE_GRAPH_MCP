@@ -10,13 +10,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/raghuram/CODE_GRAPH_MCP"><img src="https://img.shields.io/github/stars/raghuram/CODE_GRAPH_MCP?style=for-the-badge&logo=github&color=gold" alt="GitHub Stars" /></a>
+  <a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP"><img src="https://img.shields.io/github/stars/raghurammrsd/CODE_GRAPH_MCP?style=for-the-badge&logo=github&color=gold" alt="GitHub Stars" /></a>
   <a href="https://pypi.org/project/codegraph-engine/"><img src="https://img.shields.io/badge/pypi-codegraph--engine-3776AB.svg?style=for-the-badge&logo=pypi" alt="PyPI: codegraph-engine" /></a>
   <a href="src/codegraph/mcp/server.py"><img src="https://img.shields.io/badge/MCP-70%20Verified%20Tools-2ea043.svg?style=for-the-badge" alt="MCP Tools: 70 verified" /></a>
   <a href="tests/"><img src="https://img.shields.io/badge/pytest-980%2B%20passed%20(100%25)-brightgreen.svg?style=for-the-badge&logo=pytest" alt="Tests: 980+ passed" /></a>
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/ruff-0%20errors-success.svg?style=for-the-badge" alt="Ruff: 0 errors" /></a>
   <a href="src/codegraph/"><img src="https://img.shields.io/badge/mypy-strict%20(120%20files)-blue.svg?style=for-the-badge" alt="Mypy: strict" /></a>
-  <a href="https://github.com/raghuram/CODE_GRAPH_MCP/stargazers"><img src="https://img.shields.io/badge/Star%20on%20GitHub-loved%20by%20agents-yellow?style=for-the-badge" alt="Star us on GitHub" /></a>
+  <a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP/stargazers"><img src="https://img.shields.io/badge/Star%20on%20GitHub-loved%20by%20agents-yellow?style=for-the-badge" alt="Star us on GitHub" /></a>
 </p>
 
 > **Love CodeGraph MCP?** Please consider giving us a **Star on GitHub**! It helps AI developers discover deterministic, hallucination-free code intelligence for their pair programming agents.
