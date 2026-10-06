@@ -544,6 +544,18 @@ def is_parent_alive(
         # PID 0 and 1 represent init / systemd / launchd / container root; always considered alive
         return True
 
+    # On Windows, os.kill(pid, 0) is not supported and raises WinError 87.
+    # Use native kernel32 inspection via get_live_process_info.
+    if sys.platform == "win32":
+        live = get_live_process_info(parent_pid)
+        if live is None:
+            return False
+        if live.is_zombie:
+            return False
+        if parent_create_token and live.create_token and live.create_token != parent_create_token:
+            return False
+        return True
+
     # 1. Direct probe whether parent PID exists via os.kill(pid, 0)
     try:
         os.kill(parent_pid, 0)
@@ -559,8 +571,6 @@ def is_parent_alive(
 
     live = get_live_process_info(parent_pid)
     if live is None:
-        # If OS inspection was restricted (e.g. sandbox blocking proc_pidinfo),
-        # but os.kill succeeded above, the process is alive.
         return True
     if live.is_zombie:
         return False

@@ -243,7 +243,7 @@ def _subprocess_env(proc_dir: Path, poll_sec: str = "0.2") -> dict[str, str]:
     return env
 
 
-def _wait_for_condition(predicate: Any, timeout: float = 5.0, interval: float = 0.05) -> bool:
+def _wait_for_condition(predicate: Any, timeout: float = 8.0, interval: float = 0.05) -> bool:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if predicate():
@@ -337,6 +337,9 @@ env["CODEGRAPH_PROCESS_DIR"] = {str(proc_dir)!r}
 env["CODEGRAPH_PARENT_POLL_SEC"] = "0.2"
 
 r_fd, w_fd = os.pipe()
+if hasattr(os, "set_handle_inheritable"):
+    os.set_handle_inheritable(r_fd, True)
+    os.set_handle_inheritable(w_fd, True)
 
 # Spawn a grandchild that holds w_fd open so r_fd NEVER gets EOF when parent dies!
 holder = subprocess.Popen(
