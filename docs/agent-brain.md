@@ -1,8 +1,8 @@
-# CodeGraph Deep Agent Brain & Operating Manual (v2.3.0)
+# CodeGraph Deep Agent Brain & Operating Manual (v3.0.0)
 
 > **Canonical Reference (`docs/agent-brain.md`)**
 > Generated deterministically from `src/codegraph/agent_capabilities.py`, `src/codegraph/evidence_contract.py`, `src/codegraph/retrieval_policy.py`, and `src/codegraph/mcp/server.py`.
-> Package: `codegraph-engine` (`v2.3.0`) | CLI: `codegraph` | MCP Command: `codegraph mcp serve`
+> Package: `codegraph-engine` (`v3.0.0`) | CLI: `codegraph` | MCP Command: `codegraph mcp serve`
 
 ---
 
@@ -79,7 +79,7 @@ CodeGraph enforces nine canonical `evidence_class` values defined in `ALLOWED_EV
 
 ## 5. Relationship Model
 
-CodeGraph enforces the 56 canonical relationship types in `ALLOWED_RELATIONSHIP_EVIDENCE_MATRIX`. It **never** collapses framework routing, database operations, registry registration, or dependency injection into generic `CALLS` or `DEPENDS_ON`.
+CodeGraph enforces the 77 canonical relationship types in `ALLOWED_RELATIONSHIP_EVIDENCE_MATRIX`. It **never** collapses framework routing, database operations, registry registration, or dependency injection into generic `CALLS` or `DEPENDS_ON`.
 
 #### `ALIASED_TO`
 - **Meaning**: Symbol or import is assigned an explicit alias (`import X as Y`, `HandlerAlias = RealHandler`).
@@ -201,6 +201,26 @@ CodeGraph enforces the 56 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **Common Tool**: `get_architecture / get_context / get_dependents`
 - **Example**: `@acme/api` -> `DEPENDS_ON_PACKAGE` (`AST_VERIFIED`) -> `@acme/shared`
 
+#### `DISPATCHES_FORWARD`
+- **Meaning**: Neural network module invocation (model(inputs), self.submodule(x)) dispatches to nn.Module.forward().
+- **Allowed Evidence Classes**: `AMBIGUOUS`, `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `UNKNOWN`
+- **Typical Source**: Caller function or model forward pass (`predict`, `Classifier.forward`)
+- **Typical Target**: Submodule or model forward method (`Encoder.forward`, `Linear.forward`)
+- **What It Proves**: PyTorch __call__ dispatch to forward method on a concrete or resolved module instance.
+- **What It Does Not Prove**: Does not prove runtime execution if forward hooks or dynamic wrappers abort execution.
+- **Common Tool**: `trace_path / find_callees / get_context`
+- **Example**: `predict` -> `DISPATCHES_FORWARD` (`AST_VERIFIED`) -> `Classifier.forward`
+
+#### `DISPATCHES_TASK`
+- **Meaning**: Caller function or route dispatches a background task (.delay(), .apply_async(), .send_task()).
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `UNKNOWN`
+- **Typical Source**: Caller symbol or API handler (`checkout_order`, `register_user`)
+- **Typical Target**: Task handler function (`process_order_payment`, `send_welcome_email`)
+- **What It Proves**: Background task invocation connects caller to the queued task handler.
+- **What It Does Not Prove**: Does not prove queue worker status or job execution timing.
+- **Common Tool**: `trace_path / find_callees / get_context`
+- **Example**: `checkout_order` -> `DISPATCHES_TASK` (`FRAMEWORK_VERIFIED`) -> `process_order_payment`
+
 #### `DISPATCHES_TO`
 - **Meaning**: Dispatcher function or registry lookup dispatches execution to a registered handler.
 - **Allowed Evidence Classes**: `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `RUNTIME_OBSERVED`, `UNKNOWN`
@@ -251,6 +271,16 @@ CodeGraph enforces the 56 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **Common Tool**: `get_symbol / get_references`
 - **Example**: `AdminUser` -> `EXTENDS` (`AST_VERIFIED`) -> `BaseUser`
 
+#### `FETCHES_ROUTE`
+- **Meaning**: Frontend component, hook, or API client invokes a backend HTTP route (`fetch('/api/v1/invoices')`, `axios.get(...)`).
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `UNKNOWN`
+- **Typical Source**: Frontend component or data hook (`useInvoices`, `createInvoiceForm`)
+- **Typical Target**: Backend route endpoint (`POST /api/v1/invoices`, `GET /api/v1/users`)
+- **What It Proves**: Frontend client-side network request targeting a backend route.
+- **What It Does Not Prove**: Does not prove backend server availability at runtime.
+- **Common Tool**: `find_callers / trace_path / list_routes`
+- **Example**: `useInvoices` -> `FETCHES_ROUTE` (`FRAMEWORK_VERIFIED`) -> `GET /api/v1/invoices`
+
 #### `FOREIGN_KEY_TO`
 - **Meaning**: Database column or ORM field declares a foreign-key reference to a target table/column.
 - **Allowed Evidence Classes**: `AMBIGUOUS`, `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `STATIC_VERIFIED`, `UNKNOWN`
@@ -270,6 +300,16 @@ CodeGraph enforces the 56 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **What It Does Not Prove**: Does not prove middleware short-circuiting prior to the handler.
 - **Common Tool**: `list_routes / trace_path / get_context`
 - **Example**: `POST /api/v1/auth/login` -> `HANDLED_BY` (`FRAMEWORK_VERIFIED`) -> `login_endpoint`
+
+#### `HANDLES_SIGNAL`
+- **Meaning**: Signal receiver function handles lifecycle events or domain signals from a sender model.
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `UNKNOWN`
+- **Typical Source**: Receiver function (`on_customer_created`)
+- **Typical Target**: Sender model symbol (`Customer`)
+- **What It Proves**: Receiver function is bound to the sender model via @receiver or signal.connect.
+- **What It Does Not Prove**: Does not prove receiver handles all signal kwargs.
+- **Common Tool**: `find_callers / get_references / get_context`
+- **Example**: `on_customer_created` -> `HANDLES_SIGNAL` (`FRAMEWORK_VERIFIED`) -> `Customer`
 
 #### `HAS_CHECK_CONSTRAINT`
 - **Meaning**: Database table declares a `CheckConstraint` or SQL `CHECK (...)` expression.
@@ -331,6 +371,16 @@ CodeGraph enforces the 56 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **Common Tool**: `get_imports / get_dependents`
 - **Example**: `src/auth/routes.py` -> `IMPORTS` (`AST_VERIFIED`) -> `src.auth.service.AuthService`
 
+#### `IMPORTS_STYLE`
+- **Meaning**: Component or module imports a CSS/SCSS stylesheet or CSS module (`import styles from './Button.module.css'`).
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `STATIC_VERIFIED`, `UNKNOWN`
+- **Typical Source**: Component or page file (`Button.tsx`)
+- **Typical Target**: Stylesheet file (`Button.module.css`, `globals.css`)
+- **What It Proves**: Component imports style definitions from target stylesheet.
+- **What It Does Not Prove**: Does not prove all style classes in the file are actively applied.
+- **Common Tool**: `find_references / get_file / get_context`
+- **Example**: `Button.tsx` -> `IMPORTS_STYLE` (`AST_VERIFIED`) -> `Button.module.css`
+
 #### `INJECTS`
 - **Meaning**: Consumer endpoint, class, or function declares an injected dependency parameter (`Depends(provider)`, `@inject`).
 - **Allowed Evidence Classes**: `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `UNKNOWN`
@@ -340,6 +390,36 @@ CodeGraph enforces the 56 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **What It Does Not Prove**: Never implies the consumer directly calls the provider as a normal helper (`INJECTS != CALLS`).
 - **Common Tool**: `get_context / get_references / trace_path`
 - **Example**: `login_endpoint` -> `INJECTS` (`FRAMEWORK_VERIFIED`) -> `get_auth_service`
+
+#### `LOADS_SCRIPT`
+- **Meaning**: HTML template or page loads a JavaScript/TypeScript script bundle (`<script src='...'>`).
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `STATIC_VERIFIED`, `UNKNOWN`
+- **Typical Source**: HTML file (`index.html`)
+- **Typical Target**: Script file (`src/main.tsx`, `bundle.js`)
+- **What It Proves**: HTML document includes and executes target script.
+- **What It Does Not Prove**: Does not prove script execution order if async/defer are used.
+- **Common Tool**: `find_references / get_file`
+- **Example**: `index.html` -> `LOADS_SCRIPT` (`STATIC_VERIFIED`) -> `src/main.tsx`
+
+#### `LOADS_STYLESHEET`
+- **Meaning**: HTML template or page loads an external stylesheet (`<link rel='stylesheet' href='...'>`).
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `STATIC_VERIFIED`, `UNKNOWN`
+- **Typical Source**: HTML file (`index.html`)
+- **Typical Target**: Stylesheet file (`src/index.css`, `theme.css`)
+- **What It Proves**: HTML document links target stylesheet for presentation.
+- **What It Does Not Prove**: Does not prove runtime CDN stylesheet availability.
+- **Common Tool**: `find_references / get_file`
+- **Example**: `index.html` -> `LOADS_STYLESHEET` (`STATIC_VERIFIED`) -> `src/index.css`
+
+#### `MAPS_TO_COLLECTION`
+- **Meaning**: NoSQL document model (Mongoose model) maps to an underlying MongoDB collection.
+- **Allowed Evidence Classes**: `AMBIGUOUS`, `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `STATIC_VERIFIED`, `UNKNOWN`
+- **Typical Source**: Mongoose model (`InvoiceModel`)
+- **Typical Target**: MongoDB collection (`invoices`)
+- **What It Proves**: Static mapping between document model and database collection.
+- **What It Does Not Prove**: Does not prove database schema strictness unless validation options are inspected.
+- **Common Tool**: `find_db_tables / find_db_models / get_db_table`
+- **Example**: `InvoiceModel` -> `MAPS_TO_COLLECTION` (`FRAMEWORK_VERIFIED`) -> `db.UNKNOWN.UNKNOWN.invoices`
 
 #### `MAPS_TO_COLUMN`
 - **Meaning**: ORM model attribute or field maps to a database table column.
@@ -401,6 +481,16 @@ CodeGraph enforces the 56 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **Common Tool**: `get_architecture / get_imports`
 - **Example**: `packages/orders` -> `PACKAGE_IMPORTS` (`AST_VERIFIED`) -> `packages/shared`
 
+#### `PIPELINE_STEP`
+- **Meaning**: Sequential execution link in an AI/ML pipeline or LangChain LCEL chain (prompt | llm | parser).
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `UNKNOWN`
+- **Typical Source**: Upstream pipeline component or prompt template (`prompt_template`)
+- **Typical Target**: Downstream pipeline component or model runner (`chat_model`)
+- **What It Proves**: Dataflow pipe composition between execution steps in an AI/ML workflow.
+- **What It Does Not Prove**: Does not prove runtime type convergence between pipe boundaries.
+- **Common Tool**: `trace_path / find_callees / get_context`
+- **Example**: `prompt_template` -> `PIPELINE_STEP` (`DATAFLOW_VERIFIED`) -> `chat_model`
+
 #### `POSSIBLE_CALLS`
 - **Meaning**: Candidate or dynamically dispatched call edge that is plausible (`POSSIBLE`) or unresolved (`UNKNOWN`).
 - **Allowed Evidence Classes**: `AMBIGUOUS`, `POSSIBLE`, `UNKNOWN`
@@ -440,6 +530,16 @@ CodeGraph enforces the 56 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **What It Does Not Prove**: When target table is dynamic, pair with `POSSIBLE_TABLE` or `UNKNOWN_TABLE`.
 - **Common Tool**: `find_db_queries / get_runtime_trace`
 - **Example**: `run_report` -> `QUERIES_DATABASE` (`AST_VERIFIED`) -> `db.UNKNOWN.UNKNOWN`
+
+#### `READS_COLLECTION`
+- **Meaning**: Function or route reads (find, aggregate, count) documents from a MongoDB collection.
+- **Allowed Evidence Classes**: `AMBIGUOUS`, `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `RUNTIME_OBSERVED`, `RUNTIME_UNOBSERVED`, `STATIC_VERIFIED`, `UNKNOWN`
+- **Typical Source**: Caller symbol or API handler (`listInvoices`)
+- **Typical Target**: MongoDB collection (`invoices`)
+- **What It Proves**: Read query (`Model.find`, `Model.findOne`, `aggregate`) against target collection.
+- **What It Does Not Prove**: Does not prove document existence at runtime.
+- **Common Tool**: `find_db_readers / get_context / trace_path`
+- **Example**: `listInvoices` -> `READS_COLLECTION` (`AST_VERIFIED`) -> `db.UNKNOWN.UNKNOWN.invoices`
 
 #### `READS_COLUMN`
 - **Meaning**: Query or function explicitly selects or filters on a specific database column.
@@ -530,6 +630,26 @@ CodeGraph enforces the 56 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **What It Does Not Prove**: Never proves a direct `CALLS` edge at registration time.
 - **Common Tool**: `get_references / get_context`
 - **Example**: `command_registry` -> `REGISTERS` (`DATAFLOW_VERIFIED`) -> `CreateInvoiceHandler`
+
+#### `RENDERS`
+- **Meaning**: React JSX component renders a child component element (`<ChildComponent ... />`).
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `UNKNOWN`
+- **Typical Source**: Parent component symbol (`DashboardPage`, `InvoiceTable`)
+- **Typical Target**: Child component symbol (`InvoiceCard`, `Button`)
+- **What It Proves**: Static JSX component composition tree hierarchy.
+- **What It Does Not Prove**: Does not prove conditional branch execution at runtime unless inspected.
+- **Common Tool**: `find_callers / find_callees / get_references`
+- **Example**: `Dashboard` -> `RENDERS` (`AST_VERIFIED`) -> `InvoiceTable`
+
+#### `RENDERS_TEMPLATE`
+- **Meaning**: View or controller renders an HTML or Jinja template (render_template, TemplateResponse, template_name).
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `UNKNOWN`
+- **Typical Source**: View handler symbol (`dashboard_view`)
+- **Typical Target**: Template file path (`templates/dashboard.html`)
+- **What It Proves**: Deterministic linkage between backend view function and frontend HTML template.
+- **What It Does Not Prove**: Does not prove all template context variables are provided.
+- **Common Tool**: `list_routes / get_context / find_callees`
+- **Example**: `dashboard_view` -> `RENDERS_TEMPLATE` (`FRAMEWORK_VERIFIED`) -> `templates/dashboard.html`
 
 #### `RESOLVES_DEPENDENCY`
 - **Meaning**: DI container or binding map resolves an abstract interface/token to a concrete implementation.
@@ -631,6 +751,26 @@ CodeGraph enforces the 56 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **Common Tool**: `find_related_tests / get_context`
 - **Example**: `test_charge_card` -> `TESTS_SYMBOL` (`AST_VERIFIED`) -> `BillingService.charge_card`
 
+#### `TOOL_HANDLER`
+- **Meaning**: Function or method is decorated as an agentic AI tool (@tool, @function_tool, @agent).
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `UNKNOWN`
+- **Typical Source**: Tool function (`search_web_tool`, `execute_sql`)
+- **Typical Target**: Agent framework registration decorator (`@tool`)
+- **What It Proves**: Function is registered as a callable tool in an agentic workflow.
+- **What It Does Not Prove**: Does not prove tool argument schema compatibility with LLM runtime.
+- **Common Tool**: `find_references / get_symbol / get_context`
+- **Example**: `search_web_tool` -> `TOOL_HANDLER` (`FRAMEWORK_VERIFIED`) -> `@tool`
+
+#### `TRIGGERS_SIGNAL`
+- **Meaning**: Model lifecycle action (save, delete) or signal emission triggers a signal receiver.
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `UNKNOWN`
+- **Typical Source**: Model or lifecycle method (`Customer.save`, `signal.send`)
+- **Typical Target**: Signal receiver function (`on_customer_created`)
+- **What It Proves**: Django signal linkage connects the model or trigger site to registered receivers.
+- **What It Does Not Prove**: Does not prove transaction commit before receiver execution.
+- **Common Tool**: `trace_path / find_callees / get_context`
+- **Example**: `Customer.save` -> `TRIGGERS_SIGNAL` (`FRAMEWORK_VERIFIED`) -> `on_customer_created`
+
 #### `UNKNOWN_TABLE`
 - **Meaning**: Database query executes a dynamically constructed SQL string or table identifier that cannot be statically resolved (`evidence_class='UNKNOWN'`).
 - **Allowed Evidence Classes**: `AMBIGUOUS`, `UNKNOWN`
@@ -660,6 +800,36 @@ CodeGraph enforces the 56 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **What It Does Not Prove**: Does not prove direct call execution.
 - **Common Tool**: `get_references / get_context`
 - **Example**: `TokenEncoder` -> `USES` (`AST_VERIFIED`) -> `JWT_ALGORITHM`
+
+#### `USES_HOOK`
+- **Meaning**: React component or custom hook calls a state/lifecycle hook (`useAuth()`, `useInvoices()`).
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `UNKNOWN`
+- **Typical Source**: Component or custom hook (`UserProfile`, `useOrderDetails`)
+- **Typical Target**: Hook function symbol (`useAuth`, `useQuery`)
+- **What It Proves**: Component or custom hook lifecycle dependency on target hook.
+- **What It Does Not Prove**: Does not prove hook return value shape without inspecting hook definition.
+- **Common Tool**: `find_callers / get_references / trace_path`
+- **Example**: `UserProfile` -> `USES_HOOK` (`FRAMEWORK_VERIFIED`) -> `useAuth`
+
+#### `USES_STYLE_CLASS`
+- **Meaning**: JSX element or component references a CSS class selector (`className={styles.header}` or `className='btn-primary'`).
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `STATIC_VERIFIED`, `UNKNOWN`
+- **Typical Source**: Component or JSX element (`Header.tsx`)
+- **Typical Target**: CSS class symbol (`.header-title`, `.btn-primary`)
+- **What It Proves**: Component applies the named CSS style class.
+- **What It Does Not Prove**: Does not prove CSS specificity or cascade overrides.
+- **Common Tool**: `find_references / search_code / get_context`
+- **Example**: `Header.tsx` -> `USES_STYLE_CLASS` (`FRAMEWORK_VERIFIED`) -> `.header-title`
+
+#### `WRITES_COLLECTION`
+- **Meaning**: Function or route writes (insert, update, delete) documents to a MongoDB collection.
+- **Allowed Evidence Classes**: `AMBIGUOUS`, `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `RUNTIME_OBSERVED`, `RUNTIME_UNOBSERVED`, `STATIC_VERIFIED`, `UNKNOWN`
+- **Typical Source**: Caller symbol or API handler (`createInvoice`)
+- **Typical Target**: MongoDB collection (`invoices`)
+- **What It Proves**: Write operation (`Model.create`, `Model.updateOne`, `insertOne`) against target collection.
+- **What It Does Not Prove**: Does not prove transaction commit or replica-set write concern acknowledgment.
+- **Common Tool**: `find_db_writers / get_context / trace_path`
+- **Example**: `createInvoice` -> `WRITES_COLLECTION` (`AST_VERIFIED`) -> `db.UNKNOWN.UNKNOWN.invoices`
 
 #### `WRITES_COLUMN`
 - **Meaning**: Query or function explicitly inserts or updates a specific database column.
@@ -987,18 +1157,18 @@ Repository -> Candidate Facts -> Task-Aware Filtering (RetrievalPolicy)
 | :--- | :--- | :--- | :--- |
 | `ARCHITECTURE` | `1` | ENTRYPOINT -> SERVICE -> DATA -> EXTERNAL | `COMMAND_HANDLER`, `CONFIGURES`, `CONTAINS`, `DEFINES`, `DEPENDS_ON`, `DEPENDS_ON_PACKAGE`, `HANDLED_BY`, `IMPORTS`, ... |
 | `CHANGE` | `3` | TARGET -> HANDLER -> SERVICE -> DATA -> TEST | `CALLED_BY`, `CALLS`, `COMMAND_HANDLER`, `CONFIGURES`, `DEFINES`, `DEPENDS_ON`, `DEPENDS_ON_PACKAGE`, `DISPATCHES_TO`, ... |
-| `DEBUG` | `3` | TARGET -> EXECUTION_PATH -> ERROR_PATH -> TEST | `CALLED_BY`, `CALLS`, `COMMAND_HANDLER`, `CONFIGURES`, `DEFINES`, `DEPENDS_ON`, `DEPENDS_ON_PACKAGE`, `DISPATCHES_TO`, ... |
+| `DEBUG` | `3` | TARGET -> EXECUTION_PATH -> ERROR_PATH -> TEST | `CALLED_BY`, `CALLS`, `COMMAND_HANDLER`, `CONFIGURES`, `DEFINES`, `DEPENDS_ON`, `DEPENDS_ON_PACKAGE`, `DISPATCHES_FORWARD`, ... |
 | `EXPLAIN` | `2` | TARGET -> DEFINITIONS -> DEPENDENCIES -> CALLERS_CALLEES | `CALLS`, `COMMAND_HANDLER`, `CONFIGURES`, `CONTAINS`, `DEFINES`, `DEPENDS_ON`, `DEPENDS_ON_PACKAGE`, `DISPATCHES_TO`, ... |
 | `IMPACT` | `3` | TARGET -> CALLERS -> DEPENDENTS -> TEST | `CALLED_BY`, `CALLS`, `COMMAND_HANDLER`, `DEPENDS_ON`, `DEPENDS_ON_PACKAGE`, `DISPATCHES_TO`, `EVENT_LISTENER`, `HANDLED_BY`, ... |
 | `REFACTOR` | `2` | TARGET -> DEFINITIONS -> CALLERS_CALLEES -> TEST | `CALLS`, `CONTAINS`, `DEFINES`, `DEPENDS_ON`, `DEPENDS_ON_PACKAGE`, `EXTENDS`, `IMPLEMENTS`, `IMPORTS`, ... |
 | `REVIEW` | `2` | TARGET -> HANDLER -> SERVICE -> TEST | `CALLED_BY`, `CALLS`, `DEPENDS_ON`, `DEPENDS_ON_PACKAGE`, `HANDLED_BY`, `IMPORTS`, `INJECTS`, `POSSIBLE_CALLS`, ... |
 | `TEST` | `2` | TEST -> TARGET -> DEFINITIONS -> DEPENDENCIES | `CALLS`, `COMMAND_HANDLER`, `DEFINES`, `DEPENDS_ON`, `EVENT_LISTENER`, `HANDLED_BY`, `IMPORTS`, `INJECTS`, ... |
-| `TRACE` | `4` | ENTRYPOINT -> HANDLER -> SERVICE -> DATA -> TEST | `CALLS`, `CONTAINS`, `DEFINES`, `DEPENDS_ON`, `DISPATCHES_TO`, `HANDLED_BY`, `IMPORTS`, `INJECTS`, ... |
-| `UNDERSTAND` | `2` | TARGET -> DEFINITIONS -> DEPENDENCIES -> CALLERS_CALLEES | `CALLS`, `COMMAND_HANDLER`, `CONFIGURES`, `CONTAINS`, `DEFINES`, `DEPENDS_ON`, `DEPENDS_ON_PACKAGE`, `DISPATCHES_TO`, ... |
+| `TRACE` | `4` | ENTRYPOINT -> HANDLER -> SERVICE -> DATA -> TEST | `CALLS`, `CONTAINS`, `DEFINES`, `DEPENDS_ON`, `DISPATCHES_FORWARD`, `DISPATCHES_TASK`, `DISPATCHES_TO`, `HANDLED_BY`, ... |
+| `UNDERSTAND` | `2` | TARGET -> DEFINITIONS -> DEPENDENCIES -> CALLERS_CALLEES | `CALLS`, `COMMAND_HANDLER`, `CONFIGURES`, `CONTAINS`, `DEFINES`, `DEPENDS_ON`, `DEPENDS_ON_PACKAGE`, `DISPATCHES_FORWARD`, ... |
 
 - **Hard Invariants & Output Boundaries of `get_context`**:
   - Primary input is `query` (`task` is also supported as a string or `TaskSpec` dict alias).
-  - Enforces strict output boundaries BEFORE MCP serialization: `max_tokens` (default `4000`, hard cap `20000`), `max_files` (default `15`, hard cap `30`), and `max_lines` (default `500`, hard cap `1500`).
+  - Enforces strict output boundaries BEFORE MCP serialization: `max_tokens` (default `4000`, hard cap `20000`), `max_files` (default `25`, hard cap `40`), and `max_lines` (default `500`, hard cap `1500`).
   - Returns explicit budget metadata: `selected_tokens`, `candidate_tokens`, `selected_files`, `selected_lines`, `coverage_score`, and `truncated`.
   - Preserves `unknowns` and `ambiguities` explicitly—never drops uncertainty to save tokens.
   - Compresses duplicate `(source, target, relationship)` edges into a single record with `occurrence_count` and `supporting_locations`.
@@ -1087,7 +1257,7 @@ CodeGraph supports six deterministic tool profiles (`codegraph mcp serve --profi
 | `graph` | `17` | Tracing, change-impact, test discovery, and architecture sessions | `analyze_impact`, `find_related_tests`, `get_architecture`, `get_call_graph`, `get_callees`, `get_callers`, `get_context`, `get_dependents`, `get_file`, `get_git_impact`, `get_imports`, `get_references`, `get_symbol`, `list_routes`, `resolve_symbol`, `search_symbols`, `trace_path` |
 | `minimal` | `21` | Context-heavy coding sessions needing core interrogation plus get_context and read_file | `compile_task`, `find_symbol`, `get_architecture`, `get_callees`, `get_callers`, `get_context`, `get_dependents`, `get_file`, `get_git_impact`, `get_imports`, `get_references`, `get_repository_status`, `get_resource_status`, `get_symbol`, `list_routes`, `read_file`, `resolve_symbol`, `search_code`, `search_symbols`, `trace_path`, `verify_evidence` |
 | `developer` | `34` | Full interactive development with impact analysis, test linking, and git history | `analyze_change_impact`, `analyze_impact`, `compile_task`, `find_callees`, `find_callers`, `find_references`, `find_related_tests`, `find_symbol`, `get_architecture`, `get_call_graph`, `get_callees`, `get_callers`, `get_context`, `get_dependents`, `get_evidence`, `get_file`, `get_file_history`, `get_git_impact`, `get_graph`, `get_imports`, `get_recent_changes`, `get_references`, `get_repository_status`, `get_resource_status`, `get_symbol`, `list_routes`, `plan_retrieval`, `read_file`, `resolve_symbol`, `search_code`, `search_symbols`, `trace_call`, `trace_path`, `verify_evidence` |
-| `full` | `62` | Complete diagnostic, database intelligence, runtime reconciliation, benchmark, and repository administration sessions | `analyze_change_impact`, `analyze_impact`, `check_context_freshness`, `compare_git`, `compile_task`, `detect_semantic_conflicts`, `find_callees`, `find_callers`, `find_db_callers`, `find_db_columns`, `find_db_models`, `find_db_queries`, `find_db_readers`, `find_db_relationships`, `find_db_tables`, `find_db_writers`, `find_references`, `find_related_tests`, `find_routes`, `find_symbol`, `find_tests`, `get_architecture`, `get_call_graph`, `get_callees`, `get_callers`, `get_change_impact`, `get_context`, `get_db_impact`, `get_db_schema`, `get_db_table`, `get_dependencies`, `get_dependency_graph`, `get_dependents`, `get_evidence`, `get_file`, `get_file_history`, `get_file_symbols`, `get_git_impact`, `get_git_state`, `get_graph`, `get_imports`, `get_project_structure`, `get_recent_changes`, `get_references`, `get_repository_status`, `get_resource_status`, `get_runtime_trace`, `get_symbol`, `ingest_runtime_traces`, `list_routes`, `plan_retrieval`, `read_file`, `reconcile_static_runtime`, `resolve_symbol`, `search_code`, `search_memory`, `search_symbols`, `trace_call`, `trace_flow`, `trace_path`, `trace_symbol_history`, `verify_evidence` |
+| `full` | `70` | Complete diagnostic, database intelligence, runtime reconciliation, benchmark, and repository administration sessions | `analyze_change_impact`, `analyze_impact`, `check_api_drift`, `check_context_freshness`, `check_db_drift`, `check_route_schema_drift`, `compare_git`, `compile_task`, `detect_semantic_conflicts`, `find_callees`, `find_callers`, `find_db_callers`, `find_db_columns`, `find_db_models`, `find_db_queries`, `find_db_readers`, `find_db_relationships`, `find_db_tables`, `find_db_writers`, `find_references`, `find_related_tests`, `find_routes`, `find_symbol`, `find_tests`, `get_architecture`, `get_call_graph`, `get_callees`, `get_callers`, `get_change_impact`, `get_context`, `get_db_impact`, `get_db_schema`, `get_db_table`, `get_dependencies`, `get_dependency_graph`, `get_dependents`, `get_distributed_trace`, `get_evidence`, `get_file`, `get_file_history`, `get_file_symbols`, `get_git_impact`, `get_git_state`, `get_graph`, `get_imports`, `get_live_services`, `get_monorepo_packages`, `get_project_structure`, `get_recent_changes`, `get_references`, `get_repository_status`, `get_resource_status`, `get_runtime_trace`, `get_symbol`, `ingest_runtime_traces`, `list_routes`, `plan_retrieval`, `read_file`, `reconcile_static_runtime`, `resolve_symbol`, `rollback_refactor`, `safe_rename`, `search_code`, `search_memory`, `search_symbols`, `trace_call`, `trace_flow`, `trace_path`, `trace_symbol_history`, `verify_evidence` |
 
 ---
 
@@ -1480,7 +1650,7 @@ Every tool chain has an explicit **STOP condition**:
 
 ---
 
-## 41. Complete Tool Reference (All 62 Exposed MCP Tools)
+## 41. Complete Tool Reference (All 70 Exposed MCP Tools)
 
 ### `analyze_change_impact`
 
@@ -1588,6 +1758,60 @@ find_related_tests or read_file on direct_callers
 - **Call**: `analyze_impact(symbol="DatabasePool.acquire", max_depth=3)`
 - **Interpretation**: Review direct_callers, transitive_callers, affected_routes, and related_tests.
 
+### `check_api_drift`
+
+- **Capability**: `client_server_api_drift`
+- **Profiles**: `full`
+- **Task Categories**: `ROUTE_DISCOVERY`, `CHANGE_IMPACT`, `DEBUG`
+
+#### Purpose
+Detect client-server API contract drift between frontend fetch or axios calls and backend route registrations. Flags orphaned client endpoints (404s) and HTTP method mismatches (405s). Use when validating frontend API calls against backend endpoints before deployment. Does not execute live HTTP requests or validate dynamic URL strings constructed via runtime interpolation.
+
+#### Use when
+- Finding broken API endpoint paths in frontend client code
+- Detecting HTTP method mismatches before deployment
+
+#### Avoid when
+- Frontend code does not use REST fetch/axios calls to backend routes
+
+#### Required inputs
+None
+
+#### Optional inputs
+None
+
+#### Minimal invocation
+```python
+check_api_drift()
+```
+
+#### Advanced invocation
+```python
+check_api_drift()
+```
+
+#### Result interpretation
+- **Output Type**: `dict[str, Any]`
+- **Key Fields**: `status`, `orphaned_client_routes`, `method_mismatches`, `verified_contracts_count`
+- **Relationships Emitted**: None (non-edge output)
+
+#### Evidence meaning
+Cross-layer AST static verification comparing frontend fetch calls with backend route trees.
+
+#### Non-guarantees
+Does not execute live HTTP requests or validate dynamic URL concatenation at runtime.
+
+#### Typical follow-up
+find_routes or list_routes
+
+#### Common mistakes
+- Assuming check_api_drift catches dynamic URL template literals constructed via arbitrary runtime string interpolation
+
+#### Example
+- **Developer request**: "Check if any frontend API calls mismatch backend routes."
+- **Call**: `check_api_drift()`
+- **Interpretation**: Inspect orphaned_client_routes for potential 404s.
+
 ### `check_context_freshness`
 
 - **Capability**: `context_freshness_validation`
@@ -1640,6 +1864,114 @@ get_context if status is STALE or PARTIALLY_STALE
 - **Developer request**: "Is my current context packet still valid after my recent git modifications?"
 - **Call**: `check_context_freshness(task="Fix auth timeout")`
 - **Interpretation**: Inspect status: VALID means safe to proceed, STALE means recompile required.
+
+### `check_db_drift`
+
+- **Capability**: `database_schema_drift`
+- **Profiles**: `full`
+- **Task Categories**: `DEBUG`, `CHANGE_IMPACT`
+
+#### Purpose
+Detect database schema drift between migration files, live database state, and code ORM models with zero idle CPU. Flags unmapped tables, missing columns, and migration version state. Use when verifying whether database migrations are up to date with code models. Does not execute SQL data assertions or validate column constraints against live row data.
+
+#### Use when
+- Verifying whether database migrations are up to date with code models
+- Diagnosing missing table or column runtime errors
+
+#### Avoid when
+- Project does not utilize SQL databases or database models
+
+#### Required inputs
+None
+
+#### Optional inputs
+None
+
+#### Minimal invocation
+```python
+check_db_drift()
+```
+
+#### Advanced invocation
+```python
+check_db_drift()
+```
+
+#### Result interpretation
+- **Output Type**: `dict[str, Any]`
+- **Key Fields**: `status`, `unmapped_tables`, `missing_columns`, `migration_version`, `is_drifted`
+- **Relationships Emitted**: None (non-edge output)
+
+#### Evidence meaning
+Comparison of SQLite/PostgreSQL schemas and migration folder state with 5-second TTL cache.
+
+#### Non-guarantees
+Does not execute SQL data assertions or validate column constraints against live row data.
+
+#### Typical follow-up
+get_db_schema or find_db_tables
+
+#### Common mistakes
+- Assuming check_db_drift executes database migrations rather than inspecting drift
+
+#### Example
+- **Developer request**: "Check if our database schema has drifted from migrations."
+- **Call**: `check_db_drift()`
+- **Interpretation**: Check if is_drifted is true and review missing_columns.
+
+### `check_route_schema_drift`
+
+- **Capability**: `route_schema_validation_drift`
+- **Profiles**: `full`
+- **Task Categories**: `DEBUG`, `CHANGE_IMPACT`
+
+#### Purpose
+Use when detecting schema validation drift between a route/handler input schema (Pydantic BaseModel, Django Form, DRF Serializer) and destination database table columns. Flags MISSING_REQUIRED_COLUMN, NULLABILITY_MISMATCH, TYPE_INCOMPATIBILITY, LENGTH_CONSTRAINT_DRIFT, and UNUSED_SCHEMA_FIELD. Does not execute live requests.
+
+#### Use when
+- Validating route request payload models against destination database columns
+- Preventing runtime NOT NULL constraint failures and type mismatches before deployment
+
+#### Avoid when
+- Inspecting static code symbols unrelated to HTTP routes or database persistence
+
+#### Required inputs
+None
+
+#### Optional inputs
+`route`, `handler`, `table`, `schema`
+
+#### Minimal invocation
+```python
+check_route_schema_drift(route="/api/v1/orders/checkout")
+```
+
+#### Advanced invocation
+```python
+check_route_schema_drift(route="/api/v1/orders/checkout", table="orders", schema="CheckoutRequest")
+```
+
+#### Result interpretation
+- **Output Type**: `dict[str, Any]`
+- **Key Fields**: `status`, `route_or_handler`, `target_table`, `schema_name`, `drift_count`, `critical_count`, `warning_count`, `info_count`, `issues`
+- **Relationships Emitted**: None (non-edge output)
+
+#### Evidence meaning
+Deterministic AST and database schema entity comparison.
+
+#### Non-guarantees
+Does not execute live HTTP requests or live SQL transactions.
+
+#### Typical follow-up
+get_route_db_lineage or get_db_table
+
+#### Common mistakes
+- Assuming check_route_schema_drift executes HTTP requests rather than inspecting static schemas
+
+#### Example
+- **Developer request**: "Check for schema drift on our checkout route."
+- **Call**: `check_route_schema_drift(route="/api/v1/orders/checkout")`
+- **Interpretation**: Review issues for MISSING_REQUIRED_COLUMN or NULLABILITY_MISMATCH.
 
 ### `compare_git`
 
@@ -2874,7 +3206,7 @@ find_tests or get_file on affected_routes / direct_callers
 - **Task Categories**: `DEBUG`, `TRACE`, `CHANGE_IMPACT`, `MULTI_FILE_INVESTIGATION`, `ARCHITECTURE`, `EXPLANATION`, `TEST_DISCOVERY`, `PACKAGE`
 
 #### Purpose
-Compile a token-bounded, coverage-optimized ContextPacket containing verified symbols, compressed relationships, routes, DI providers, packages, and related tests. Primary input: `query` (natural-language question, symbol, or task description; `task` is also supported as a compatibility alias for string or structured TaskSpec dict). Budget controls: `max_tokens` (default 4000, hard cap 20000), `max_files` (default 15, hard cap 30), `max_lines` (default 500, hard cap 1500). Preserves UNKNOWN, POSSIBLE, and AMBIGUOUS states explicitly. Does not return full raw files; use targeted get_file or read_file only if exact omitted lines are needed afterward.
+Compile a token-bounded, coverage-optimized ContextPacket containing verified symbols, compressed relationships, routes, DI providers, packages, and related tests. Primary input: `query` (natural-language question, symbol, or task description; `task` is also supported as a compatibility alias for string or structured TaskSpec dict). Budget controls: `max_tokens` (default 4000, hard cap 20000), `max_files` (default 25, hard cap 40), `max_lines` (default 500, hard cap 1500). Preserves UNKNOWN, POSSIBLE, and AMBIGUOUS states explicitly. Does not return full raw files; use targeted get_file or read_file only if exact omitted lines are needed afterward.
 
 #### Use when
 - Investigating a bug, route flow, DI chain, or multi-file feature in one bounded call
@@ -2896,7 +3228,7 @@ get_context(query="Debug authentication failure in login_endpoint")
 
 #### Advanced invocation
 ```python
-get_context(query="Trace DI chain for get_current_user", intent="DEBUG", max_tokens=4000, max_files=15, max_lines=500, explain=True)
+get_context(query="Trace DI chain for get_current_user", intent="DEBUG", max_tokens=4000, max_files=25, max_lines=500, explain=True)
 ```
 
 #### Result interpretation
@@ -3239,6 +3571,60 @@ find_related_tests or analyze_impact
 - **Developer request**: "Which modules depend on src/auth/repository.py?"
 - **Call**: `get_dependents(file="src/auth/repository.py")`
 - **Interpretation**: Review the dependents list to see all upstream files and symbols importing the module.
+
+### `get_distributed_trace`
+
+- **Capability**: `distributed_trace_reconstruction`
+- **Profiles**: `full`
+- **Task Categories**: `TRACE`, `DEBUG`
+
+#### Purpose
+Stitch and reconstruct multi-service distributed execution trees across frontend, backend, and database boundaries for a specific W3C trace ID. Use when tracing cross-service requests or debugging multi-service latency bottlenecks. Does not capture unobserved code paths or untraced sidecar requests.
+
+#### Use when
+- Tracing an end-to-end user request from UI click to backend SQL execution
+- Pinpointing which service failed in a distributed microservice workflow
+
+#### Avoid when
+- Static code traversal is sufficient or dev servers have not captured runtime traces
+
+#### Required inputs
+`trace_id`
+
+#### Optional inputs
+None
+
+#### Minimal invocation
+```python
+get_distributed_trace(trace_id="4bf92f3577b34da6a3ce929d0e0e4736")
+```
+
+#### Advanced invocation
+```python
+get_distributed_trace(trace_id="4bf92f3577b34da6a3ce929d0e0e4736")
+```
+
+#### Result interpretation
+- **Output Type**: `dict[str, Any]`
+- **Key Fields**: `trace_id`, `status`, `root_span`, `total_spans`, `services_involved`, `timeline`
+- **Relationships Emitted**: None (non-edge output)
+
+#### Evidence meaning
+W3C traceparent stitching across multi-service runtime observations.
+
+#### Non-guarantees
+Does not capture unobserved code paths or untraced sidecar requests.
+
+#### Typical follow-up
+get_runtime_trace or reconcile_static_runtime
+
+#### Common mistakes
+- Passing span_id instead of trace_id to get_distributed_trace
+
+#### Example
+- **Developer request**: "Trace the distributed execution for trace ID 4bf92f3577b34da6a3ce929d0e0e4736."
+- **Call**: `get_distributed_trace(trace_id="4bf92f3577b34da6a3ce929d0e0e4736")`
+- **Interpretation**: Review timeline and services_involved to locate execution bottlenecks or failures.
 
 ### `get_evidence`
 
@@ -3664,6 +4050,114 @@ get_dependents or get_architecture
 - **Developer request**: "What modules does src/auth/routes.py import?"
 - **Call**: `get_imports(file="src/auth/routes.py")`
 - **Interpretation**: Inspect the imports list for internal module paths and cross-package imports.
+
+### `get_live_services`
+
+- **Capability**: `live_service_discovery`
+- **Profiles**: `full`
+- **Task Categories**: `DIAGNOSTIC`, `DEBUG`, `ARCHITECTURE`
+
+#### Purpose
+Detect and attribute active localhost services, ports, PIDs, frameworks, and workspace sub-packages with zero idle CPU. Use when diagnosing running dev servers or multi-service architectures. Does not prove live HTTP response payloads or application layer health.
+
+#### Use when
+- Identifying running backend and frontend dev servers
+- Attributing localhost ports to workspace sub-directories
+
+#### Avoid when
+- Dev servers are not running or only static AST analysis is required
+
+#### Required inputs
+None
+
+#### Optional inputs
+None
+
+#### Minimal invocation
+```python
+get_live_services()
+```
+
+#### Advanced invocation
+```python
+get_live_services()
+```
+
+#### Result interpretation
+- **Output Type**: `dict[str, Any]`
+- **Key Fields**: `live_services`, `configured_services`, `count`
+- **Relationships Emitted**: None (non-edge output)
+
+#### Evidence meaning
+Kernel socket table inspection and static configuration discovery with 5-second TTL cache.
+
+#### Non-guarantees
+Does not prove live HTTP response payloads or application layer health.
+
+#### Typical follow-up
+get_distributed_trace or list_routes
+
+#### Common mistakes
+- Polling get_live_services in a rapid spin loop instead of relying on the 5-second TTL cache
+
+#### Example
+- **Developer request**: "What dev servers are running on localhost?"
+- **Call**: `get_live_services()`
+- **Interpretation**: Inspect live_services for active listening ports and PIDs.
+
+### `get_monorepo_packages`
+
+- **Capability**: `monorepo_package_discovery`
+- **Profiles**: `full`
+- **Task Categories**: `PACKAGE`, `ARCHITECTURE`
+
+#### Purpose
+Catalog monorepo workspace packages, tools (pnpm, Turborepo, npm/yarn workspaces), entry points, and inter-package dependencies. Use when mapping multi-package repository structure and package boundaries. Does not prove build system execution order or runtime dependency loading.
+
+#### Use when
+- Mapping multi-package repository structure and package boundaries
+- Tracing internal dependency graph between workspace packages
+
+#### Avoid when
+- Repository is a single standalone package without workspaces
+
+#### Required inputs
+None
+
+#### Optional inputs
+None
+
+#### Minimal invocation
+```python
+get_monorepo_packages()
+```
+
+#### Advanced invocation
+```python
+get_monorepo_packages()
+```
+
+#### Result interpretation
+- **Output Type**: `dict[str, Any]`
+- **Key Fields**: `tool`, `packages`, `dependency_graph`, `root_path`
+- **Relationships Emitted**: None (non-edge output)
+
+#### Evidence meaning
+Deterministic workspace manifest analysis across pnpm, yarn, npm, Turborepo, Cargo, and Poetry.
+
+#### Non-guarantees
+Does not prove build system execution order or runtime dependency loading.
+
+#### Typical follow-up
+get_architecture or get_dependencies
+
+#### Common mistakes
+- Expecting get_monorepo_packages to build or run package package.json scripts
+
+#### Example
+- **Developer request**: "List all packages in this monorepo and their dependencies."
+- **Call**: `get_monorepo_packages()`
+- **Interpretation**: Inspect packages mapping to understand package names, root paths, and dependencies.
 
 ### `get_project_structure`
 
@@ -4362,6 +4856,114 @@ get_callers, get_callees, get_references, trace_path, or get_context
 - **Developer request**: "Where is AuthService defined?"
 - **Call**: `resolve_symbol(symbol="AuthService")`
 - **Interpretation**: Inspect canonical_id, file, and start_line..end_line; if ambiguity_state == 'AMBIGUOUS', compare alternatives by module/package.
+
+### `rollback_refactor`
+
+- **Capability**: `refactor_transaction_rollback`
+- **Profiles**: `full`
+- **Task Categories**: `CHANGE_IMPACT`
+
+#### Purpose
+Atomically rollback an applied refactoring transaction using its rollback manifest ID. Use when reverting an applied refactoring transaction to restore original source files cleanly. Does not restore files if they were modified externally after refactoring was applied.
+
+#### Use when
+- Undoing an applied refactoring transaction cleanly to restore original code bytes
+
+#### Avoid when
+- Transaction was not applied or files have subsequent manual edits
+
+#### Required inputs
+`transaction_id`
+
+#### Optional inputs
+None
+
+#### Minimal invocation
+```python
+rollback_refactor(transaction_id="rf_abc123")
+```
+
+#### Advanced invocation
+```python
+rollback_refactor(transaction_id="rf_abc123")
+```
+
+#### Result interpretation
+- **Output Type**: `RefactorResult`
+- **Key Fields**: `status`, `target_symbol`, `new_name`, `files_changed`, `rollback_id`, `errors`
+- **Relationships Emitted**: None (non-edge output)
+
+#### Evidence meaning
+Precondition SHA-256 validation and atomic file replacement with os.replace.
+
+#### Non-guarantees
+Cannot rollback if files were modified externally after refactoring was applied.
+
+#### Typical follow-up
+get_repository_status to verify repository state
+
+#### Common mistakes
+- Calling rollback after modifying the files externally (which blocks rollback for safety)
+
+#### Example
+- **Developer request**: "Undo the refactor with transaction ID rf_12345."
+- **Call**: `rollback_refactor(transaction_id="rf_12345")`
+- **Interpretation**: Inspect status=='ROLLED_BACK' and files_changed.
+
+### `safe_rename`
+
+- **Capability**: `ast_symbol_refactor`
+- **Profiles**: `full`
+- **Task Categories**: `CHANGE_IMPACT`
+
+#### Purpose
+Perform a deterministic, syntax-validated, transaction-safe AST rename of a symbol across the repository. Use when renaming a function, method, or class across multiple files safely with in-memory preview diffs. Does not prove runtime equivalence beyond AST syntax validation and statically verified references.
+
+#### Use when
+- Renaming a function, method, or class safely across multiple files without breaking references
+- Previewing exact diffs before executing an atomic codebase refactoring
+
+#### Avoid when
+- Trivial single-file edit of a local variable inside an already-open function
+
+#### Required inputs
+`target`, `new_name`
+
+#### Optional inputs
+`dry_run`, `force_uncertain`
+
+#### Minimal invocation
+```python
+safe_rename(target="AuthService", new_name="AuthenticationService", dry_run=True)
+```
+
+#### Advanced invocation
+```python
+safe_rename(target="AuthService.verify", new_name="verify_token", dry_run=False, force_uncertain=False)
+```
+
+#### Result interpretation
+- **Output Type**: `RefactorResult`
+- **Key Fields**: `status`, `target_symbol`, `new_name`, `risk`, `files_changed`, `spans_count`, `diffs`, `rollback_id`, `errors`
+- **Relationships Emitted**: `DEFINES`, `CALLS`, `IMPORTS`
+
+#### Evidence meaning
+Token-exact replacement with in-memory ast.parse syntax validation and atomic rollback manifest.
+
+#### Non-guarantees
+Does not prove semantic preservation beyond AST syntax validation and statically verified references.
+
+#### Typical follow-up
+rollback_refactor if undo needed, or find_tests to run affected test suite
+
+#### Common mistakes
+- Applying without inspecting preview diffs when dry_run=True
+- Using invalid Python identifiers with spaces or keywords
+
+#### Example
+- **Developer request**: "Rename AuthService to AuthenticationService and preview all diffs."
+- **Call**: `safe_rename(target="AuthService", new_name="AuthenticationService", dry_run=True)`
+- **Interpretation**: Inspect status=='READY', diffs, risk=='LOW', and affected_tests before applying.
 
 ### `search_code`
 

@@ -41,7 +41,7 @@ _CONFIDENCE_RANK = {
 
 # Hard upper safety limits enforced even when omitted or exceeded
 HARD_MAX_TOKENS = 20_000
-HARD_MAX_FILES = 30
+HARD_MAX_FILES = 40
 HARD_MAX_LINES = 1_500
 HARD_MAX_SYMBOLS = 50
 HARD_MAX_RELATIONSHIPS = 60
@@ -54,7 +54,7 @@ class ContextBudgetSpec:
     max_tokens: int = 20_000
     max_symbols: int = 25
     max_relationships: int = 30
-    max_files: int = 15
+    max_files: int = 25
     max_lines: int = 500
     max_depth: int = 3
     max_package_depth: int = 2
@@ -94,7 +94,7 @@ class ContextBudget:
     tool_calls: int = 1
     max_symbols: int = 25
     max_relationships: int = 30
-    max_files: int = 15
+    max_files: int = 25
     max_lines: int = 500
     max_depth: int = 3
     max_package_depth: int = 2
@@ -374,6 +374,17 @@ def compute_item_utility(
     dim_unseen = selected_dimensions is not None and dim not in selected_dimensions and dim != "GENERAL"
     coverage_factor = 1.3 if (layer_unseen or dim_unseen) else 1.0
 
+    # Priority boost for task-critical items over tangential ones
+    priority_dim_boost = 0.0
+    if dim == "TARGET" or item.relevance_score >= 0.80:
+        priority_dim_boost = 0.20
+    elif dim in ("ROUTE", "CALLER"):
+        priority_dim_boost = 0.12
+    elif dim == "CALLEE":
+        priority_dim_boost = 0.08
+    elif dim in ("TEST", "GIT", "PACKAGE", "GENERAL") and item.relevance_score < 0.50:
+        priority_dim_boost = -0.08
+
     # Redundancy penalty: heavily discount items sharing duplicate keys with already selected items
     redundancy_penalty = 0.5 if item.duplicate_key in selected_duplicate_keys else 0.0
 
@@ -384,6 +395,7 @@ def compute_item_utility(
         + (fresh_factor * 0.15)
         + (epistemic_factor * 0.10)
         + pkg_adj
+        + priority_dim_boost
     ) * coverage_factor
 
     final_score = max(0.01, utility - redundancy_penalty - conf_penalty - art_penalty - dist_penalty)
@@ -572,7 +584,7 @@ def optimize_context_budget(
     """Deterministically select the highest-utility, coverage-preserving subset of candidates."""
     raw_max_symbols = budget_spec.max_symbols if budget_spec else 25
     raw_max_relationships = budget_spec.max_relationships if budget_spec else 30
-    raw_max_files = budget_spec.max_files if budget_spec else 15
+    raw_max_files = budget_spec.max_files if budget_spec else 25
     raw_max_lines = budget_spec.max_lines if budget_spec else 500
     max_depth = budget_spec.max_depth if budget_spec else 3
     max_package_depth = budget_spec.max_package_depth if budget_spec else 2
@@ -767,7 +779,32 @@ def optimize_context_budget(
                     )
                     break
 
-    # Pass 1b: Architectural Layer Coverage pass — ensure distinct layers
+    # Pass 1b: Task-Critical Candidates Priority pass — ensure all direct targets,
+    # routes, and direct callers/callees are admitted into the file budget before
+    # tangential layer coverage files consume file slots.
+    for item in sorted_candidates:
+        if item in selected or _is_excluded(item, task_spec):
+            continue
+        if item.duplicate_key in selected_duplicate_keys:
+            continue
+        dim = item.infer_dimension()
+        is_task_critical = (
+            dim in ("TARGET", "ROUTE", "CALLER")
+            or item.relevance_score >= 0.70
+            or (dim == "CALLEE" and item.relevance_score >= 0.50)
+        )
+        if is_task_critical:
+            if _can_fit(item) or (dim == "TARGET" and len(selected) == 0 and _trim_to_fit(item)):
+                _accept(
+                    item,
+                    is_coverage_fill=False,
+                    why=[
+                        f"Task-critical priority candidate: dimension '{dim}'",
+                        f"Relevance: {item.relevance_score:.2f}, Evidence: {item.evidence_quality:.2f}",
+                    ],
+                )
+
+    # Pass 1c: Architectural Layer Coverage pass — ensure distinct layers
     # (e.g. ENTRYPOINT, SERVICE, DATA, TEST, GIT) get represented if candidates exist
     for item in sorted_candidates:
         if item in selected or _is_excluded(item, task_spec):

@@ -19,6 +19,7 @@ from .interrogation import (
     get_db_impact,
     get_db_schema,
     get_db_table,
+    get_route_db_lineage,
 )
 from .models import (
     DatabaseEntity,
@@ -29,15 +30,27 @@ from .models import (
     normalize_dialect,
     normalize_schema_name,
 )
+from .schema_drift import (
+    DriftSeverity,
+    DriftType,
+    SchemaDriftIssue,
+    SchemaFieldSpec,
+    detect_schema_drift,
+)
 
 __all__ = [
     "DatabaseEntity",
     "DatabaseEntityKind",
     "DatabaseExtractionResult",
     "DatabaseQueryFact",
+    "DriftSeverity",
+    "DriftType",
     "MigrationFact",
+    "SchemaDriftIssue",
+    "SchemaFieldSpec",
     "build_db_canonical_id",
     "detect_file_dialects",
+    "detect_schema_drift",
     "extract_database_from_file",
     "find_db_callers",
     "find_db_columns",
@@ -50,6 +63,7 @@ __all__ = [
     "get_db_impact",
     "get_db_schema",
     "get_db_table",
+    "get_route_db_lineage",
     "has_potential_database_activity",
     "has_potential_orm_models",
     "normalize_dialect",

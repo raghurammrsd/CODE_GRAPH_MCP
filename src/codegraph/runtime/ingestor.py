@@ -460,8 +460,14 @@ def ingest_runtime_traces(
     spans_by_id: dict[tuple[str, str], RuntimeEvent] = {(e.trace_id, e.span_id): e for e in events}
 
     for ev in events:
-        caller_resolved = _resolve_symbol_in_db(con, ev.caller_symbol or ev.handler_symbol or ev.service_name)
-        handler_resolved = _resolve_symbol_in_db(con, ev.handler_symbol) if ev.handler_symbol else caller_resolved
+        parent_ev = spans_by_id.get((ev.trace_id, ev.parent_span_id)) if ev.parent_span_id else None
+        route_path_eff = ev.route_path or (parent_ev.route_path if parent_ev else "")
+        http_method_eff = ev.http_method or (parent_ev.http_method if parent_ev else "")
+        handler_sym = ev.handler_symbol or (parent_ev.handler_symbol if parent_ev else "")
+        caller_sym = ev.caller_symbol or handler_sym or ev.service_name or (parent_ev.caller_symbol if parent_ev else "")
+
+        caller_resolved = _resolve_symbol_in_db(con, caller_sym)
+        handler_resolved = _resolve_symbol_in_db(con, handler_sym) if handler_sym else caller_resolved
         callee_resolved = _resolve_symbol_in_db(con, ev.callee_symbol) if ev.callee_symbol else ""
         tbl_resolved = _resolve_table_in_db(con, ev.db_table) if ev.db_table else ""
 
@@ -479,8 +485,8 @@ def ingest_runtime_traces(
                 ev.parent_span_id,
                 ev.timestamp,
                 ev.source_format,
-                ev.http_method,
-                redact_secrets(ev.route_path),
+                http_method_eff,
+                redact_secrets(route_path_eff),
                 handler_resolved,
                 caller_resolved,
                 callee_resolved,
@@ -498,22 +504,21 @@ def ingest_runtime_traces(
         )
 
         # 1. Route -> Handler runtime edge
-        if ev.route_path and handler_resolved:
-            ep_label = f"ENDPOINT:{ev.http_method or 'ANY'}:{ev.route_path}"
+        if route_path_eff and handler_resolved:
+            ep_label = f"ENDPOINT:{http_method_eff or 'ANY'}:{route_path_eff}"
             _upsert_runtime_edge(
                 con,
                 source=ep_label,
                 target=handler_resolved,
                 relationship="HANDLED_BY",
-                operation=ev.http_method or "HTTP",
+                operation=http_method_eff or "HTTP",
                 ev=ev,
                 next_gen=next_gen,
             )
             edges_upserted += 1
 
         # 2. Parent span caller -> child span caller edge
-        if ev.parent_span_id and (ev.trace_id, ev.parent_span_id) in spans_by_id:
-            parent_ev = spans_by_id[(ev.trace_id, ev.parent_span_id)]
+        if ev.parent_span_id and parent_ev:
             parent_sym = _resolve_symbol_in_db(con, parent_ev.caller_symbol or parent_ev.handler_symbol)
             if parent_sym and caller_resolved and parent_sym != caller_resolved:
                 _upsert_runtime_edge(
@@ -542,7 +547,7 @@ def ingest_runtime_traces(
 
         # 4. Caller / Service -> Database Table & Column runtime edges
         if ev.db_table and tbl_resolved:
-            src_actor = caller_resolved or ev.service_name or (f"ENDPOINT:{ev.http_method or 'ANY'}:{ev.route_path}" if ev.route_path else "runtime.anonymous")
+            src_actor = caller_resolved or handler_resolved or ev.service_name or (f"ENDPOINT:{http_method_eff or 'ANY'}:{route_path_eff}" if route_path_eff else "runtime.anonymous")
             op_upper = ev.db_operation.upper()
             rel = "READS_TABLE" if op_upper in ("SELECT", "READ", "FIND", "GET") else "WRITES_TABLE"
             _upsert_runtime_edge(
@@ -555,6 +560,21 @@ def ingest_runtime_traces(
                 next_gen=next_gen,
             )
             edges_upserted += 1
+
+            # Also create edge from route endpoint if available and distinct
+            if route_path_eff:
+                route_actor = f"ENDPOINT:{http_method_eff or 'ANY'}:{route_path_eff}"
+                if route_actor != src_actor:
+                    _upsert_runtime_edge(
+                        con,
+                        source=route_actor,
+                        target=tbl_resolved,
+                        relationship=rel,
+                        operation=op_upper or "QUERY",
+                        ev=ev,
+                        next_gen=next_gen,
+                    )
+                    edges_upserted += 1
 
             col_rel = "READS_COLUMN" if rel == "READS_TABLE" else "WRITES_COLUMN"
             for col in ev.db_columns:

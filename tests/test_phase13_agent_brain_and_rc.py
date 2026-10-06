@@ -50,7 +50,7 @@ def test_p13_01_all_39_mcp_tools_registered_in_capability_registry(tmp_path: Pat
     srv = create_server(tmp_path, profile="full")
     mcp_tools = srv._tool_manager._tools
     assert len(mcp_tools) == len(TOOL_CAPABILITY_REGISTRY)
-    assert len(TOOL_CAPABILITY_REGISTRY) == 62
+    assert len(TOOL_CAPABILITY_REGISTRY) == 70
 
     reg_names = {spec.tool_name for spec in TOOL_CAPABILITY_REGISTRY}
     assert reg_names == set(mcp_tools.keys())

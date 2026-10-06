@@ -30,6 +30,12 @@ _SOURCE_EXTENSIONS = (
     ".py",
     ".ts",
     ".js",
+    ".html",
+    ".htm",
+    ".jinja",
+    ".jinja2",
+    ".njk",
+    ".ejs",
 )
 
 

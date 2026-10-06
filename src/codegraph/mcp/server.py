@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import functools
 import json
 from pathlib import Path
 from typing import Any
+
+import anyio
 
 from codegraph.architecture import get_architecture as arch_get_architecture
 from codegraph.config import Settings
@@ -442,9 +445,9 @@ def create_server(
         task: dict[str, Any] | str = "",
         intent: str | None = None,
         max_tokens: int = 4000,
-        max_files: int = 15,
+        max_files: int = 25,
         max_lines: int = 500,
-        top_k: int = 15,
+        top_k: int = 25,
         plan: dict[str, Any] | None = None,
         mode: str = "BALANCED",
         explain: bool = False,
@@ -956,6 +959,58 @@ def create_server(
         with indexer.session() as con:
             return runtime_reconcile_static_runtime(con, indexer.repository, symbol=symbol, route=route, table=table)
 
+    def get_live_services() -> dict[str, Any]:
+        """Detect and attribute active localhost services, ports, PIDs, frameworks, and workspace sub-packages with zero idle CPU. Use when diagnosing running dev servers or multi-service architectures. Does not prove live HTTP response payloads or application layer health."""
+        from codegraph.runtime.port_inspector import (
+            discover_live_listening_ports,
+            discover_static_configured_ports,
+        )
+        live = [s.as_dict() for s in discover_live_listening_ports(indexer.repository)]
+        static = [s.as_dict() for s in discover_static_configured_ports(indexer.repository).values()]
+        return {"live_services": live, "configured_services": static, "count": len(live)}
+
+    def check_db_drift() -> dict[str, Any]:
+        """Detect database schema drift between migration files, live database state, and code ORM models with zero idle CPU. Flags unmapped tables, missing columns, and migration version state. Use when verifying whether database migrations are up to date with code models. Does not execute SQL data assertions or validate column constraints against live row data."""
+        from codegraph.runtime.db_watcher import detect_schema_drift
+        with indexer.session() as con:
+            return detect_schema_drift(con, indexer.repository).as_dict()
+
+    def get_distributed_trace(trace_id: str) -> dict[str, Any]:
+        """Stitch and reconstruct multi-service distributed execution trees across frontend, backend, and database boundaries for a specific W3C trace ID. Use when tracing cross-service requests or debugging multi-service latency bottlenecks. Does not capture unobserved code paths or untraced sidecar requests."""
+        from codegraph.runtime.trace_linker import link_distributed_trace
+        with indexer.session() as con:
+            res = link_distributed_trace(con, indexer.repository, trace_id)
+            return res.as_dict() if res else {"status": "not_found", "trace_id": trace_id}
+
+    def check_route_schema_drift(
+        route: str = "",
+        handler: str = "",
+        table: str | None = None,
+        schema: str | None = None,
+    ) -> dict[str, Any]:
+        """Detect schema validation drift between a route/handler input schema (Pydantic BaseModel, Django Form, DRF Serializer) and destination database table columns. Flags MISSING_REQUIRED_COLUMN, NULLABILITY_MISMATCH, TYPE_INCOMPATIBILITY, LENGTH_CONSTRAINT_DRIFT, and UNUSED_SCHEMA_FIELD. Does not execute live requests."""
+        from codegraph.database.schema_drift import detect_schema_drift as impl_detect_drift
+        target = route or handler
+        with indexer.session() as con:
+            return impl_detect_drift(
+                con,
+                indexer.repository,
+                route_or_handler=target,
+                target_table=table,
+                schema_name=schema,
+            )
+
+    def check_api_drift() -> dict[str, Any]:
+        """Detect client-server API contract drift between frontend fetch or axios calls and backend route registrations. Flags orphaned client endpoints (404s), HTTP method mismatches (405s), and cross-language TypeScript-to-backend model drift. Use when validating frontend API calls against backend endpoints before deployment. Does not execute live HTTP requests or validate dynamic URL strings constructed via runtime interpolation."""
+        from codegraph.api_drift import detect_api_contract_drift
+        with indexer.session() as con:
+            return detect_api_contract_drift(con, indexer.repository).as_dict()
+
+    def get_monorepo_packages() -> dict[str, Any]:
+        """Catalog monorepo workspace packages, tools (pnpm, Turborepo, npm/yarn workspaces), entry points, and inter-package dependencies. Use when mapping multi-package repository structure and package boundaries. Does not prove build system execution order or runtime dependency loading."""
+        from codegraph.monorepo import discover_workspace
+        return discover_workspace(indexer.repository).as_dict()
+
     # -----------------------------------------------------------------------
     # Git Intelligence Tools (5 Unified Capabilities)
     # -----------------------------------------------------------------------
@@ -980,8 +1035,12 @@ def create_server(
     def get_change_impact(base: str = "HEAD~1", head: str = "HEAD", max_depth: int = 2, max_results: int = 50) -> dict[str, Any]:
         """Compute deep downstream change impact across callers, callees, framework routes, covering tests, mutating database queries, and monorepo packages. Use when analyzing blast radius and ripple effects of git commits. Does not assume unobserved runtime paths are impossible."""
         from codegraph.change_impact import get_deep_change_impact
+        target_sym = None
+        clean_base = base.strip()
+        if clean_base.startswith("symbol:"):
+            target_sym = clean_base.split("symbol:", 1)[1]
         with indexer.session() as con:
-            return get_deep_change_impact(indexer.repository, con, base=base, head=head, max_depth=max_depth, max_results=max_results).as_dict()
+            return get_deep_change_impact(indexer.repository, con, base=base, head=head, max_depth=max_depth, max_results=max_results, symbol=target_sym).as_dict()
 
     def check_context_freshness(task: str = "", context_packet: dict[str, Any] | None = None) -> dict[str, Any]:
         """Validate whether a previously compiled context packet or task context is still VALID, PARTIALLY_STALE, or STALE. Use when checking if cached context is valid after edits. Does not invalidate context when only unrelated files change."""
@@ -1015,6 +1074,49 @@ def create_server(
         with indexer.session() as con:
             return impl_detect_semantic_conflicts(indexer.repository, base_branch=base_branch, head_branch=head_branch, con=con).as_dict()
 
+    def safe_rename(
+        target: str,
+        new_name: str,
+        dry_run: bool = True,
+        force_uncertain: bool = False,
+    ) -> dict[str, Any]:
+        """Perform a deterministic, syntax-validated, transaction-safe AST rename of a symbol across the repository.
+        Follows the core invariant: DISCOVER -> PLAN -> PREVIEW -> VALIDATE -> COMMIT -> REINDEX -> VERIFY.
+        When dry_run=True, performs zero disk mutation and returns preview diffs, risk assessment, affected tests, and affected routes.
+        When dry_run=False, validates all preconditions and syntax in memory, commits atomically using sibling temp files and os.replace, persists a rollback manifest, and triggers an incremental index update.
+        If risk != LOW (due to UNKNOWN/POSSIBLE/AMBIGUOUS references), the rename is BLOCKED unless force_uncertain=True."""
+        from codegraph.refactor.renamer import execute_safe_rename
+
+        with indexer.session() as con:
+            result = execute_safe_rename(
+                repository=indexer.repository,
+                con=con,
+                target=target,
+                new_name=new_name,
+                dry_run=dry_run,
+                force_uncertain=force_uncertain,
+            )
+            return result.to_dict()
+
+    def rollback_refactor(
+        transaction_id: str,
+    ) -> dict[str, Any]:
+        """Atomically rollback an applied refactoring transaction using its rollback manifest ID.
+        Verifies that files on disk have not been modified externally since the refactor before restoring original contents."""
+        from codegraph.refactor.models import RefactorStatus
+        from codegraph.refactor.transactions import rollback_refactor as do_rollback
+
+        result = do_rollback(
+            repository=indexer.repository,
+            transaction_id=transaction_id,
+        )
+        if result.status == RefactorStatus.ROLLED_BACK:
+            try:
+                indexer.index()
+            except Exception:
+                pass
+        return result.to_dict()
+
     core_tools: dict[str, Any] = {
         "resolve_symbol": resolve_symbol,
         "search_symbols": search_symbols,
@@ -1040,10 +1142,16 @@ def create_server(
         "detect_semantic_conflicts": detect_semantic_conflicts,
     }
 
+    refactor_tools: dict[str, Any] = {
+        "safe_rename": safe_rename,
+        "rollback_refactor": rollback_refactor,
+    }
+
     # Map of all available tools
     all_tools: dict[str, Any] = {
         **core_tools,
         **git_intelligence_tools,
+        **refactor_tools,
         "search_code": search_code,
         "read_file": read_file,
         "find_symbol": find_symbol,
@@ -1087,6 +1195,12 @@ def create_server(
         "ingest_runtime_traces": ingest_runtime_traces,
         "get_runtime_trace": get_runtime_trace,
         "reconcile_static_runtime": reconcile_static_runtime,
+        "get_live_services": get_live_services,
+        "check_db_drift": check_db_drift,
+        "check_route_schema_drift": check_route_schema_drift,
+        "get_distributed_trace": get_distributed_trace,
+        "check_api_drift": check_api_drift,
+        "get_monorepo_packages": get_monorepo_packages,
     }
 
     agent_names = {
@@ -1179,6 +1293,7 @@ def create_server(
 
             get_graph_cache().clear()
             get_parse_cache().clear()
+            indexer.reset_pool()
             return True
         return False
 
@@ -1196,6 +1311,40 @@ def create_server(
 
         app.tool(name=tool_name)(_make_guarded(target_fn))
 
+    # FastMCP Event Loop Offload:
+    # Ensure synchronous tools execute in worker threads so MCP asyncio loop is never blocked
+    orig_call_tool = app._tool_manager.call_tool
+
+    async def _concurrent_call_tool(
+        name: str,
+        arguments: dict[str, Any],
+        context: Any = None,
+        convert_result: bool = False,
+    ) -> Any:
+        tool = app._tool_manager.get_tool(name)
+        if tool is not None and not tool.is_async:
+            def _invoke_in_thread() -> Any:
+                return asyncio.run(
+                    orig_call_tool(
+                        name,
+                        arguments,
+                        context=context,
+                        convert_result=convert_result,
+                    )
+                )
+
+            return await anyio.to_thread.run_sync(_invoke_in_thread)
+
+        return await orig_call_tool(
+            name,
+            arguments,
+            context=context,
+            convert_result=convert_result,
+        )
+
+    app._tool_manager.call_tool = _concurrent_call_tool  # type: ignore[method-assign]
+
+
     # -----------------------------------------------------------------------
     # MCP Resources
     # -----------------------------------------------------------------------
@@ -1208,46 +1357,59 @@ def create_server(
         return json.dumps(get_capability_manifest(), indent=2)
 
     @app.resource("codebase://status")
-    def resource_status() -> str:
+    async def resource_status() -> str:
         """Repository index status, generation, and file counts."""
-        with indexer.session() as con:
-            report = check_freshness(indexer.repository, con)
-            return json.dumps(
-                {
-                    "repository": str(indexer.repository),
-                    "generation": report.index_generation,
-                    "freshness": report.status.value,
-                    "files": con.execute("SELECT count(*) FROM files").fetchone()[0],
-                    "symbols": con.execute("SELECT count(*) FROM symbols").fetchone()[0],
-                },
-                indent=2,
-            )
+        def _get_status() -> str:
+            with indexer.session() as con:
+                report = check_freshness(indexer.repository, con)
+                return json.dumps(
+                    {
+                        "repository": str(indexer.repository),
+                        "generation": report.index_generation,
+                        "freshness": report.status.value,
+                        "files": con.execute("SELECT count(*) FROM files").fetchone()[0],
+                        "symbols": con.execute("SELECT count(*) FROM symbols").fetchone()[0],
+                    },
+                    indent=2,
+                )
+
+        return await anyio.to_thread.run_sync(_get_status)
 
     @app.resource("codebase://architecture")
-    def resource_architecture() -> str:
+    async def resource_architecture() -> str:
         """High-level architectural overview."""
-        with indexer.session() as con:
-            arch = arch_get_architecture(con, indexer.repository)
-            return json.dumps(arch, indent=2)
+        def _get_arch() -> str:
+            with indexer.session() as con:
+                arch = arch_get_architecture(con, indexer.repository)
+                return json.dumps(arch, indent=2)
+
+        return await anyio.to_thread.run_sync(_get_arch)
 
     @app.resource("codebase://modules")
-    def resource_modules() -> str:
+    async def resource_modules() -> str:
         """List of indexed repository module paths."""
-        with indexer.session() as con:
-            rows = con.execute("SELECT path FROM files ORDER BY path LIMIT 500").fetchall()
-            return "\n".join(r[0] for r in rows)
+        def _get_modules() -> str:
+            with indexer.session() as con:
+                rows = con.execute("SELECT path FROM files ORDER BY path LIMIT 500").fetchall()
+                return "\n".join(r[0] for r in rows)
+
+        return await anyio.to_thread.run_sync(_get_modules)
 
     @app.resource("codebase://health")
-    def resource_health() -> str:
+    async def resource_health() -> str:
         """Database health and integrity report."""
-        with indexer.session() as con:
-            health = check_database_health(con)
-            return json.dumps(health, indent=2)
+        def _get_health() -> str:
+            with indexer.session() as con:
+                health = check_database_health(con)
+                return json.dumps(health, indent=2)
+
+        return await anyio.to_thread.run_sync(_get_health)
 
     @app.resource("codebase://resources")
     def resource_resources() -> str:
         """Resource governor state, memory bounds, pressure, and activity mode."""
         return json.dumps(indexer.governor.get_state().as_dict(), indent=2)
+
 
     # -----------------------------------------------------------------------
     # MCP Prompts

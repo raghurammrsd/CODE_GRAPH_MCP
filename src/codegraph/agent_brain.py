@@ -644,6 +644,176 @@ RELATIONSHIP_SEMANTICS_REGISTRY: dict[str, RelationshipSemanticsSpec] = {
         common_tool="get_db_schema / get_context",
         example="`src/config.py` -> `READS_ENV` (`AST_VERIFIED`) -> `env:DATABASE_URL`",
     ),
+    "RENDERS": RelationshipSemanticsSpec(
+        relationship="RENDERS",
+        meaning="React JSX component renders a child component element (`<ChildComponent ... />`).",
+        typical_source="Parent component symbol (`DashboardPage`, `InvoiceTable`)",
+        typical_target="Child component symbol (`InvoiceCard`, `Button`)",
+        proves="Static JSX component composition tree hierarchy.",
+        does_not_prove="Does not prove conditional branch execution at runtime unless inspected.",
+        common_tool="find_callers / find_callees / get_references",
+        example="`Dashboard` -> `RENDERS` (`AST_VERIFIED`) -> `InvoiceTable`",
+    ),
+    "USES_HOOK": RelationshipSemanticsSpec(
+        relationship="USES_HOOK",
+        meaning="React component or custom hook calls a state/lifecycle hook (`useAuth()`, `useInvoices()`).",
+        typical_source="Component or custom hook (`UserProfile`, `useOrderDetails`)",
+        typical_target="Hook function symbol (`useAuth`, `useQuery`)",
+        proves="Component or custom hook lifecycle dependency on target hook.",
+        does_not_prove="Does not prove hook return value shape without inspecting hook definition.",
+        common_tool="find_callers / get_references / trace_path",
+        example="`UserProfile` -> `USES_HOOK` (`FRAMEWORK_VERIFIED`) -> `useAuth`",
+    ),
+    "IMPORTS_STYLE": RelationshipSemanticsSpec(
+        relationship="IMPORTS_STYLE",
+        meaning="Component or module imports a CSS/SCSS stylesheet or CSS module (`import styles from './Button.module.css'`).",
+        typical_source="Component or page file (`Button.tsx`)",
+        typical_target="Stylesheet file (`Button.module.css`, `globals.css`)",
+        proves="Component imports style definitions from target stylesheet.",
+        does_not_prove="Does not prove all style classes in the file are actively applied.",
+        common_tool="find_references / get_file / get_context",
+        example="`Button.tsx` -> `IMPORTS_STYLE` (`AST_VERIFIED`) -> `Button.module.css`",
+    ),
+    "USES_STYLE_CLASS": RelationshipSemanticsSpec(
+        relationship="USES_STYLE_CLASS",
+        meaning="JSX element or component references a CSS class selector (`className={styles.header}` or `className='btn-primary'`).",
+        typical_source="Component or JSX element (`Header.tsx`)",
+        typical_target="CSS class symbol (`.header-title`, `.btn-primary`)",
+        proves="Component applies the named CSS style class.",
+        does_not_prove="Does not prove CSS specificity or cascade overrides.",
+        common_tool="find_references / search_code / get_context",
+        example="`Header.tsx` -> `USES_STYLE_CLASS` (`FRAMEWORK_VERIFIED`) -> `.header-title`",
+    ),
+    "FETCHES_ROUTE": RelationshipSemanticsSpec(
+        relationship="FETCHES_ROUTE",
+        meaning="Frontend component, hook, or API client invokes a backend HTTP route (`fetch('/api/v1/invoices')`, `axios.get(...)`).",
+        typical_source="Frontend component or data hook (`useInvoices`, `createInvoiceForm`)",
+        typical_target="Backend route endpoint (`POST /api/v1/invoices`, `GET /api/v1/users`)",
+        proves="Frontend client-side network request targeting a backend route.",
+        does_not_prove="Does not prove backend server availability at runtime.",
+        common_tool="find_callers / trace_path / list_routes",
+        example="`useInvoices` -> `FETCHES_ROUTE` (`FRAMEWORK_VERIFIED`) -> `GET /api/v1/invoices`",
+    ),
+    "LOADS_SCRIPT": RelationshipSemanticsSpec(
+        relationship="LOADS_SCRIPT",
+        meaning="HTML template or page loads a JavaScript/TypeScript script bundle (`<script src='...'>`).",
+        typical_source="HTML file (`index.html`)",
+        typical_target="Script file (`src/main.tsx`, `bundle.js`)",
+        proves="HTML document includes and executes target script.",
+        does_not_prove="Does not prove script execution order if async/defer are used.",
+        common_tool="find_references / get_file",
+        example="`index.html` -> `LOADS_SCRIPT` (`STATIC_VERIFIED`) -> `src/main.tsx`",
+    ),
+    "LOADS_STYLESHEET": RelationshipSemanticsSpec(
+        relationship="LOADS_STYLESHEET",
+        meaning="HTML template or page loads an external stylesheet (`<link rel='stylesheet' href='...'>`).",
+        typical_source="HTML file (`index.html`)",
+        typical_target="Stylesheet file (`src/index.css`, `theme.css`)",
+        proves="HTML document links target stylesheet for presentation.",
+        does_not_prove="Does not prove runtime CDN stylesheet availability.",
+        common_tool="find_references / get_file",
+        example="`index.html` -> `LOADS_STYLESHEET` (`STATIC_VERIFIED`) -> `src/index.css`",
+    ),
+    "MAPS_TO_COLLECTION": RelationshipSemanticsSpec(
+        relationship="MAPS_TO_COLLECTION",
+        meaning="NoSQL document model (Mongoose model) maps to an underlying MongoDB collection.",
+        typical_source="Mongoose model (`InvoiceModel`)",
+        typical_target="MongoDB collection (`invoices`)",
+        proves="Static mapping between document model and database collection.",
+        does_not_prove="Does not prove database schema strictness unless validation options are inspected.",
+        common_tool="find_db_tables / find_db_models / get_db_table",
+        example="`InvoiceModel` -> `MAPS_TO_COLLECTION` (`FRAMEWORK_VERIFIED`) -> `db.UNKNOWN.UNKNOWN.invoices`",
+    ),
+    "WRITES_COLLECTION": RelationshipSemanticsSpec(
+        relationship="WRITES_COLLECTION",
+        meaning="Function or route writes (insert, update, delete) documents to a MongoDB collection.",
+        typical_source="Caller symbol or API handler (`createInvoice`)",
+        typical_target="MongoDB collection (`invoices`)",
+        proves="Write operation (`Model.create`, `Model.updateOne`, `insertOne`) against target collection.",
+        does_not_prove="Does not prove transaction commit or replica-set write concern acknowledgment.",
+        common_tool="find_db_writers / get_context / trace_path",
+        example="`createInvoice` -> `WRITES_COLLECTION` (`AST_VERIFIED`) -> `db.UNKNOWN.UNKNOWN.invoices`",
+    ),
+    "READS_COLLECTION": RelationshipSemanticsSpec(
+        relationship="READS_COLLECTION",
+        meaning="Function or route reads (find, aggregate, count) documents from a MongoDB collection.",
+        typical_source="Caller symbol or API handler (`listInvoices`)",
+        typical_target="MongoDB collection (`invoices`)",
+        proves="Read query (`Model.find`, `Model.findOne`, `aggregate`) against target collection.",
+        does_not_prove="Does not prove document existence at runtime.",
+        common_tool="find_db_readers / get_context / trace_path",
+        example="`listInvoices` -> `READS_COLLECTION` (`AST_VERIFIED`) -> `db.UNKNOWN.UNKNOWN.invoices`",
+    ),
+    "DISPATCHES_TASK": RelationshipSemanticsSpec(
+        relationship="DISPATCHES_TASK",
+        meaning="Caller function or route dispatches a background task (.delay(), .apply_async(), .send_task()).",
+        typical_source="Caller symbol or API handler (`checkout_order`, `register_user`)",
+        typical_target="Task handler function (`process_order_payment`, `send_welcome_email`)",
+        proves="Background task invocation connects caller to the queued task handler.",
+        does_not_prove="Does not prove queue worker status or job execution timing.",
+        common_tool="trace_path / find_callees / get_context",
+        example="`checkout_order` -> `DISPATCHES_TASK` (`FRAMEWORK_VERIFIED`) -> `process_order_payment`",
+    ),
+    "TRIGGERS_SIGNAL": RelationshipSemanticsSpec(
+        relationship="TRIGGERS_SIGNAL",
+        meaning="Model lifecycle action (save, delete) or signal emission triggers a signal receiver.",
+        typical_source="Model or lifecycle method (`Customer.save`, `signal.send`)",
+        typical_target="Signal receiver function (`on_customer_created`)",
+        proves="Django signal linkage connects the model or trigger site to registered receivers.",
+        does_not_prove="Does not prove transaction commit before receiver execution.",
+        common_tool="trace_path / find_callees / get_context",
+        example="`Customer.save` -> `TRIGGERS_SIGNAL` (`FRAMEWORK_VERIFIED`) -> `on_customer_created`",
+    ),
+    "HANDLES_SIGNAL": RelationshipSemanticsSpec(
+        relationship="HANDLES_SIGNAL",
+        meaning="Signal receiver function handles lifecycle events or domain signals from a sender model.",
+        typical_source="Receiver function (`on_customer_created`)",
+        typical_target="Sender model symbol (`Customer`)",
+        proves="Receiver function is bound to the sender model via @receiver or signal.connect.",
+        does_not_prove="Does not prove receiver handles all signal kwargs.",
+        common_tool="find_callers / get_references / get_context",
+        example="`on_customer_created` -> `HANDLES_SIGNAL` (`FRAMEWORK_VERIFIED`) -> `Customer`",
+    ),
+    "RENDERS_TEMPLATE": RelationshipSemanticsSpec(
+        relationship="RENDERS_TEMPLATE",
+        meaning="View or controller renders an HTML or Jinja template (render_template, TemplateResponse, template_name).",
+        typical_source="View handler symbol (`dashboard_view`)",
+        typical_target="Template file path (`templates/dashboard.html`)",
+        proves="Deterministic linkage between backend view function and frontend HTML template.",
+        does_not_prove="Does not prove all template context variables are provided.",
+        common_tool="list_routes / get_context / find_callees",
+        example="`dashboard_view` -> `RENDERS_TEMPLATE` (`FRAMEWORK_VERIFIED`) -> `templates/dashboard.html`",
+    ),
+    "DISPATCHES_FORWARD": RelationshipSemanticsSpec(
+        relationship="DISPATCHES_FORWARD",
+        meaning="Neural network module invocation (model(inputs), self.submodule(x)) dispatches to nn.Module.forward().",
+        typical_source="Caller function or model forward pass (`predict`, `Classifier.forward`)",
+        typical_target="Submodule or model forward method (`Encoder.forward`, `Linear.forward`)",
+        proves="PyTorch __call__ dispatch to forward method on a concrete or resolved module instance.",
+        does_not_prove="Does not prove runtime execution if forward hooks or dynamic wrappers abort execution.",
+        common_tool="trace_path / find_callees / get_context",
+        example="`predict` -> `DISPATCHES_FORWARD` (`AST_VERIFIED`) -> `Classifier.forward`",
+    ),
+    "TOOL_HANDLER": RelationshipSemanticsSpec(
+        relationship="TOOL_HANDLER",
+        meaning="Function or method is decorated as an agentic AI tool (@tool, @function_tool, @agent).",
+        typical_source="Tool function (`search_web_tool`, `execute_sql`)",
+        typical_target="Agent framework registration decorator (`@tool`)",
+        proves="Function is registered as a callable tool in an agentic workflow.",
+        does_not_prove="Does not prove tool argument schema compatibility with LLM runtime.",
+        common_tool="find_references / get_symbol / get_context",
+        example="`search_web_tool` -> `TOOL_HANDLER` (`FRAMEWORK_VERIFIED`) -> `@tool`",
+    ),
+    "PIPELINE_STEP": RelationshipSemanticsSpec(
+        relationship="PIPELINE_STEP",
+        meaning="Sequential execution link in an AI/ML pipeline or LangChain LCEL chain (prompt | llm | parser).",
+        typical_source="Upstream pipeline component or prompt template (`prompt_template`)",
+        typical_target="Downstream pipeline component or model runner (`chat_model`)",
+        proves="Dataflow pipe composition between execution steps in an AI/ML workflow.",
+        does_not_prove="Does not prove runtime type convergence between pipe boundaries.",
+        common_tool="trace_path / find_callees / get_context",
+        example="`prompt_template` -> `PIPELINE_STEP` (`DATAFLOW_VERIFIED`) -> `chat_model`",
+    ),
 }
 
 
@@ -1248,7 +1418,7 @@ CodeGraph enforces nine canonical `evidence_class` values defined in `ALLOWED_EV
 
 ## 5. Relationship Model
 
-CodeGraph enforces the 56 canonical relationship types in `ALLOWED_RELATIONSHIP_EVIDENCE_MATRIX`. It **never** collapses framework routing, database operations, registry registration, or dependency injection into generic `CALLS` or `DEPENDS_ON`.
+CodeGraph enforces the {len(ALLOWED_RELATIONSHIP_EVIDENCE_MATRIX)} canonical relationship types in `ALLOWED_RELATIONSHIP_EVIDENCE_MATRIX`. It **never** collapses framework routing, database operations, registry registration, or dependency injection into generic `CALLS` or `DEPENDS_ON`.
 
 {relationships_block}
 
@@ -1547,7 +1717,7 @@ Repository -> Candidate Facts -> Task-Aware Filtering (RetrievalPolicy)
 
 - **Hard Invariants & Output Boundaries of `get_context`**:
   - Primary input is `query` (`task` is also supported as a string or `TaskSpec` dict alias).
-  - Enforces strict output boundaries BEFORE MCP serialization: `max_tokens` (default `4000`, hard cap `20000`), `max_files` (default `15`, hard cap `30`), and `max_lines` (default `500`, hard cap `1500`).
+  - Enforces strict output boundaries BEFORE MCP serialization: `max_tokens` (default `4000`, hard cap `20000`), `max_files` (default `25`, hard cap `40`), and `max_lines` (default `500`, hard cap `1500`).
   - Returns explicit budget metadata: `selected_tokens`, `candidate_tokens`, `selected_files`, `selected_lines`, `coverage_score`, and `truncated`.
   - Preserves `unknowns` and `ambiguities` explicitly—never drops uncertainty to save tokens.
   - Compresses duplicate `(source, target, relationship)` edges into a single record with `occurrence_count` and `supporting_locations`.

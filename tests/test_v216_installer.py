@@ -440,7 +440,7 @@ def test_11_cli_json_and_print_config_modes(tmp_path: Path) -> None:
     inst_data = json.loads(res_inst.stdout)
     assert inst_data["status"] == "ok"
     assert inst_data["verification"]["passed"] is True
-    assert inst_data["verification"]["tool_count"] == 62
+    assert inst_data["verification"]["tool_count"] == 70
 
 
 # ---------------------------------------------------------------------------

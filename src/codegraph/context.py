@@ -301,7 +301,7 @@ def get_context(
     task: str | TaskSpec | dict[str, Any] = "",
     intent: Intent | str | None = None,
     max_tokens: int = 20_000,
-    top_k: int = 15,
+    top_k: int = 25,
     plan: RetrievalPlan | dict[str, Any] | None = None,
     mode: str = "BALANCED",  # FAST | BALANCED | DEEP
     explain: bool = False,
@@ -311,7 +311,7 @@ def get_context(
     include_build_artifacts: bool = False,
     max_symbols: int = 25,
     max_relationships: int = 30,
-    max_files: int = 15,
+    max_files: int = 25,
     max_lines: int = 500,
     max_depth: int | None = None,
     max_package_depth: int | None = None,
@@ -363,7 +363,7 @@ def _get_context_impl(
     task: str | TaskSpec | dict[str, Any],
     intent: Intent | str | None = None,
     max_tokens: int = 20_000,
-    top_k: int = 15,
+    top_k: int = 25,
     plan: RetrievalPlan | dict[str, Any] | None = None,
     mode: str = "BALANCED",  # FAST | BALANCED | DEEP
     explain: bool = False,
@@ -374,7 +374,7 @@ def _get_context_impl(
     include_build_artifacts: bool = False,
     max_symbols: int = 25,
     max_relationships: int = 30,
-    max_files: int = 15,
+    max_files: int = 25,
     max_lines: int = 500,
     max_depth: int | None = None,
     max_package_depth: int | None = None,
@@ -936,6 +936,28 @@ def _get_context_impl(
             if res.qualified_name and _guard.allows_symbol(res.qualified_name) and res.qualified_name not in _seen_seeds:
                 _seen_seeds.add(res.qualified_name)
                 ordered_seeds.append(res.qualified_name)
+            if res.file_path:
+                try:
+                    f_rows = con.execute(
+                        "SELECT canonical_id FROM symbols WHERE path = ? LIMIT 5",
+                        (res.file_path,),
+                    ).fetchall()
+                    for fr in f_rows:
+                        fs_cid = str(fr["canonical_id"])
+                        if fs_cid and _guard.allows_canonical_id(fs_cid) and fs_cid not in _seen_seeds:
+                            _seen_seeds.add(fs_cid)
+                            ordered_seeds.append(fs_cid)
+                    e_rows = con.execute(
+                        "SELECT DISTINCT target FROM graph_edges WHERE file = ? AND relationship IN ('CALLS', 'IMPORTS') LIMIT 5",
+                        (res.file_path,),
+                    ).fetchall()
+                    for er in e_rows:
+                        e_tgt = str(er["target"])
+                        if e_tgt and _guard.allows_symbol(e_tgt) and e_tgt not in _seen_seeds:
+                            _seen_seeds.add(e_tgt)
+                            ordered_seeds.append(e_tgt)
+                except Exception:
+                    pass
 
         for ep in entry_points_out:
             h = str(ep.get("handler", ""))
@@ -1430,10 +1452,15 @@ def _get_context_impl(
                     "SELECT canonical_id FROM symbols WHERE (canonical_id=? OR qualified_name=? OR name=?) AND path=? LIMIT 1",
                     (item.symbol, item.symbol, item.symbol, item.file),
                 ).fetchone()
-                if not srow:
+                if not srow and not item.file:
                     srow = con.execute(
-                        "SELECT canonical_id FROM symbols WHERE canonical_id=? OR qualified_name=? OR name=? LIMIT 1",
-                        (item.symbol, item.symbol, item.symbol),
+                        "SELECT canonical_id FROM symbols WHERE canonical_id=? OR qualified_name=? LIMIT 1",
+                        (item.symbol, item.symbol),
+                    ).fetchone()
+                elif not srow and item.symbol:
+                    srow = con.execute(
+                        "SELECT canonical_id FROM symbols WHERE canonical_id=? LIMIT 1",
+                        (item.symbol,),
                     ).fetchone()
                 if srow:
                     canon = srow["canonical_id"]
@@ -1525,12 +1552,12 @@ def _get_context_impl(
                     ).fetchone()
                 else:
                     row = con.execute(
-                        "SELECT canonical_id, kind FROM symbols WHERE (qualified_name=? OR name=?) AND path=? LIMIT 1",
-                        (sym_name, sym_name, it.file_path),
+                        "SELECT canonical_id, kind FROM symbols WHERE (canonical_id=? OR qualified_name=? OR name=?) AND path=? LIMIT 1",
+                        (sym_name, sym_name, sym_name, it.file_path),
                     ).fetchone()
-                    if not row:
+                    if not row and not it.file_path:
                         row = con.execute(
-                            "SELECT canonical_id, kind FROM symbols WHERE qualified_name=? OR name=? LIMIT 1",
+                            "SELECT canonical_id, kind FROM symbols WHERE canonical_id=? OR qualified_name=? LIMIT 1",
                             (sym_name, sym_name),
                         ).fetchone()
                 cid = known_cid or (row["canonical_id"] if row and "canonical_id" in row.keys() else None)

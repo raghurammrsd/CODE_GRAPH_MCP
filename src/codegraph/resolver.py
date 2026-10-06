@@ -36,6 +36,8 @@ from codegraph.indexing.models import (
 )
 from codegraph.monorepo import WorkspaceInfo
 from codegraph.route_composer import ComposedMountEdge
+from codegraph.route_topology import match_route_topology, normalize_route
+from codegraph.tsconfig import TsConfigResolver
 
 _TEST_FILE_RE = re.compile(
     r"(^|[_/])test[_s]?[_/]|[_/]spec[_/]|test[_s]?\.(py|js|ts|jsx|tsx)$|spec\.(py|js|ts|jsx|tsx)$",
@@ -51,6 +53,7 @@ def resolve_module_to_path(
     source_file: str,
     known_files: set[str],
     workspace: WorkspaceInfo | None = None,
+    tsconfig_resolver: TsConfigResolver | None = None,
 ) -> str | None:
     """Deterministically resolve an import specifier to a repository-relative file path.
 
@@ -73,6 +76,12 @@ def resolve_module_to_path(
                     return f"{clean_entry}/index{ext}"
                 if f"{clean_entry}/__init__{ext}" in known_files:
                     return f"{clean_entry}/__init__{ext}"
+
+    # 0b. Check tsconfig.json / jsconfig.json path aliases
+    if tsconfig_resolver is not None:
+        alias_target = tsconfig_resolver.resolve_alias(imported_module, source_file, known_files)
+        if alias_target:
+            return alias_target
 
     src_clean = source_file.replace("\\", "/").lstrip("./")
     src_dir = posixpath.dirname(src_clean)
@@ -150,6 +159,7 @@ class ReferenceResolver:
         mount_edges: list[ComposedMountEdge] | None = None,
         bindings: list[BindingRef] | None = None,
         workspace: WorkspaceInfo | None = None,
+        tsconfig_resolver: TsConfigResolver | None = None,
         max_reexport_depth: int = 16,
         max_wildcard_expansions: int = 64,
     ) -> None:
@@ -164,6 +174,7 @@ class ReferenceResolver:
         self.file_hashes = file_hashes
         self.indexed_commit = indexed_commit
         self.workspace = workspace
+        self.tsconfig_resolver = tsconfig_resolver
         self.max_reexport_depth = max_reexport_depth
         self.max_wildcard_expansions = max_wildcard_expansions
 
@@ -257,7 +268,11 @@ class ReferenceResolver:
 
     def _resolve_import_target_module_uncached(self, imp: ImportRef) -> tuple[str | None, str | None]:
         target_path = resolve_module_to_path(
-            imp.imported_module, imp.source_file, self.known_files, workspace=self.workspace
+            imp.imported_module,
+            imp.source_file,
+            self.known_files,
+            workspace=self.workspace,
+            tsconfig_resolver=self.tsconfig_resolver,
         )
         if target_path:
             return target_path, normalize_module(target_path)
@@ -266,7 +281,11 @@ class ReferenceResolver:
         if "." in imp.imported_module and not imp.imported_module.startswith("."):
             parent_mod, last_seg = imp.imported_module.rsplit(".", 1)
             parent_path = resolve_module_to_path(
-                parent_mod, imp.source_file, self.known_files, workspace=self.workspace
+                parent_mod,
+                imp.source_file,
+                self.known_files,
+                workspace=self.workspace,
+                tsconfig_resolver=self.tsconfig_resolver,
             )
             if parent_path:
                 return parent_path, normalize_module(parent_path)
@@ -605,7 +624,23 @@ class ReferenceResolver:
                 seen_refs.add(key)
                 references.append(ref)
 
+        _NON_CODE_EXTS = (
+            ".html",
+            ".htm",
+            ".jinja",
+            ".jinja2",
+            ".css",
+            ".yaml",
+            ".yml",
+            ".json",
+            ".md",
+            ".markdown",
+        )
+
         def add_edge(edge: GraphEdge) -> None:
+            fpath = str(edge.file or "")
+            if fpath.endswith(_NON_CODE_EXTS):
+                return
             key = (
                 edge.source,
                 edge.target,
@@ -617,8 +652,17 @@ class ReferenceResolver:
                 seen_edges.add(key)
                 edges.append(edge)
 
+        def _find_caller_id_for_binding(b: BindingRef) -> str:
+            for s in self.path_to_symbols.get(b.file_path, ()):
+                if s.start_line <= b.line <= s.end_line:
+                    return s.canonical_id
+            mod = self.file_to_module.get(b.file_path) or normalize_module(b.file_path)
+            return f"{mod}.{b.scope}" if b.scope else mod
+
         # 0. Definition & Containment edges
         for sym in self.symbols:
+            if sym.path.endswith(_NON_CODE_EXTS):
+                continue
             f_hash = self.file_hashes.get(sym.path, "")
             if sym.parent_symbol_id:
                 add_edge(
@@ -976,6 +1020,8 @@ class ReferenceResolver:
             expr = call.qualified_callee or call.callee
             via_factory_sym: Symbol | None = None
             resolved_via_dataflow = False
+            is_pytorch_forward = False
+            is_concrete_module = False
 
             target_sym, conf, reason = self.resolve_identifier_in_file(
                 expr, call.source_file, caller_id, use_line=call.line
@@ -998,6 +1044,35 @@ class ReferenceResolver:
                                 reason = f"{recv_reason}; inherited method on '{owner_canon}'"
                             else:
                                 reason = recv_reason
+                    # If not a method, check if expr or self.<attr> is an nn.Module submodule invocation (e.g. self.encoder(x))
+                    if not target_sym:
+                        submod_cls_sym, _, submod_reason = _resolve_receiver_class(
+                            expr, call.source_file, caller_id, caller_qname, call.line
+                        )
+                        if not submod_cls_sym:
+                            for b in self.bindings:
+                                if b.file_path == call.source_file and b.target_name == f"self.{method_part}":
+                                    if b.expr_kind == "CALL_RETURN" and b.source_expr:
+                                        s_cls, _, _ = self.resolve_identifier_in_file(b.source_expr, b.file_path, caller_id, use_line=b.line)
+                                        if s_cls and s_cls.kind == "class":
+                                            submod_cls_sym = s_cls
+                                            submod_reason = f"submodule assignment 'self.{method_part} = {b.source_expr}()'"
+                                            break
+                                    elif b.expr_kind == "TYPE_ANNOTATION" and b.source_expr:
+                                        s_cls, _, _ = self.resolve_identifier_in_file(b.source_expr, b.file_path, caller_id, use_line=b.line)
+                                        if s_cls and s_cls.kind == "class":
+                                            submod_cls_sym = s_cls
+                                            submod_reason = f"submodule annotation 'self.{method_part}: {b.source_expr}'"
+                                            break
+                        if submod_cls_sym:
+                            fwd_sym, _ = _lookup_method_on_class(submod_cls_sym.canonical_id, "forward")
+                            if fwd_sym:
+                                target_sym = fwd_sym
+                                resolved_via_dataflow = True
+                                is_pytorch_forward = True
+                                is_concrete_module = "Constructed instance" in submod_reason or "factory" in submod_reason or "submodule assignment" in submod_reason
+                                conf = "HIGH" if is_concrete_module else "MEDIUM"
+                                reason = f"PyTorch submodule forward dispatch via {submod_reason}"
                 else:
                     # Even if parser substituted receiver -> ClassName, check if it came from a local factory binding
                     for b in call_return_bindings_by_file.get(call.source_file, ()):
@@ -1041,6 +1116,23 @@ class ReferenceResolver:
                         )
                     )
 
+            else:
+                # expr has no dot (e.g. model(x))
+                # Only dispatch to forward if target_sym is NOT already a class (constructor call Classifier() is __init__)
+                if not target_sym or target_sym.kind not in ("function", "method", "class"):
+                    mod_cls_sym, _, mod_reason = _resolve_receiver_class(
+                        expr, call.source_file, caller_id, caller_qname, call.line
+                    )
+                    if mod_cls_sym and mod_cls_sym.kind == "class":
+                        fwd_sym, _ = _lookup_method_on_class(mod_cls_sym.canonical_id, "forward")
+                        if fwd_sym:
+                            target_sym = fwd_sym
+                            resolved_via_dataflow = True
+                            is_pytorch_forward = True
+                            is_concrete_module = "Constructed instance" in mod_reason or "factory" in mod_reason
+                            conf = "HIGH" if is_concrete_module else "MEDIUM"
+                            reason = f"PyTorch module forward dispatch via {mod_reason}"
+
             if target_sym:
                 resolved_calls[(call.source_file, call.line, call.callee)] = (
                     target_sym.canonical_id,
@@ -1078,6 +1170,40 @@ class ReferenceResolver:
                         evidence_class=call_ev_cls,
                     )
                 )
+                if is_pytorch_forward:
+                    fwd_ev_cls = (
+                        RelationshipEvidenceClass.AST_VERIFIED.value
+                        if is_concrete_module
+                        else RelationshipEvidenceClass.POSSIBLE.value
+                    )
+                    add_ref(
+                        Reference(
+                            source_symbol_id=caller_id,
+                            target_symbol_id=target_sym.canonical_id,
+                            relationship="DISPATCHES_FORWARD",
+                            confidence=conf,
+                            path=call.source_file,
+                            start_line=call.line,
+                            end_line=call.end_line,
+                            evidence=f"Module invocation '{expr}()' at {call.source_file}:{call.line} dispatches to {target_sym.canonical_id} ({reason})",
+                            source_hash=f_hash,
+                            indexed_commit=self.indexed_commit,
+                        )
+                    )
+                    add_edge(
+                        GraphEdge(
+                            source=caller_id,
+                            target=target_sym.canonical_id,
+                            relationship="DISPATCHES_FORWARD",
+                            confidence=conf,
+                            file=call.source_file,
+                            start_line=call.line,
+                            end_line=call.end_line,
+                            evidence=f"Resolved PyTorch forward dispatch {caller_id} -> {target_sym.canonical_id} at {call.source_file}:{call.line} ({reason})",
+                            evidence_class=fwd_ev_cls,
+                            reason="pytorch_forward_dispatch",
+                        )
+                    )
             elif "[" in expr and "]" in expr:
                 dict_part, raw_k = expr.split("[", 1)
                 raw_k = raw_k.rstrip("]")
@@ -1562,6 +1688,101 @@ class ReferenceResolver:
                                 reason=edge_reason,
                             )
                         )
+                        # Django signal sender linking: @receiver(signal, sender=Model)
+                        sender_val = metadata.get("sender")
+                        if sender_val:
+                            sender_str = str(sender_val)
+                            sender_sym, _, _ = self.resolve_identifier_in_file(
+                                sender_str, b.file_path, use_line=b.line
+                            )
+                            if not sender_sym and "." in sender_str:
+                                sender_sym, _, _ = self.resolve_identifier_in_file(
+                                    sender_str.split(".")[-1], b.file_path, use_line=b.line
+                                )
+                            if not sender_sym:
+                                short_target = sender_str.split(".")[-1]
+                                if short_target in self.short_to_symbols:
+                                    for s in self.short_to_symbols[short_target]:
+                                        if s.kind == "class":
+                                            sender_sym = s
+                                            break
+                                    if not sender_sym:
+                                        sender_sym = self.short_to_symbols[short_target][0]
+
+                            sender_canon = sender_sym.canonical_id if sender_sym else sender_str
+                            sig_evidence = f"Django signal '{ev_str}' from sender '{sender_str}' triggers listener '{target_canon}' via '@{b.source_expr}'"
+                            add_ref(
+                                Reference(
+                                    source_symbol_id=sender_canon,
+                                    target_symbol_id=target_canon,
+                                    relationship="TRIGGERS_SIGNAL",
+                                    confidence=edge_conf,
+                                    path=b.file_path,
+                                    start_line=b.line,
+                                    end_line=b.line,
+                                    evidence=sig_evidence,
+                                    source_hash=f_hash,
+                                    indexed_commit=self.indexed_commit,
+                                )
+                            )
+                            add_edge(
+                                GraphEdge(
+                                    source=sender_canon,
+                                    target=target_canon,
+                                    relationship="TRIGGERS_SIGNAL",
+                                    confidence=edge_conf,
+                                    file=b.file_path,
+                                    start_line=b.line,
+                                    end_line=b.line,
+                                    evidence=sig_evidence,
+                                    evidence_class=ev_class.value,
+                                    reason=f"django_signal:{ev_str}",
+                                )
+                            )
+                            lifecycle_method = "delete" if "delete" in ev_str.lower() else "save"
+                            save_source = f"{sender_canon}.{lifecycle_method}"
+                            add_edge(
+                                GraphEdge(
+                                    source=save_source,
+                                    target=target_canon,
+                                    relationship="TRIGGERS_SIGNAL",
+                                    confidence=edge_conf,
+                                    file=b.file_path,
+                                    start_line=b.line,
+                                    end_line=b.line,
+                                    evidence=sig_evidence,
+                                    evidence_class=ev_class.value,
+                                    reason=f"django_signal:{ev_str}",
+                                )
+                            )
+                            add_edge(
+                                GraphEdge(
+                                    source=save_source,
+                                    target=target_canon,
+                                    relationship="CALLS",
+                                    confidence=edge_conf,
+                                    file=b.file_path,
+                                    start_line=b.line,
+                                    end_line=b.line,
+                                    evidence=sig_evidence,
+                                    evidence_class=RelationshipEvidenceClass.DATAFLOW_VERIFIED.value,
+                                    reason=f"django_signal:{ev_str}",
+                                )
+                            )
+                            add_edge(
+                                GraphEdge(
+                                    source=target_canon,
+                                    target=sender_canon,
+                                    relationship="HANDLES_SIGNAL",
+                                    confidence=edge_conf,
+                                    file=b.file_path,
+                                    start_line=b.line,
+                                    end_line=b.line,
+                                    evidence=f"Listener '{target_canon}' handles '{ev_str}' from '{sender_canon}'",
+                                    evidence_class=ev_class.value,
+                                    reason=f"django_signal:{ev_str}",
+                                )
+                            )
                 else:
                     src_id = b.source_expr
                     ev_evidence = f"Event listener '{target_canon}' registered via '@{b.source_expr}'"
@@ -1692,6 +1913,404 @@ class ReferenceResolver:
                     )
                 )
 
+            elif rel == "TOOL_HANDLER":
+                source_id = f"@{b.source_expr}"
+                ev_evidence = f"AI agent tool '{target_canon}' registered via '@{b.source_expr}'"
+                add_ref(
+                    Reference(
+                        source_symbol_id=target_canon,
+                        target_symbol_id=source_id,
+                        relationship=rel,
+                        confidence=edge_conf,
+                        path=b.file_path,
+                        start_line=b.line,
+                        end_line=b.line,
+                        evidence=ev_evidence,
+                        source_hash=f_hash,
+                        indexed_commit=self.indexed_commit,
+                    )
+                )
+                add_edge(
+                    GraphEdge(
+                        source=target_canon,
+                        target=source_id,
+                        relationship=rel,
+                        confidence=edge_conf,
+                        file=b.file_path,
+                        start_line=b.line,
+                        end_line=b.line,
+                        evidence=ev_evidence,
+                        evidence_class=ev_class.value,
+                        reason=edge_reason,
+                    )
+                )
+
+        # 8b. Django Signal Receivers via connect()
+        for b in bindings_by_kind.get("DJANGO_SIGNAL_RECEIVER", ()):
+            f_hash = self.file_hashes.get(b.file_path, "")
+            receiver_sym, _, _ = self.resolve_identifier_in_file(
+                b.target_name, b.file_path, use_line=b.line
+            )
+            if not receiver_sym and b.target_name in self.short_to_symbols:
+                receiver_sym = self.short_to_symbols[b.target_name][0]
+            target_canon = receiver_sym.canonical_id if receiver_sym else b.target_name
+
+            sig_name = b.base_expr
+            sender_str = b.source_expr
+            sender_sym = None
+            if sender_str:
+                sender_sym, _, _ = self.resolve_identifier_in_file(
+                    sender_str, b.file_path, use_line=b.line
+                )
+                if not sender_sym and "." in sender_str:
+                    sender_sym, _, _ = self.resolve_identifier_in_file(
+                        sender_str.split(".")[-1], b.file_path, use_line=b.line
+                    )
+                if not sender_sym:
+                    short_s = sender_str.split(".")[-1]
+                    if short_s in self.short_to_symbols:
+                        for s in self.short_to_symbols[short_s]:
+                            if s.kind == "class":
+                                sender_sym = s
+                                break
+                        if not sender_sym:
+                            sender_sym = self.short_to_symbols[short_s][0]
+
+            sender_canon = sender_sym.canonical_id if sender_sym else (sender_str or sig_name)
+            sig_ev = f"Signal '{sig_name}' connects sender '{sender_str or '*'}' to '{target_canon}'"
+            add_ref(
+                Reference(
+                    source_symbol_id=sender_canon,
+                    target_symbol_id=target_canon,
+                    relationship="TRIGGERS_SIGNAL",
+                    confidence="HIGH" if sender_sym else "MEDIUM",
+                    path=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=sig_ev,
+                    source_hash=f_hash,
+                    indexed_commit=self.indexed_commit,
+                )
+            )
+            add_edge(
+                GraphEdge(
+                    source=sender_canon,
+                    target=target_canon,
+                    relationship="TRIGGERS_SIGNAL",
+                    confidence="HIGH" if sender_sym else "MEDIUM",
+                    file=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=sig_ev,
+                    evidence_class=RelationshipEvidenceClass.FRAMEWORK_VERIFIED.value,
+                    reason=f"django_signal:{sig_name}",
+                )
+            )
+            lifecycle_method = "delete" if "delete" in sig_name.lower() else "save"
+            add_edge(
+                GraphEdge(
+                    source=f"{sender_canon}.{lifecycle_method}",
+                    target=target_canon,
+                    relationship="CALLS",
+                    confidence="HIGH" if sender_sym else "MEDIUM",
+                    file=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=sig_ev,
+                    evidence_class=RelationshipEvidenceClass.DATAFLOW_VERIFIED.value,
+                    reason=f"django_signal:{sig_name}",
+                )
+            )
+            add_edge(
+                GraphEdge(
+                    source=target_canon,
+                    target=sender_canon,
+                    relationship="HANDLES_SIGNAL",
+                    confidence="HIGH" if sender_sym else "MEDIUM",
+                    file=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=f"Listener '{target_canon}' handles '{sig_name}' from '{sender_canon}'",
+                    evidence_class=RelationshipEvidenceClass.FRAMEWORK_VERIFIED.value,
+                    reason=f"django_signal:{sig_name}",
+                )
+            )
+
+        # 8c. Django Signal Dispatches via send() / send_robust()
+        for b in bindings_by_kind.get("DJANGO_SIGNAL_SEND", ()):
+            caller_id = _find_caller_id_for_binding(b)
+            sig_name = b.target_name
+            for b_rcv in bindings_by_kind.get("DJANGO_SIGNAL_RECEIVER", ()):
+                if b_rcv.base_expr == sig_name or sig_name.endswith(b_rcv.base_expr):
+                    rcv_sym, _, _ = self.resolve_identifier_in_file(b_rcv.target_name, b_rcv.file_path, use_line=b_rcv.line)
+                    if not rcv_sym and b_rcv.target_name in self.short_to_symbols:
+                        rcv_sym = self.short_to_symbols[b_rcv.target_name][0]
+                    target_id = rcv_sym.canonical_id if rcv_sym else b_rcv.target_name
+                    ev_str = f"Caller dispatches signal '{sig_name}' triggering '{target_id}'"
+                    add_edge(
+                        GraphEdge(
+                            source=caller_id,
+                            target=target_id,
+                            relationship="TRIGGERS_SIGNAL",
+                            confidence="HIGH",
+                            file=b.file_path,
+                            start_line=b.line,
+                            end_line=b.line,
+                            evidence=ev_str,
+                            evidence_class=RelationshipEvidenceClass.FRAMEWORK_VERIFIED.value,
+                            reason=f"signal_send:{sig_name}",
+                        )
+                    )
+
+        # 8d. Celery Task Dispatches via .delay() / .apply_async() / send_task()
+        for b in bindings_by_kind.get("CELERY_DISPATCH", ()):
+            caller_id = _find_caller_id_for_binding(b)
+            task_name = b.target_name
+            task_sym, _, _ = self.resolve_identifier_in_file(task_name, b.file_path, use_line=b.line)
+            if not task_sym and task_name in self.short_to_symbols:
+                task_sym = self.short_to_symbols[task_name][0]
+            target_id = task_sym.canonical_id if task_sym else task_name
+            f_hash = self.file_hashes.get(b.file_path, "")
+            ev_str = f"Caller dispatches background Celery task '{task_name}' via .{b.base_expr}() at {b.file_path}:{b.line}"
+            add_ref(
+                Reference(
+                    source_symbol_id=caller_id,
+                    target_symbol_id=target_id,
+                    relationship="DISPATCHES_TASK",
+                    confidence="HIGH" if task_sym else "MEDIUM",
+                    path=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    source_hash=f_hash,
+                    indexed_commit=self.indexed_commit,
+                )
+            )
+            add_edge(
+                GraphEdge(
+                    source=caller_id,
+                    target=target_id,
+                    relationship="DISPATCHES_TASK",
+                    confidence="HIGH" if task_sym else "MEDIUM",
+                    file=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    evidence_class=RelationshipEvidenceClass.FRAMEWORK_VERIFIED.value,
+                    reason=f"celery_dispatch:{b.base_expr}",
+                )
+            )
+            add_edge(
+                GraphEdge(
+                    source=caller_id,
+                    target=target_id,
+                    relationship="CALLS",
+                    confidence="HIGH" if task_sym else "MEDIUM",
+                    file=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    evidence_class=RelationshipEvidenceClass.DATAFLOW_VERIFIED.value,
+                    reason=f"celery_dispatch:{b.base_expr}",
+                )
+            )
+
+        # 8e. Ray Remote Task Dispatches via .remote()
+        for b in bindings_by_kind.get("RAY_REMOTE", ()):
+            caller_id = _find_caller_id_for_binding(b)
+            task_name = b.target_name
+            task_sym, _, _ = self.resolve_identifier_in_file(task_name, b.file_path, use_line=b.line)
+            if not task_sym and task_name in self.short_to_symbols:
+                task_sym = self.short_to_symbols[task_name][0]
+            target_id = task_sym.canonical_id if task_sym else task_name
+            f_hash = self.file_hashes.get(b.file_path, "")
+            ev_str = f"Caller dispatches remote Ray task '{task_name}' via .{b.base_expr}() at {b.file_path}:{b.line}"
+            add_ref(
+                Reference(
+                    source_symbol_id=caller_id,
+                    target_symbol_id=target_id,
+                    relationship="DISPATCHES_TASK",
+                    confidence="HIGH" if task_sym else "MEDIUM",
+                    path=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    source_hash=f_hash,
+                    indexed_commit=self.indexed_commit,
+                )
+            )
+            add_edge(
+                GraphEdge(
+                    source=caller_id,
+                    target=target_id,
+                    relationship="DISPATCHES_TASK",
+                    confidence="HIGH" if task_sym else "MEDIUM",
+                    file=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    evidence_class=RelationshipEvidenceClass.FRAMEWORK_VERIFIED.value,
+                    reason=f"ray_remote:{b.base_expr}",
+                )
+            )
+            add_edge(
+                GraphEdge(
+                    source=caller_id,
+                    target=target_id,
+                    relationship="CALLS",
+                    confidence="HIGH" if task_sym else "MEDIUM",
+                    file=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    evidence_class=RelationshipEvidenceClass.DATAFLOW_VERIFIED.value,
+                    reason=f"ray_remote:{b.base_expr}",
+                )
+            )
+
+        # 8f. Agent Tool Registrations (e.g. AgentExecutor(tools=[...]))
+        for b in bindings_by_kind.get("AGENT_TOOL_REGISTRATION", ()):
+            caller_id = _find_caller_id_for_binding(b)
+            tool_name = b.target_name
+            tool_sym, _, _ = self.resolve_identifier_in_file(tool_name, b.file_path, use_line=b.line)
+            if not tool_sym and tool_name in self.short_to_symbols:
+                tool_sym = self.short_to_symbols[tool_name][0]
+            target_id = tool_sym.canonical_id if tool_sym else tool_name
+            f_hash = self.file_hashes.get(b.file_path, "")
+            ev_str = f"Agent '{b.base_expr}' registers tool '{tool_name}' at {b.file_path}:{b.line}"
+            add_ref(
+                Reference(
+                    source_symbol_id=caller_id,
+                    target_symbol_id=target_id,
+                    relationship="REGISTERS",
+                    confidence="HIGH" if tool_sym else "MEDIUM",
+                    path=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    source_hash=f_hash,
+                    indexed_commit=self.indexed_commit,
+                )
+            )
+            add_edge(
+                GraphEdge(
+                    source=caller_id,
+                    target=target_id,
+                    relationship="REGISTERS",
+                    confidence="HIGH" if tool_sym else "MEDIUM",
+                    file=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    evidence_class=RelationshipEvidenceClass.FRAMEWORK_VERIFIED.value,
+                    reason=f"agent_tool_registration:{b.base_expr}",
+                )
+            )
+
+        # 8g. LCEL Pipeline Chains (prompt | llm | output_parser)
+        for b in bindings_by_kind.get("LCEL_PIPELINE", ()):
+            caller_id = _find_caller_id_for_binding(b)
+            try:
+                steps: list[str] = json.loads(b.source_expr)
+            except Exception:
+                steps = []
+            f_hash = self.file_hashes.get(b.file_path, "")
+            step_syms: list[Symbol | None] = []
+            for s_name in steps:
+                s_sym, _, _ = self.resolve_identifier_in_file(
+                    s_name, b.file_path, caller_canonical_id=caller_id, use_line=b.line
+                )
+                if not s_sym and self.binding_resolver:
+                    alias_t, _, _ = self.binding_resolver.resolve(
+                        b.file_path, s_name, scope=b.scope, use_line=b.line
+                    )
+                    if alias_t and alias_t in self.canonical_to_symbol:
+                        s_sym = self.canonical_to_symbol[alias_t]
+                    elif alias_t:
+                        s_sym, _, _ = self.resolve_identifier_in_file(alias_t, b.file_path, use_line=b.line)
+                        if not s_sym and alias_t in self.short_to_symbols:
+                            s_sym = self.short_to_symbols[alias_t][0]
+                if not s_sym and s_name in self.short_to_symbols:
+                    s_sym = self.short_to_symbols[s_name][0]
+                step_syms.append(s_sym)
+
+            # Link consecutive pipeline steps: step[i] -> PIPELINE_STEP -> step[i+1]
+            for i in range(len(steps) - 1):
+                sym_from = step_syms[i]
+                sym_to = step_syms[i + 1]
+                from_id = sym_from.canonical_id if sym_from is not None else steps[i]
+                to_id = sym_to.canonical_id if sym_to is not None else steps[i + 1]
+                ev_str = f"LCEL pipeline step '{steps[i]}' -> '{steps[i+1]}' at {b.file_path}:{b.line}"
+                add_ref(
+                    Reference(
+                        source_symbol_id=from_id,
+                        target_symbol_id=to_id,
+                        relationship="PIPELINE_STEP",
+                        confidence="HIGH" if (sym_from is not None and sym_to is not None) else "MEDIUM",
+                        path=b.file_path,
+                        start_line=b.line,
+                        end_line=b.line,
+                        evidence=ev_str,
+                        source_hash=f_hash,
+                        indexed_commit=self.indexed_commit,
+                    )
+                )
+                add_edge(
+                    GraphEdge(
+                        source=from_id,
+                        target=to_id,
+                        relationship="PIPELINE_STEP",
+                        confidence="HIGH" if (step_syms[i] and step_syms[i+1]) else "MEDIUM",
+                        file=b.file_path,
+                        start_line=b.line,
+                        end_line=b.line,
+                        evidence=ev_str,
+                        evidence_class=RelationshipEvidenceClass.DATAFLOW_VERIFIED.value,
+                        reason="lcel_pipe",
+                    )
+                )
+
+        # 8h. Python View -> Template Rendering (Flask, Django, FastAPI)
+        for b in bindings_by_kind.get("RENDERS_TEMPLATE", ()):
+            caller_id = _find_caller_id_for_binding(b)
+            raw_tmpl = b.target_name
+            resolved_tmpl = raw_tmpl
+            if raw_tmpl not in self.known_files:
+                for kf in self.known_files:
+                    if kf.endswith(f"/{raw_tmpl}") or kf == raw_tmpl:
+                        resolved_tmpl = kf
+                        break
+            f_hash = self.file_hashes.get(b.file_path, "")
+            ev_str = f"View renders HTML template '{raw_tmpl}' at {b.file_path}:{b.line}"
+            add_ref(
+                Reference(
+                    source_symbol_id=caller_id,
+                    target_symbol_id=resolved_tmpl,
+                    relationship="RENDERS_TEMPLATE",
+                    confidence="HIGH",
+                    path=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    source_hash=f_hash,
+                    indexed_commit=self.indexed_commit,
+                )
+            )
+            add_edge(
+                GraphEdge(
+                    source=caller_id,
+                    target=resolved_tmpl,
+                    relationship="RENDERS_TEMPLATE",
+                    confidence="HIGH",
+                    file=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    evidence_class=RelationshipEvidenceClass.FRAMEWORK_VERIFIED.value,
+                    reason=f"template_render:{raw_tmpl}",
+                )
+            )
+
         # 9. Dependency Injection & Configuration Intelligence
         # 9a. Statically grounded provider registration (PROVIDES)
         provider_map: dict[str, list[tuple[str, BindingRef, str]]] = {}
@@ -1750,6 +2369,12 @@ class ReferenceResolver:
             impl_sym, _, _ = self.resolve_identifier_in_file(b.source_expr, b.file_path, use_line=b.line)
             if not impl_sym and len(self.short_to_symbols.get(b.source_expr, [])) == 1:
                 impl_sym = self.short_to_symbols[b.source_expr][0]
+
+            if not iface_sym and b.base_expr == "nestjs_provider" and impl_sym:
+                iface_canon = b.target_name
+                impl_canon = impl_sym.canonical_id
+                provider_map.setdefault(iface_canon, []).append((impl_canon, b, "nestjs_provider"))
+                continue
 
             if not iface_sym or not impl_sym:
                 findings.append({
@@ -2177,6 +2802,97 @@ class ReferenceResolver:
                 )
             )
 
+        # 9d-nest. NestJS Constructor & @Inject Parameter Injection (INJECTS)
+        for b in bindings_by_kind.get("NESTJS_INJECTS", ()):
+            ann_sym, _, _ = self.resolve_identifier_in_file(b.source_expr, b.file_path, use_line=b.line)
+            if not ann_sym and len(self.short_to_symbols.get(b.source_expr, [])) == 1:
+                ann_sym = self.short_to_symbols[b.source_expr][0]
+
+            injected_canon: str | None = None
+            if ann_sym:
+                injected_canon = ann_sym.canonical_id
+            elif b.source_expr in provider_map:
+                injected_canon = provider_map[b.source_expr][0][0]
+            elif b.source_expr:
+                injected_canon = f"token.{b.source_expr}"
+
+            if not injected_canon:
+                continue
+
+            f_hash = self.file_hashes.get(b.file_path, "")
+            caller_canon = b.target_name
+            ev_str = f"NestJS injection: '{caller_canon}' INJECTS '{injected_canon}' (param='{b.attr_name}') at {b.file_path}:{b.line}"
+
+            add_ref(
+                Reference(
+                    source_symbol_id=caller_canon,
+                    target_symbol_id=injected_canon,
+                    relationship="INJECTS",
+                    confidence="HIGH",
+                    path=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    source_hash=f_hash,
+                    indexed_commit=self.indexed_commit,
+                )
+            )
+            add_edge(
+                GraphEdge(
+                    source=caller_canon,
+                    target=injected_canon,
+                    relationship="INJECTS",
+                    confidence="HIGH",
+                    file=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    evidence_class=RelationshipEvidenceClass.FRAMEWORK_VERIFIED.value,
+                    reason="nestjs_injection",
+                )
+            )
+
+            # Link routes of this controller to the injected dependency
+            for rt in self.routes:
+                if rt.handler_canonical_id.startswith(f"{caller_canon}."):
+                    rt_ev = f"NestJS Route endpoint '{rt.endpoint_id}' INJECTS '{injected_canon}' via {caller_canon} at {rt.file_path}:{rt.line}"
+                    add_edge(
+                        GraphEdge(
+                            source=rt.endpoint_id,
+                            target=injected_canon,
+                            relationship="INJECTS",
+                            confidence="HIGH",
+                            file=rt.file_path,
+                            start_line=rt.line,
+                            end_line=rt.line,
+                            evidence=rt_ev,
+                            evidence_class=RelationshipEvidenceClass.FRAMEWORK_VERIFIED.value,
+                            reason="nestjs_route_injection",
+                        )
+                    )
+
+        # 9d-ctrl. NestJS Controller Mounting (MOUNTS)
+        for b in bindings_by_kind.get("NESTJS_CONTROLLER", ()):
+            ctrl_sym, _, _ = self.resolve_identifier_in_file(b.source_expr, b.file_path, use_line=b.line)
+            if not ctrl_sym and len(self.short_to_symbols.get(b.source_expr, [])) == 1:
+                ctrl_sym = self.short_to_symbols[b.source_expr][0]
+            if ctrl_sym:
+                ctrl_canon = ctrl_sym.canonical_id
+                add_edge(
+                    GraphEdge(
+                        source=b.target_name,
+                        target=ctrl_canon,
+                        relationship="MOUNTS",
+                        confidence="HIGH",
+                        file=b.file_path,
+                        start_line=b.line,
+                        end_line=b.line,
+                        evidence=f"NestJS Module '{b.target_name}' mounts controller '{ctrl_canon}'",
+                        evidence_class=RelationshipEvidenceClass.FRAMEWORK_VERIFIED.value,
+                        reason="nestjs_module_mount",
+                    )
+                )
+
         # 9d-cycle. Static DI Cycle Detection (INJECTS / PROVIDES / RESOLVES_DEPENDENCY)
         di_adj: dict[str, list[tuple[str, str, int]]] = {}
         for ed in list(edges):
@@ -2291,12 +3007,6 @@ class ReferenceResolver:
             )
 
         # 10. Test Intelligence & Deterministic Test Discovery
-        def _find_caller_id_for_binding(b: BindingRef) -> str:
-            for s in self.path_to_symbols.get(b.file_path, ()):
-                if s.start_line <= b.line <= s.end_line:
-                    return s.canonical_id
-            mod = self.file_to_module.get(b.file_path) or normalize_module(b.file_path)
-            return f"{mod}.{b.scope}" if b.scope else mod
 
         # 10a. Direct Test Calls (TESTS)
         # Any call originating from a test file to a production symbol
@@ -2664,6 +3374,339 @@ class ReferenceResolver:
                             reason="workspace_package_manifest_dependency",
                         )
                     )
+
+        # 12. Frontend Web Graph (React, JSX, Hooks, Styles, HTML - Pillar 4)
+        for b in bindings_by_kind.get("REACT_RENDERS", ()):
+            child_name = b.target_name
+            caller_id = _find_caller_id_for_binding(b)
+            target_sym, _, _ = self.resolve_identifier_in_file(child_name, b.file_path, use_line=b.line)
+            if not target_sym and child_name in self.short_to_symbols:
+                candidates = [s for s in self.short_to_symbols[child_name] if s.kind in ("component", "function")]
+                if candidates:
+                    target_sym = candidates[0]
+            target_id = target_sym.canonical_id if target_sym else child_name
+            ev_str = f"React component renders '<{child_name} />' at {b.file_path}:{b.line}"
+            f_hash = self.file_hashes.get(b.file_path, "")
+            add_ref(
+                Reference(
+                    source_symbol_id=caller_id,
+                    target_symbol_id=target_id,
+                    relationship="RENDERS",
+                    confidence="HIGH" if target_sym else "MEDIUM",
+                    path=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    source_hash=f_hash,
+                    indexed_commit=self.indexed_commit,
+                )
+            )
+            add_edge(
+                GraphEdge(
+                    source=caller_id,
+                    target=target_id,
+                    relationship="RENDERS",
+                    confidence="HIGH" if target_sym else "MEDIUM",
+                    file=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    evidence_class=RelationshipEvidenceClass.AST_VERIFIED.value if target_sym else RelationshipEvidenceClass.FRAMEWORK_VERIFIED.value,
+                    reason=f"react_jsx_render:{child_name}",
+                )
+            )
+
+        for b in bindings_by_kind.get("REACT_USES_HOOK", ()):
+            hook_name = b.target_name
+            caller_id = _find_caller_id_for_binding(b)
+            target_sym, _, _ = self.resolve_identifier_in_file(hook_name, b.file_path, use_line=b.line)
+            if not target_sym and hook_name in self.short_to_symbols:
+                candidates = [s for s in self.short_to_symbols[hook_name] if s.kind in ("hook", "function")]
+                if candidates:
+                    target_sym = candidates[0]
+            target_id = target_sym.canonical_id if target_sym else hook_name
+            ev_str = f"React component invokes hook '{hook_name}()' at {b.file_path}:{b.line}"
+            f_hash = self.file_hashes.get(b.file_path, "")
+            add_ref(
+                Reference(
+                    source_symbol_id=caller_id,
+                    target_symbol_id=target_id,
+                    relationship="USES_HOOK",
+                    confidence="HIGH" if target_sym else "MEDIUM",
+                    path=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    source_hash=f_hash,
+                    indexed_commit=self.indexed_commit,
+                )
+            )
+            add_edge(
+                GraphEdge(
+                    source=caller_id,
+                    target=target_id,
+                    relationship="USES_HOOK",
+                    confidence="HIGH" if target_sym else "MEDIUM",
+                    file=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    evidence_class=RelationshipEvidenceClass.FRAMEWORK_VERIFIED.value,
+                    reason=f"react_hook_call:{hook_name}",
+                )
+            )
+
+        for b in bindings_by_kind.get("REACT_IMPORTS_STYLE", ()):
+            style_rel = b.target_name
+            src_dir = posixpath.dirname(b.file_path.replace("\\", "/").lstrip("./"))
+            resolved_style = posixpath.normpath(posixpath.join(src_dir, style_rel)) if style_rel.startswith(".") else style_rel
+            if resolved_style not in self.known_files:
+                for kf in self.known_files:
+                    if kf.endswith(f"/{style_rel}") or kf == style_rel:
+                        resolved_style = kf
+                        break
+            caller_id = _find_caller_id_for_binding(b)
+            ev_str = f"Component imports stylesheet '{style_rel}' at {b.file_path}:{b.line}"
+            f_hash = self.file_hashes.get(b.file_path, "")
+            add_ref(
+                Reference(
+                    source_symbol_id=caller_id,
+                    target_symbol_id=resolved_style,
+                    relationship="IMPORTS_STYLE",
+                    confidence="HIGH",
+                    path=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    source_hash=f_hash,
+                    indexed_commit=self.indexed_commit,
+                )
+            )
+            add_edge(
+                GraphEdge(
+                    source=caller_id,
+                    target=resolved_style,
+                    relationship="IMPORTS_STYLE",
+                    confidence="HIGH",
+                    file=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    evidence_class=RelationshipEvidenceClass.AST_VERIFIED.value,
+                    reason=f"react_style_import:{style_rel}",
+                )
+            )
+
+        for b in bindings_by_kind.get("REACT_USES_STYLE_CLASS", ()):
+            cls_name = b.target_name
+            caller_id = _find_caller_id_for_binding(b)
+            ev_str = f"Component applies CSS class '.{cls_name}' at {b.file_path}:{b.line}"
+            f_hash = self.file_hashes.get(b.file_path, "")
+            add_ref(
+                Reference(
+                    source_symbol_id=caller_id,
+                    target_symbol_id=f".{cls_name}",
+                    relationship="USES_STYLE_CLASS",
+                    confidence="HIGH",
+                    path=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    source_hash=f_hash,
+                    indexed_commit=self.indexed_commit,
+                )
+            )
+            add_edge(
+                GraphEdge(
+                    source=caller_id,
+                    target=f".{cls_name}",
+                    relationship="USES_STYLE_CLASS",
+                    confidence="HIGH",
+                    file=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    evidence_class=RelationshipEvidenceClass.FRAMEWORK_VERIFIED.value,
+                    reason=f"css_class_use:.{cls_name}",
+                )
+            )
+
+        for b in bindings_by_kind.get("REACT_FETCH_ROUTE", ()):
+            raw_url = b.target_name
+            caller_id = _find_caller_id_for_binding(b)
+            client_method = b.base_expr or "GET"
+            norm_client = normalize_route(client_method, raw_url)
+
+            matched_routes: list[tuple[RouteDetection, str]] = []
+            for r in self.routes:
+                if (
+                    r.route_path == raw_url
+                    or r.normalized_route == raw_url
+                    or r.route_path.rstrip("/") == raw_url.rstrip("/")
+                ):
+                    matched_routes.append((r, "EXACT"))
+                    continue
+                norm_backend = normalize_route(r.http_method, r.route_path)
+                is_matched, match_type = match_route_topology(
+                    norm_client, norm_backend, allow_proxy_prefix=True, match_methods=True
+                )
+                if is_matched:
+                    matched_routes.append((r, match_type))
+
+            f_hash = self.file_hashes.get(b.file_path, "")
+            if matched_routes:
+                for r, match_type in matched_routes:
+                    ev_str = f"Client fetches route '{r.route_path}' ({match_type}) at {b.file_path}:{b.line}"
+                    add_ref(
+                        Reference(
+                            source_symbol_id=caller_id,
+                            target_symbol_id=r.endpoint_id,
+                            relationship="FETCHES_ROUTE",
+                            confidence="HIGH",
+                            path=b.file_path,
+                            start_line=b.line,
+                            end_line=b.line,
+                            evidence=ev_str,
+                            source_hash=f_hash,
+                            indexed_commit=self.indexed_commit,
+                        )
+                    )
+                    add_edge(
+                        GraphEdge(
+                            source=caller_id,
+                            target=r.endpoint_id,
+                            relationship="FETCHES_ROUTE",
+                            confidence="HIGH",
+                            file=b.file_path,
+                            start_line=b.line,
+                            end_line=b.line,
+                            evidence=ev_str,
+                            evidence_class=RelationshipEvidenceClass.FRAMEWORK_VERIFIED.value,
+                            reason=f"client_fetch:{r.route_path}",
+                        )
+                    )
+                    if r.handler_canonical_id:
+                        h_ev = f"Client invokes backend handler '{r.handler_canonical_id}' via {r.route_path} ({match_type}) at {b.file_path}:{b.line}"
+                        add_ref(
+                            Reference(
+                                source_symbol_id=caller_id,
+                                target_symbol_id=r.handler_canonical_id,
+                                relationship="CALLS",
+                                confidence="HIGH",
+                                path=b.file_path,
+                                start_line=b.line,
+                                end_line=b.line,
+                                evidence=h_ev,
+                                source_hash=f_hash,
+                                indexed_commit=self.indexed_commit,
+                            )
+                        )
+                        add_edge(
+                            GraphEdge(
+                                source=caller_id,
+                                target=r.handler_canonical_id,
+                                relationship="CALLS",
+                                confidence="HIGH",
+                                file=b.file_path,
+                                start_line=b.line,
+                                end_line=b.line,
+                                evidence=h_ev,
+                                evidence_class=RelationshipEvidenceClass.DATAFLOW_VERIFIED.value,
+                                reason=f"client_handler_call:{r.route_path}",
+                            )
+                        )
+            else:
+                ev_str = f"Client fetches external/custom route '{raw_url}' at {b.file_path}:{b.line}"
+                add_edge(
+                    GraphEdge(
+                        source=caller_id,
+                        target=raw_url,
+                        relationship="FETCHES_ROUTE",
+                        confidence="LOW",
+                        file=b.file_path,
+                        start_line=b.line,
+                        end_line=b.line,
+                        evidence=ev_str,
+                        evidence_class=RelationshipEvidenceClass.POSSIBLE.value,
+                        reason=f"client_fetch:{raw_url}",
+                    )
+                )
+
+        for b in bindings_by_kind.get("HTML_LOADS_SCRIPT", ()):
+            src_val = b.target_name
+            target_file = src_val
+            for kf in self.known_files:
+                if kf.endswith(f"/{src_val}") or kf == src_val:
+                    target_file = kf
+                    break
+            ev_str = f"HTML loads script '{src_val}' at {b.file_path}:{b.line}"
+            f_hash = self.file_hashes.get(b.file_path, "")
+            add_ref(
+                Reference(
+                    source_symbol_id=b.file_path,
+                    target_symbol_id=target_file,
+                    relationship="LOADS_SCRIPT",
+                    confidence="HIGH",
+                    path=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    source_hash=f_hash,
+                    indexed_commit=self.indexed_commit,
+                )
+            )
+            add_edge(
+                GraphEdge(
+                    source=b.file_path,
+                    target=target_file,
+                    relationship="LOADS_SCRIPT",
+                    confidence="HIGH",
+                    file=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    evidence_class=RelationshipEvidenceClass.STATIC_VERIFIED.value,
+                    reason=f"html_script:{src_val}",
+                )
+            )
+
+        for b in bindings_by_kind.get("HTML_LOADS_STYLESHEET", ()):
+            href_val = b.target_name
+            target_file = href_val
+            for kf in self.known_files:
+                if kf.endswith(f"/{href_val}") or kf == href_val:
+                    target_file = kf
+                    break
+            ev_str = f"HTML loads stylesheet '{href_val}' at {b.file_path}:{b.line}"
+            f_hash = self.file_hashes.get(b.file_path, "")
+            add_ref(
+                Reference(
+                    source_symbol_id=b.file_path,
+                    target_symbol_id=target_file,
+                    relationship="LOADS_STYLESHEET",
+                    confidence="HIGH",
+                    path=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    source_hash=f_hash,
+                    indexed_commit=self.indexed_commit,
+                )
+            )
+            add_edge(
+                GraphEdge(
+                    source=b.file_path,
+                    target=target_file,
+                    relationship="LOADS_STYLESHEET",
+                    confidence="HIGH",
+                    file=b.file_path,
+                    start_line=b.line,
+                    end_line=b.line,
+                    evidence=ev_str,
+                    evidence_class=RelationshipEvidenceClass.STATIC_VERIFIED.value,
+                    reason=f"html_stylesheet:{href_val}",
+                )
+            )
 
         return ResolutionOutput(
             references=references,

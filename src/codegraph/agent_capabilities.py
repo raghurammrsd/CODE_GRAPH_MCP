@@ -158,6 +158,8 @@ ROUTING_MANIFEST: dict[str, str] = {
     "context_freshness": "check_context_freshness",
     "symbol_history": "trace_symbol_history",
     "semantic_conflicts": "detect_semantic_conflicts",
+    "safe_rename": "safe_rename",
+    "rollback_refactor": "rollback_refactor",
 }
 
 DEFAULT_AGENT_PROFILE_TOOLS: tuple[str, ...] = (
@@ -736,7 +738,7 @@ TOOL_CAPABILITY_REGISTRY: tuple[ToolCapabilitySpec, ...] = (
         description=(
             "Compile a token-bounded, coverage-optimized ContextPacket containing verified symbols, compressed relationships, routes, DI providers, packages, and related tests. "
             "Primary input: `query` (natural-language question, symbol, or task description; `task` is also supported as a compatibility alias for string or structured TaskSpec dict). "
-            "Budget controls: `max_tokens` (default 4000, hard cap 20000), `max_files` (default 15, hard cap 30), `max_lines` (default 500, hard cap 1500). "
+            "Budget controls: `max_tokens` (default 4000, hard cap 20000), `max_files` (default 25, hard cap 40), `max_lines` (default 500, hard cap 1500). "
             "Preserves UNKNOWN, POSSIBLE, and AMBIGUOUS states explicitly. "
             "Does not return full raw files; use targeted get_file or read_file only if exact omitted lines are needed afterward."
         ),
@@ -790,7 +792,7 @@ TOOL_CAPABILITY_REGISTRY: tuple[ToolCapabilitySpec, ...] = (
         ),
         profiles=("agent", "graph", "minimal", "developer", "full"),
         minimal_invocation='get_context(query="Debug authentication failure in login_endpoint")',
-        advanced_invocation='get_context(query="Trace DI chain for get_current_user", intent="DEBUG", max_tokens=4000, max_files=15, max_lines=500, explain=True)',
+        advanced_invocation='get_context(query="Trace DI chain for get_current_user", intent="DEBUG", max_tokens=4000, max_files=25, max_lines=500, explain=True)',
         result_fields=("symbols", "relationships", "routes", "tests", "packages", "unknowns", "conflicts", "uncertainties", "freshness", "selected_tokens", "candidate_tokens", "selected_files", "selected_lines", "coverage_score", "truncated", "candidate_token_estimate", "selected_token_estimate", "context_reduction_pct", "coverage"),
         typical_followup="get_file on specific line ranges if implementation details outside snippets are required",
         common_mistakes=(
@@ -2625,6 +2627,313 @@ TOOL_CAPABILITY_REGISTRY: tuple[ToolCapabilitySpec, ...] = (
         example_call='detect_semantic_conflicts(base_branch="main", head_branch="HEAD")',
         example_interpretation="Inspect has_conflicts and conflicts list for DELETED_SYMBOL_REFERENCED or CALL_SIGNATURE_MISMATCH.",
     ),
+    # 49. safe_rename
+    ToolCapabilitySpec(
+        tool_name="safe_rename",
+        capability="ast_symbol_refactor",
+        description=(
+            "Perform a deterministic, syntax-validated, transaction-safe AST rename of a symbol across the repository. "
+            "Use when renaming a function, method, or class across multiple files safely with in-memory preview diffs. "
+            "Does not prove runtime equivalence beyond AST syntax validation and statically verified references."
+        ),
+        task_types=(
+            AgentTaskCategory.CHANGE_IMPACT.value,
+        ),
+        required_inputs=("target", "new_name"),
+        optional_inputs=("dry_run", "force_uncertain"),
+        expected_output_type="RefactorResult",
+        relationship_types_returned=("DEFINES", "CALLS", "IMPORTS"),
+        evidence_guarantees="Token-exact replacement with in-memory ast.parse syntax validation and atomic rollback manifest.",
+        does_not_prove="Does not prove semantic preservation beyond AST syntax validation and statically verified references.",
+        useful_situations=(
+            "Renaming a function, method, or class safely across multiple files without breaking references",
+            "Previewing exact diffs before executing an atomic codebase refactoring",
+        ),
+        avoid_when=(
+            "Trivial single-file edit of a local variable inside an already-open function",
+        ),
+        profiles=("full",),
+        minimal_invocation='safe_rename(target="AuthService", new_name="AuthenticationService", dry_run=True)',
+        advanced_invocation='safe_rename(target="AuthService.verify", new_name="verify_token", dry_run=False, force_uncertain=False)',
+        result_fields=("status", "target_symbol", "new_name", "risk", "files_changed", "spans_count", "diffs", "rollback_id", "errors"),
+        typical_followup="rollback_refactor if undo needed, or find_tests to run affected test suite",
+        common_mistakes=(
+            "Applying without inspecting preview diffs when dry_run=True",
+            "Using invalid Python identifiers with spaces or keywords",
+        ),
+        example_request="Rename AuthService to AuthenticationService and preview all diffs.",
+        example_call='safe_rename(target="AuthService", new_name="AuthenticationService", dry_run=True)',
+        example_interpretation="Inspect status=='READY', diffs, risk=='LOW', and affected_tests before applying.",
+    ),
+    # 50. rollback_refactor
+    ToolCapabilitySpec(
+        tool_name="rollback_refactor",
+        capability="refactor_transaction_rollback",
+        description=(
+            "Atomically rollback an applied refactoring transaction using its rollback manifest ID. "
+            "Use when reverting an applied refactoring transaction to restore original source files cleanly. "
+            "Does not restore files if they were modified externally after refactoring was applied."
+        ),
+        task_types=(
+            AgentTaskCategory.CHANGE_IMPACT.value,
+        ),
+        required_inputs=("transaction_id",),
+        optional_inputs=(),
+        expected_output_type="RefactorResult",
+        relationship_types_returned=(),
+        evidence_guarantees="Precondition SHA-256 validation and atomic file replacement with os.replace.",
+        does_not_prove="Cannot rollback if files were modified externally after refactoring was applied.",
+        useful_situations=(
+            "Undoing an applied refactoring transaction cleanly to restore original code bytes",
+        ),
+        avoid_when=(
+            "Transaction was not applied or files have subsequent manual edits",
+        ),
+        profiles=("full",),
+        minimal_invocation='rollback_refactor(transaction_id="rf_abc123")',
+        advanced_invocation='rollback_refactor(transaction_id="rf_abc123")',
+        result_fields=("status", "target_symbol", "new_name", "files_changed", "rollback_id", "errors"),
+        typical_followup="get_repository_status to verify repository state",
+        common_mistakes=(
+            "Calling rollback after modifying the files externally (which blocks rollback for safety)",
+        ),
+        example_request="Undo the refactor with transaction ID rf_12345.",
+        example_call='rollback_refactor(transaction_id="rf_12345")',
+        example_interpretation="Inspect status=='ROLLED_BACK' and files_changed.",
+    ),
+    # 65. get_live_services
+    ToolCapabilitySpec(
+        tool_name="get_live_services",
+        capability="live_service_discovery",
+        description=(
+            "Detect and attribute active localhost services, ports, PIDs, frameworks, and workspace sub-packages with zero idle CPU. "
+            "Use when diagnosing running dev servers or multi-service architectures. "
+            "Does not prove live HTTP response payloads or application layer health."
+        ),
+        task_types=(
+            AgentTaskCategory.DIAGNOSTIC.value,
+            AgentTaskCategory.DEBUG.value,
+            AgentTaskCategory.ARCHITECTURE.value,
+        ),
+        required_inputs=(),
+        optional_inputs=(),
+        expected_output_type="dict[str, Any]",
+        relationship_types_returned=(),
+        evidence_guarantees="Kernel socket table inspection and static configuration discovery with 5-second TTL cache.",
+        does_not_prove="Does not prove live HTTP response payloads or application layer health.",
+        useful_situations=(
+            "Identifying running backend and frontend dev servers",
+            "Attributing localhost ports to workspace sub-directories",
+        ),
+        avoid_when=(
+            "Dev servers are not running or only static AST analysis is required",
+        ),
+        profiles=("full",),
+        minimal_invocation="get_live_services()",
+        advanced_invocation="get_live_services()",
+        result_fields=("live_services", "configured_services", "count"),
+        typical_followup="get_distributed_trace or list_routes",
+        common_mistakes=(
+            "Polling get_live_services in a rapid spin loop instead of relying on the 5-second TTL cache",
+        ),
+        example_request="What dev servers are running on localhost?",
+        example_call="get_live_services()",
+        example_interpretation="Inspect live_services for active listening ports and PIDs.",
+    ),
+    # 66. check_db_drift
+    ToolCapabilitySpec(
+        tool_name="check_db_drift",
+        capability="database_schema_drift",
+        description=(
+            "Detect database schema drift between migration files, live database state, and code ORM models with zero idle CPU. "
+            "Flags unmapped tables, missing columns, and migration version state. "
+            "Use when verifying whether database migrations are up to date with code models. "
+            "Does not execute SQL data assertions or validate column constraints against live row data."
+        ),
+        task_types=(
+            AgentTaskCategory.DEBUG.value,
+            AgentTaskCategory.CHANGE_IMPACT.value,
+        ),
+        required_inputs=(),
+        optional_inputs=(),
+        expected_output_type="dict[str, Any]",
+        relationship_types_returned=(),
+        evidence_guarantees="Comparison of SQLite/PostgreSQL schemas and migration folder state with 5-second TTL cache.",
+        does_not_prove="Does not execute SQL data assertions or validate column constraints against live row data.",
+        useful_situations=(
+            "Verifying whether database migrations are up to date with code models",
+            "Diagnosing missing table or column runtime errors",
+        ),
+        avoid_when=(
+            "Project does not utilize SQL databases or database models",
+        ),
+        profiles=("full",),
+        minimal_invocation="check_db_drift()",
+        advanced_invocation="check_db_drift()",
+        result_fields=("status", "unmapped_tables", "missing_columns", "migration_version", "is_drifted"),
+        typical_followup="get_db_schema or find_db_tables",
+        common_mistakes=(
+            "Assuming check_db_drift executes database migrations rather than inspecting drift",
+        ),
+        example_request="Check if our database schema has drifted from migrations.",
+        example_call="check_db_drift()",
+        example_interpretation="Check if is_drifted is true and review missing_columns.",
+    ),
+    # 67. check_route_schema_drift
+    ToolCapabilitySpec(
+        tool_name="check_route_schema_drift",
+        capability="route_schema_validation_drift",
+        description=(
+            "Use when detecting schema validation drift between a route/handler input schema (Pydantic BaseModel, Django Form, DRF Serializer) "
+            "and destination database table columns. "
+            "Flags MISSING_REQUIRED_COLUMN, NULLABILITY_MISMATCH, TYPE_INCOMPATIBILITY, LENGTH_CONSTRAINT_DRIFT, and UNUSED_SCHEMA_FIELD. "
+            "Does not execute live requests."
+        ),
+        task_types=(
+            AgentTaskCategory.DEBUG.value,
+            AgentTaskCategory.CHANGE_IMPACT.value,
+        ),
+        required_inputs=(),
+        optional_inputs=("route", "handler", "table", "schema"),
+        expected_output_type="dict[str, Any]",
+        relationship_types_returned=(),
+        evidence_guarantees="Deterministic AST and database schema entity comparison.",
+        does_not_prove="Does not execute live HTTP requests or live SQL transactions.",
+        useful_situations=(
+            "Validating route request payload models against destination database columns",
+            "Preventing runtime NOT NULL constraint failures and type mismatches before deployment",
+        ),
+        avoid_when=(
+            "Inspecting static code symbols unrelated to HTTP routes or database persistence",
+        ),
+        profiles=("full",),
+        minimal_invocation='check_route_schema_drift(route="/api/v1/orders/checkout")',
+        advanced_invocation='check_route_schema_drift(route="/api/v1/orders/checkout", table="orders", schema="CheckoutRequest")',
+        result_fields=("status", "route_or_handler", "target_table", "schema_name", "drift_count", "critical_count", "warning_count", "info_count", "issues"),
+        typical_followup="get_route_db_lineage or get_db_table",
+        common_mistakes=(
+            "Assuming check_route_schema_drift executes HTTP requests rather than inspecting static schemas",
+        ),
+        example_request="Check for schema drift on our checkout route.",
+        example_call='check_route_schema_drift(route="/api/v1/orders/checkout")',
+        example_interpretation="Review issues for MISSING_REQUIRED_COLUMN or NULLABILITY_MISMATCH.",
+    ),
+    # 68. get_distributed_trace
+    ToolCapabilitySpec(
+        tool_name="get_distributed_trace",
+        capability="distributed_trace_reconstruction",
+        description=(
+            "Stitch and reconstruct multi-service distributed execution trees across frontend, backend, and database boundaries for a specific W3C trace ID. "
+            "Use when tracing cross-service requests or debugging multi-service latency bottlenecks. "
+            "Does not capture unobserved code paths or untraced sidecar requests."
+        ),
+        task_types=(
+            AgentTaskCategory.TRACE.value,
+            AgentTaskCategory.DEBUG.value,
+        ),
+        required_inputs=("trace_id",),
+        optional_inputs=(),
+        expected_output_type="dict[str, Any]",
+        relationship_types_returned=(),
+        evidence_guarantees="W3C traceparent stitching across multi-service runtime observations.",
+        does_not_prove="Does not capture unobserved code paths or untraced sidecar requests.",
+        useful_situations=(
+            "Tracing an end-to-end user request from UI click to backend SQL execution",
+            "Pinpointing which service failed in a distributed microservice workflow",
+        ),
+        avoid_when=(
+            "Static code traversal is sufficient or dev servers have not captured runtime traces",
+        ),
+        profiles=("full",),
+        minimal_invocation='get_distributed_trace(trace_id="4bf92f3577b34da6a3ce929d0e0e4736")',
+        advanced_invocation='get_distributed_trace(trace_id="4bf92f3577b34da6a3ce929d0e0e4736")',
+        result_fields=("trace_id", "status", "root_span", "total_spans", "services_involved", "timeline"),
+        typical_followup="get_runtime_trace or reconcile_static_runtime",
+        common_mistakes=(
+            "Passing span_id instead of trace_id to get_distributed_trace",
+        ),
+        example_request="Trace the distributed execution for trace ID 4bf92f3577b34da6a3ce929d0e0e4736.",
+        example_call='get_distributed_trace(trace_id="4bf92f3577b34da6a3ce929d0e0e4736")',
+        example_interpretation="Review timeline and services_involved to locate execution bottlenecks or failures.",
+    ),
+    # 68. check_api_drift
+    ToolCapabilitySpec(
+        tool_name="check_api_drift",
+        capability="client_server_api_drift",
+        description=(
+            "Detect client-server API contract drift between frontend fetch or axios calls and backend route registrations. "
+            "Flags orphaned client endpoints (404s) and HTTP method mismatches (405s). "
+            "Use when validating frontend API calls against backend endpoints before deployment. "
+            "Does not execute live HTTP requests or validate dynamic URL strings constructed via runtime interpolation."
+        ),
+        task_types=(
+            AgentTaskCategory.ROUTE_DISCOVERY.value,
+            AgentTaskCategory.CHANGE_IMPACT.value,
+            AgentTaskCategory.DEBUG.value,
+        ),
+        required_inputs=(),
+        optional_inputs=(),
+        expected_output_type="dict[str, Any]",
+        relationship_types_returned=(),
+        evidence_guarantees="Cross-layer AST static verification comparing frontend fetch calls with backend route trees.",
+        does_not_prove="Does not execute live HTTP requests or validate dynamic URL concatenation at runtime.",
+        useful_situations=(
+            "Finding broken API endpoint paths in frontend client code",
+            "Detecting HTTP method mismatches before deployment",
+        ),
+        avoid_when=(
+            "Frontend code does not use REST fetch/axios calls to backend routes",
+        ),
+        profiles=("full",),
+        minimal_invocation="check_api_drift()",
+        advanced_invocation="check_api_drift()",
+        result_fields=("status", "orphaned_client_routes", "method_mismatches", "verified_contracts_count"),
+        typical_followup="find_routes or list_routes",
+        common_mistakes=(
+            "Assuming check_api_drift catches dynamic URL template literals constructed via arbitrary runtime string interpolation",
+        ),
+        example_request="Check if any frontend API calls mismatch backend routes.",
+        example_call="check_api_drift()",
+        example_interpretation="Inspect orphaned_client_routes for potential 404s.",
+    ),
+    # 69. get_monorepo_packages
+    ToolCapabilitySpec(
+        tool_name="get_monorepo_packages",
+        capability="monorepo_package_discovery",
+        description=(
+            "Catalog monorepo workspace packages, tools (pnpm, Turborepo, npm/yarn workspaces), entry points, and inter-package dependencies. "
+            "Use when mapping multi-package repository structure and package boundaries. "
+            "Does not prove build system execution order or runtime dependency loading."
+        ),
+        task_types=(
+            AgentTaskCategory.PACKAGE.value,
+            AgentTaskCategory.ARCHITECTURE.value,
+        ),
+        required_inputs=(),
+        optional_inputs=(),
+        expected_output_type="dict[str, Any]",
+        relationship_types_returned=(),
+        evidence_guarantees="Deterministic workspace manifest analysis across pnpm, yarn, npm, Turborepo, Cargo, and Poetry.",
+        does_not_prove="Does not prove build system execution order or runtime dependency loading.",
+        useful_situations=(
+            "Mapping multi-package repository structure and package boundaries",
+            "Tracing internal dependency graph between workspace packages",
+        ),
+        avoid_when=(
+            "Repository is a single standalone package without workspaces",
+        ),
+        profiles=("full",),
+        minimal_invocation="get_monorepo_packages()",
+        advanced_invocation="get_monorepo_packages()",
+        result_fields=("tool", "packages", "dependency_graph", "root_path"),
+        typical_followup="get_architecture or get_dependencies",
+        common_mistakes=(
+            "Expecting get_monorepo_packages to build or run package package.json scripts",
+        ),
+        example_request="List all packages in this monorepo and their dependencies.",
+        example_call="get_monorepo_packages()",
+        example_interpretation="Inspect packages mapping to understand package names, root paths, and dependencies.",
+    ),
 )
 
 _TOOL_BY_NAME: dict[str, ToolCapabilitySpec] = {t.tool_name: t for t in TOOL_CAPABILITY_REGISTRY}
@@ -2931,12 +3240,15 @@ MCP_PROFILE_RECOMMENDATIONS: dict[str, dict[str, object]] = {
     },
     "full": {
         "profile": "full",
-        "tool_count": 62,
+        "tool_count": 70,
         "recommended_for": "Complete diagnostic, database intelligence, runtime reconciliation, benchmark, and repository administration sessions",
         "included_tools": [
             "analyze_change_impact",
             "analyze_impact",
+            "check_api_drift",
             "check_context_freshness",
+            "check_db_drift",
+            "check_route_schema_drift",
             "compare_git",
             "compile_task",
             "detect_semantic_conflicts",
@@ -2967,6 +3279,7 @@ MCP_PROFILE_RECOMMENDATIONS: dict[str, dict[str, object]] = {
             "get_dependencies",
             "get_dependency_graph",
             "get_dependents",
+            "get_distributed_trace",
             "get_evidence",
             "get_file",
             "get_file_history",
@@ -2975,6 +3288,8 @@ MCP_PROFILE_RECOMMENDATIONS: dict[str, dict[str, object]] = {
             "get_git_state",
             "get_graph",
             "get_imports",
+            "get_live_services",
+            "get_monorepo_packages",
             "get_project_structure",
             "get_recent_changes",
             "get_references",
@@ -2988,6 +3303,8 @@ MCP_PROFILE_RECOMMENDATIONS: dict[str, dict[str, object]] = {
             "read_file",
             "reconcile_static_runtime",
             "resolve_symbol",
+            "rollback_refactor",
+            "safe_rename",
             "search_code",
             "search_memory",
             "search_symbols",

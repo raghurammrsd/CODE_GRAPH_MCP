@@ -1256,7 +1256,7 @@
     "name": "get_context",
     "category": "core",
     "capability": "bounded_repository_context",
-    "description": "Compile a token-bounded, coverage-optimized ContextPacket containing verified symbols, compressed relationships, routes, DI providers, packages, and related tests. Primary input: `query` (natural-language question, symbol, or task description; `task` is also supported as a compatibility alias for string or structured TaskSpec dict). Budget controls: `max_tokens` (default 4000, hard cap 20000), `max_files` (default 15, hard cap 30), `max_lines` (default 500, hard cap 1500). Preserves UNKNOWN, POSSIBLE, and AMBIGUOUS states explicitly. Does not return full raw files; use targeted get_file or read_file only if exact omitted lines are needed afterward.",
+    "description": "Compile a token-bounded, coverage-optimized ContextPacket containing verified symbols, compressed relationships, routes, DI providers, packages, and related tests. Primary input: `query` (natural-language question, symbol, or task description; `task` is also supported as a compatibility alias for string or structured TaskSpec dict). Budget controls: `max_tokens` (default 4000, hard cap 20000), `max_files` (default 25, hard cap 40), `max_lines` (default 500, hard cap 1500). Preserves UNKNOWN, POSSIBLE, and AMBIGUOUS states explicitly. Does not return full raw files; use targeted get_file or read_file only if exact omitted lines are needed afterward.",
     "problem_solved": "Investigating a bug, route flow, DI chain, or multi-file feature in one bounded call",
     "profiles": [
       "agent",
@@ -1318,7 +1318,7 @@
           "type": "integer"
         },
         "max_files": {
-          "default": 15,
+          "default": 25,
           "title": "Max Files",
           "type": "integer"
         },
@@ -1328,7 +1328,7 @@
           "type": "integer"
         },
         "top_k": {
-          "default": 15,
+          "default": 25,
           "title": "Top K",
           "type": "integer"
         },
@@ -1456,7 +1456,7 @@
     "returns": "ContextPacket",
     "example_invocation": "get_context(query=\"How does UserRepository get injected into UserController\", intent=\"DEBUG\", max_tokens=4000)",
     "minimal_invocation": "get_context(query=\"Debug authentication failure in login_endpoint\")",
-    "advanced_invocation": "get_context(query=\"Trace DI chain for get_current_user\", intent=\"DEBUG\", max_tokens=4000, max_files=15, max_lines=500, explain=True)",
+    "advanced_invocation": "get_context(query=\"Trace DI chain for get_current_user\", intent=\"DEBUG\", max_tokens=4000, max_files=25, max_lines=500, explain=True)",
     "evidence": "Bounded source snippets, compressed relationships with supporting_locations, coverage_score, budget metadata (selected_tokens, candidate_tokens, selected_files, selected_lines, truncated), and explicit UNKNOWN/POSSIBLE/AMBIGUOUS preservation.",
     "does_not_prove": "Does not execute code or fabricate edges for unresolvable dynamic dispatch."
   },
@@ -4995,5 +4995,510 @@
     "advanced_invocation": "detect_semantic_conflicts(base_branch=\"main\", head_branch=\"HEAD\")",
     "evidence": "Deterministic cross-branch AST call-site and definition verification.",
     "does_not_prove": "Does not execute code; reports contract incompatibility between revisions."
+  },
+  {
+    "name": "safe_rename",
+    "category": "core",
+    "capability": "ast_symbol_refactor",
+    "description": "Perform a deterministic, syntax-validated, transaction-safe AST rename of a symbol across the repository. Use when renaming a function, method, or class across multiple files safely with in-memory preview diffs. Does not prove runtime equivalence beyond AST syntax validation and statically verified references.",
+    "problem_solved": "Renaming a function, method, or class safely across multiple files without breaking references",
+    "profiles": [
+      "full"
+    ],
+    "required_inputs": [
+      "target",
+      "new_name"
+    ],
+    "optional_inputs": [
+      "dry_run",
+      "force_uncertain"
+    ],
+    "parameters_schema": {
+      "properties": {
+        "target": {
+          "title": "Target",
+          "type": "string"
+        },
+        "new_name": {
+          "title": "New Name",
+          "type": "string"
+        },
+        "dry_run": {
+          "default": true,
+          "title": "Dry Run",
+          "type": "boolean"
+        },
+        "force_uncertain": {
+          "default": false,
+          "title": "Force Uncertain",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "target",
+        "new_name"
+      ],
+      "title": "safe_renameArguments",
+      "type": "object"
+    },
+    "return_schema": {
+      "title": "RefactorResult",
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "title": "Status"
+        },
+        "target_symbol": {
+          "type": "string",
+          "title": "Target Symbol"
+        },
+        "new_name": {
+          "type": "string",
+          "title": "New Name"
+        },
+        "risk": {
+          "type": "string",
+          "title": "Risk"
+        },
+        "files_changed": {
+          "type": "array",
+          "title": "Files Changed"
+        },
+        "spans_count": {
+          "type": "integer",
+          "title": "Spans Count"
+        },
+        "diffs": {
+          "type": "string",
+          "title": "Diffs"
+        },
+        "rollback_id": {
+          "type": "string",
+          "title": "Rollback Id"
+        },
+        "errors": {
+          "type": "string",
+          "title": "Errors"
+        }
+      }
+    },
+    "returns": "RefactorResult",
+    "example_invocation": "safe_rename(target=\"AuthService\", new_name=\"AuthenticationService\", dry_run=True)",
+    "minimal_invocation": "safe_rename(target=\"AuthService\", new_name=\"AuthenticationService\", dry_run=True)",
+    "advanced_invocation": "safe_rename(target=\"AuthService.verify\", new_name=\"verify_token\", dry_run=False, force_uncertain=False)",
+    "evidence": "Token-exact replacement with in-memory ast.parse syntax validation and atomic rollback manifest.",
+    "does_not_prove": "Does not prove semantic preservation beyond AST syntax validation and statically verified references."
+  },
+  {
+    "name": "rollback_refactor",
+    "category": "core",
+    "capability": "refactor_transaction_rollback",
+    "description": "Atomically rollback an applied refactoring transaction using its rollback manifest ID. Use when reverting an applied refactoring transaction to restore original source files cleanly. Does not restore files if they were modified externally after refactoring was applied.",
+    "problem_solved": "Undoing an applied refactoring transaction cleanly to restore original code bytes",
+    "profiles": [
+      "full"
+    ],
+    "required_inputs": [
+      "transaction_id"
+    ],
+    "optional_inputs": [],
+    "parameters_schema": {
+      "properties": {
+        "transaction_id": {
+          "title": "Transaction Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "transaction_id"
+      ],
+      "title": "rollback_refactorArguments",
+      "type": "object"
+    },
+    "return_schema": {
+      "title": "RefactorResult",
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "title": "Status"
+        },
+        "target_symbol": {
+          "type": "string",
+          "title": "Target Symbol"
+        },
+        "new_name": {
+          "type": "string",
+          "title": "New Name"
+        },
+        "files_changed": {
+          "type": "array",
+          "title": "Files Changed"
+        },
+        "rollback_id": {
+          "type": "string",
+          "title": "Rollback Id"
+        },
+        "errors": {
+          "type": "string",
+          "title": "Errors"
+        }
+      }
+    },
+    "returns": "RefactorResult",
+    "example_invocation": "rollback_refactor(transaction_id=\"rf_12345\")",
+    "minimal_invocation": "rollback_refactor(transaction_id=\"rf_abc123\")",
+    "advanced_invocation": "rollback_refactor(transaction_id=\"rf_abc123\")",
+    "evidence": "Precondition SHA-256 validation and atomic file replacement with os.replace.",
+    "does_not_prove": "Cannot rollback if files were modified externally after refactoring was applied."
+  },
+  {
+    "name": "get_live_services",
+    "category": "core",
+    "capability": "live_service_discovery",
+    "description": "Detect and attribute active localhost services, ports, PIDs, frameworks, and workspace sub-packages with zero idle CPU. Use when diagnosing running dev servers or multi-service architectures. Does not prove live HTTP response payloads or application layer health.",
+    "problem_solved": "Identifying running backend and frontend dev servers",
+    "profiles": [
+      "full"
+    ],
+    "required_inputs": [],
+    "optional_inputs": [],
+    "parameters_schema": {
+      "properties": {},
+      "title": "get_live_servicesArguments",
+      "type": "object"
+    },
+    "return_schema": {
+      "title": "dict[str, Any]",
+      "type": "object",
+      "properties": {
+        "live_services": {
+          "type": "string",
+          "title": "Live Services"
+        },
+        "configured_services": {
+          "type": "string",
+          "title": "Configured Services"
+        },
+        "count": {
+          "type": "integer",
+          "title": "Count"
+        }
+      }
+    },
+    "returns": "dict[str, Any]",
+    "example_invocation": "get_live_services()",
+    "minimal_invocation": "get_live_services()",
+    "advanced_invocation": "get_live_services()",
+    "evidence": "Kernel socket table inspection and static configuration discovery with 5-second TTL cache.",
+    "does_not_prove": "Does not prove live HTTP response payloads or application layer health."
+  },
+  {
+    "name": "check_db_drift",
+    "category": "core",
+    "capability": "database_schema_drift",
+    "description": "Detect database schema drift between migration files, live database state, and code ORM models with zero idle CPU. Flags unmapped tables, missing columns, and migration version state. Use when verifying whether database migrations are up to date with code models. Does not execute SQL data assertions or validate column constraints against live row data.",
+    "problem_solved": "Verifying whether database migrations are up to date with code models",
+    "profiles": [
+      "full"
+    ],
+    "required_inputs": [],
+    "optional_inputs": [],
+    "parameters_schema": {
+      "properties": {},
+      "title": "check_db_driftArguments",
+      "type": "object"
+    },
+    "return_schema": {
+      "title": "dict[str, Any]",
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "title": "Status"
+        },
+        "unmapped_tables": {
+          "type": "array",
+          "title": "Unmapped Tables"
+        },
+        "missing_columns": {
+          "type": "array",
+          "title": "Missing Columns"
+        },
+        "migration_version": {
+          "type": "string",
+          "title": "Migration Version"
+        },
+        "is_drifted": {
+          "type": "string",
+          "title": "Is Drifted"
+        }
+      }
+    },
+    "returns": "dict[str, Any]",
+    "example_invocation": "check_db_drift()",
+    "minimal_invocation": "check_db_drift()",
+    "advanced_invocation": "check_db_drift()",
+    "evidence": "Comparison of SQLite/PostgreSQL schemas and migration folder state with 5-second TTL cache.",
+    "does_not_prove": "Does not execute SQL data assertions or validate column constraints against live row data."
+  },
+  {
+    "name": "check_route_schema_drift",
+    "category": "routes",
+    "capability": "route_schema_validation_drift",
+    "description": "Use when detecting schema validation drift between a route/handler input schema (Pydantic BaseModel, Django Form, DRF Serializer) and destination database table columns. Flags MISSING_REQUIRED_COLUMN, NULLABILITY_MISMATCH, TYPE_INCOMPATIBILITY, LENGTH_CONSTRAINT_DRIFT, and UNUSED_SCHEMA_FIELD. Does not execute live requests.",
+    "problem_solved": "Validating route request payload models against destination database columns",
+    "profiles": [
+      "full"
+    ],
+    "required_inputs": [],
+    "optional_inputs": [
+      "route",
+      "handler",
+      "table",
+      "schema"
+    ],
+    "parameters_schema": {
+      "properties": {
+        "route": {
+          "default": "",
+          "title": "Route",
+          "type": "string"
+        },
+        "handler": {
+          "default": "",
+          "title": "Handler",
+          "type": "string"
+        },
+        "table": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Table"
+        },
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Schema"
+        }
+      },
+      "title": "check_route_schema_driftArguments",
+      "type": "object"
+    },
+    "return_schema": {
+      "title": "dict[str, Any]",
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "title": "Status"
+        },
+        "route_or_handler": {
+          "type": "string",
+          "title": "Route Or Handler"
+        },
+        "target_table": {
+          "type": "string",
+          "title": "Target Table"
+        },
+        "schema_name": {
+          "type": "string",
+          "title": "Schema Name"
+        },
+        "drift_count": {
+          "type": "integer",
+          "title": "Drift Count"
+        },
+        "critical_count": {
+          "type": "integer",
+          "title": "Critical Count"
+        },
+        "warning_count": {
+          "type": "integer",
+          "title": "Warning Count"
+        },
+        "info_count": {
+          "type": "integer",
+          "title": "Info Count"
+        },
+        "issues": {
+          "type": "string",
+          "title": "Issues"
+        }
+      }
+    },
+    "returns": "dict[str, Any]",
+    "example_invocation": "check_route_schema_drift(route=\"/api/v1/orders/checkout\")",
+    "minimal_invocation": "check_route_schema_drift(route=\"/api/v1/orders/checkout\")",
+    "advanced_invocation": "check_route_schema_drift(route=\"/api/v1/orders/checkout\", table=\"orders\", schema=\"CheckoutRequest\")",
+    "evidence": "Deterministic AST and database schema entity comparison.",
+    "does_not_prove": "Does not execute live HTTP requests or live SQL transactions."
+  },
+  {
+    "name": "get_distributed_trace",
+    "category": "core",
+    "capability": "distributed_trace_reconstruction",
+    "description": "Stitch and reconstruct multi-service distributed execution trees across frontend, backend, and database boundaries for a specific W3C trace ID. Use when tracing cross-service requests or debugging multi-service latency bottlenecks. Does not capture unobserved code paths or untraced sidecar requests.",
+    "problem_solved": "Tracing an end-to-end user request from UI click to backend SQL execution",
+    "profiles": [
+      "full"
+    ],
+    "required_inputs": [
+      "trace_id"
+    ],
+    "optional_inputs": [],
+    "parameters_schema": {
+      "properties": {
+        "trace_id": {
+          "title": "Trace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "trace_id"
+      ],
+      "title": "get_distributed_traceArguments",
+      "type": "object"
+    },
+    "return_schema": {
+      "title": "dict[str, Any]",
+      "type": "object",
+      "properties": {
+        "trace_id": {
+          "type": "string",
+          "title": "Trace Id"
+        },
+        "status": {
+          "type": "string",
+          "title": "Status"
+        },
+        "root_span": {
+          "type": "string",
+          "title": "Root Span"
+        },
+        "total_spans": {
+          "type": "string",
+          "title": "Total Spans"
+        },
+        "services_involved": {
+          "type": "string",
+          "title": "Services Involved"
+        },
+        "timeline": {
+          "type": "integer",
+          "title": "Timeline"
+        }
+      }
+    },
+    "returns": "dict[str, Any]",
+    "example_invocation": "get_distributed_trace(trace_id=\"4bf92f3577b34da6a3ce929d0e0e4736\")",
+    "minimal_invocation": "get_distributed_trace(trace_id=\"4bf92f3577b34da6a3ce929d0e0e4736\")",
+    "advanced_invocation": "get_distributed_trace(trace_id=\"4bf92f3577b34da6a3ce929d0e0e4736\")",
+    "evidence": "W3C traceparent stitching across multi-service runtime observations.",
+    "does_not_prove": "Does not capture unobserved code paths or untraced sidecar requests."
+  },
+  {
+    "name": "check_api_drift",
+    "category": "core",
+    "capability": "client_server_api_drift",
+    "description": "Detect client-server API contract drift between frontend fetch or axios calls and backend route registrations. Flags orphaned client endpoints (404s) and HTTP method mismatches (405s). Use when validating frontend API calls against backend endpoints before deployment. Does not execute live HTTP requests or validate dynamic URL strings constructed via runtime interpolation.",
+    "problem_solved": "Finding broken API endpoint paths in frontend client code",
+    "profiles": [
+      "full"
+    ],
+    "required_inputs": [],
+    "optional_inputs": [],
+    "parameters_schema": {
+      "properties": {},
+      "title": "check_api_driftArguments",
+      "type": "object"
+    },
+    "return_schema": {
+      "title": "dict[str, Any]",
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "title": "Status"
+        },
+        "orphaned_client_routes": {
+          "type": "array",
+          "title": "Orphaned Client Routes"
+        },
+        "method_mismatches": {
+          "type": "array",
+          "title": "Method Mismatches"
+        },
+        "verified_contracts_count": {
+          "type": "integer",
+          "title": "Verified Contracts Count"
+        }
+      }
+    },
+    "returns": "dict[str, Any]",
+    "example_invocation": "check_api_drift()",
+    "minimal_invocation": "check_api_drift()",
+    "advanced_invocation": "check_api_drift()",
+    "evidence": "Cross-layer AST static verification comparing frontend fetch calls with backend route trees.",
+    "does_not_prove": "Does not execute live HTTP requests or validate dynamic URL concatenation at runtime."
+  },
+  {
+    "name": "get_monorepo_packages",
+    "category": "core",
+    "capability": "monorepo_package_discovery",
+    "description": "Catalog monorepo workspace packages, tools (pnpm, Turborepo, npm/yarn workspaces), entry points, and inter-package dependencies. Use when mapping multi-package repository structure and package boundaries. Does not prove build system execution order or runtime dependency loading.",
+    "problem_solved": "Mapping multi-package repository structure and package boundaries",
+    "profiles": [
+      "full"
+    ],
+    "required_inputs": [],
+    "optional_inputs": [],
+    "parameters_schema": {
+      "properties": {},
+      "title": "get_monorepo_packagesArguments",
+      "type": "object"
+    },
+    "return_schema": {
+      "title": "dict[str, Any]",
+      "type": "object",
+      "properties": {
+        "tool": {
+          "type": "string",
+          "title": "Tool"
+        },
+        "packages": {
+          "type": "string",
+          "title": "Packages"
+        },
+        "dependency_graph": {
+          "type": "string",
+          "title": "Dependency Graph"
+        },
+        "root_path": {
+          "type": "string",
+          "title": "Root Path"
+        }
+      }
+    },
+    "returns": "dict[str, Any]",
+    "example_invocation": "get_monorepo_packages()",
+    "minimal_invocation": "get_monorepo_packages()",
+    "advanced_invocation": "get_monorepo_packages()",
+    "evidence": "Deterministic workspace manifest analysis across pnpm, yarn, npm, Turborepo, Cargo, and Poetry.",
+    "does_not_prove": "Does not prove build system execution order or runtime dependency loading."
   }
 ]

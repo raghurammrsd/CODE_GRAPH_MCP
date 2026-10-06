@@ -109,7 +109,7 @@ Select the smallest targeted tool that answers the question without over-fetchin
 - **Symbol modification blast radius**: `analyze_impact(symbol=..., max_depth=3)`
 - **Git commit diff impact**: `get_git_impact(base="HEAD~1", head="HEAD")`
 - **Architecture & workspace packages**: `get_architecture()`
-- **Multi-file debugging / DI / comprehensive task context**: `get_context(query=..., intent="DEBUG" | "TRACE" | "UNDERSTAND" | "IMPACT" | "ARCHITECTURE", max_tokens=4000, max_files=15, max_lines=500)` (`task=...` is also supported as an alias)
+- **Multi-file debugging / DI / comprehensive task context**: `get_context(query=..., intent="DEBUG" | "TRACE" | "UNDERSTAND" | "IMPACT" | "ARCHITECTURE", max_tokens=4000, max_files=25, max_lines=500)` (`task=...` is also supported as an alias)
 
 ---
 

@@ -623,6 +623,11 @@ def search_code(
 
     config_exts = {".json", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".conf"}
     filtered: list[dict[str, object]] = []
+    seen_file_lines: set[tuple[str, int]] = set()
+    files_with_exact_matches: set[str] = set()
+
+    query_terms = _safe_fts5_terms(clean_query)
+    query_terms_lower = [t.lower() for t in query_terms]
 
     for item in raw_hits:
         rel_path = item.path or item.file
@@ -659,6 +664,27 @@ def search_code(
             d["match_type"] = "case_insensitive"
         else:
             d["match_type"] = "token"
+
+        hit_line = item.line
+        file_line_key = (rel_path, hit_line)
+        if file_line_key in seen_file_lines:
+            continue
+
+        # If multi-word query and this hit is only a token match:
+        # verify that all query terms appear in the snippet or matched text
+        if len(query_terms_lower) >= 2 and d["match_type"] == "token":
+            haystack = (str(d.get("snippet", "")) + " " + str(d.get("matched_text", ""))).lower()
+            if not all(t in haystack for t in query_terms_lower):
+                continue
+
+        # If a file already had an exact/case-insensitive match, discard subsequent loose token matches
+        if rel_path in files_with_exact_matches and d["match_type"] == "token":
+            continue
+
+        if d["match_type"] in ("exact", "case_insensitive"):
+            files_with_exact_matches.add(rel_path)
+
+        seen_file_lines.add(file_line_key)
         filtered.append(d)
         if len(filtered) >= effective_limit:
             break

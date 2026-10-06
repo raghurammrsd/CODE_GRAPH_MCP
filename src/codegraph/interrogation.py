@@ -1564,7 +1564,10 @@ def trace_path(
             "FROM graph_edges "
             "WHERE source=? AND relationship IN ("
             "'CALLS', 'DEFINES', 'CONTAINS', 'IMPORTS', 'HANDLED_BY', 'ROUTES_TO', "
-            "'PROVIDES', 'INJECTS', 'RESOLVES_DEPENDENCY', 'DISPATCHES_TO', 'REGISTERS'"
+            "'PROVIDES', 'INJECTS', 'RESOLVES_DEPENDENCY', 'DISPATCHES_TO', 'REGISTERS', "
+            "'PRODUCES_TO_QUEUE', 'CONSUMES_FROM_QUEUE', 'STATIC_QUEUE_LINKED', 'OTEL_DISTRIBUTED_VERIFIED', "
+            "'DISPATCHES_TASK', 'TRIGGERS_SIGNAL', 'HANDLES_SIGNAL', 'RENDERS_TEMPLATE', "
+            "'DISPATCHES_FORWARD', 'TOOL_HANDLER', 'PIPELINE_STEP'"
             ") AND confidence IN ('HIGH', 'MEDIUM') "
             "ORDER BY relationship ASC, target ASC",
             (curr_sym,),
@@ -2010,25 +2013,130 @@ def list_routes(
     except sqlite3.OperationalError:
         rows = []
 
-    routes = [
-        {
-            "method": r["http_method"],
-            "path": r["route_path"],
-            "handler": r["handler_canonical_id"] or r["handler_name"],
-            "file": r["file_path"],
-            "start_line": r["line"],
-            "end_line": r["line"],
-            "framework": r["framework"],
-            "evidence": make_evidence(
-                file=r["file_path"],
-                start_line=r["line"],
-                end_line=r["line"],
-                evidence_type="route",
-                canonical_id=r["handler_canonical_id"],
-            ),
-        }
-        for r in rows
-    ]
+    # Fetch HTMX requests and template rendering edges if available
+    htmx_rows: list[sqlite3.Row] = []
+    try:
+        htmx_rows = con.execute(
+            "SELECT target_name, file_path, line, base_expr, dict_entries_json "
+            "FROM local_bindings WHERE expr_kind='HTMX_REQUEST'"
+        ).fetchall()
+    except sqlite3.OperationalError:
+        pass
+
+    template_edges: dict[str, list[dict[str, Any]]] = {}
+    try:
+        t_rows = con.execute(
+            "SELECT source, target, file, start_line FROM graph_edges WHERE relationship='RENDERS_TEMPLATE'"
+        ).fetchall()
+        for tr in t_rows:
+            template_edges.setdefault(tr["source"], []).append(
+                {
+                    "template": tr["target"],
+                    "file": tr["file"],
+                    "line": tr["start_line"],
+                }
+            )
+    except sqlite3.OperationalError:
+        pass
+
+    def _route_matches_url(route_path: str, url: str, handler_name: str = "", handler_canon: str = "") -> bool:
+        if not route_path or not url:
+            return False
+        if handler_name and (url == handler_name or url.endswith(f".{handler_name}")):
+            return True
+        if handler_canon and url in handler_canon:
+            return True
+        rp = route_path.rstrip("/") or "/"
+        u = url.rstrip("/") or "/"
+        if rp == u:
+            return True
+        u_clean = u.split("?")[0]
+        if rp == u_clean:
+            return True
+        import re
+        pattern = re.sub(r"<[^>]+>", r"[^/]+", rp)
+        pattern = re.sub(r"\{[^}]+\}", r"[^/]+", pattern)
+        pattern = re.sub(r":[\w]+", r"[^/]+", pattern)
+        pattern = f"^{pattern}$"
+        try:
+            return bool(re.match(pattern, u_clean))
+        except Exception:
+            return False
+
+    routes = []
+    for r in rows:
+        r_path = r["route_path"]
+        r_method = (r["http_method"] or "").upper()
+        h_canon = r["handler_canonical_id"] or ""
+        h_name = r["handler_name"] or ""
+
+        # Match HTMX callers
+        htmx_callers: list[dict[str, Any]] = []
+        for hb in htmx_rows:
+            url = hb["target_name"]
+            hb_method = (hb["base_expr"] or "").upper()
+            if (not hb_method or hb_method == r_method or r_method in ("ALL", "ANY")) and _route_matches_url(
+                r_path, url, h_name, h_canon
+            ):
+                import json
+                meta_dict: dict[str, Any] = {}
+                try:
+                    raw_entries = json.loads(hb["dict_entries_json"] or "[]")
+                    if isinstance(raw_entries, list):
+                        meta_dict = dict(raw_entries)
+                    elif isinstance(raw_entries, dict):
+                        meta_dict = raw_entries
+                except Exception:
+                    pass
+                htmx_callers.append(
+                    {
+                        "url": url,
+                        "method": hb_method,
+                        "file": hb["file_path"],
+                        "line": hb["line"],
+                        "target": meta_dict.get("target"),
+                        "trigger": meta_dict.get("trigger"),
+                        "swap": meta_dict.get("swap"),
+                        "element": meta_dict.get("element"),
+                    }
+                )
+
+        rendered = template_edges.get(h_canon, []) or template_edges.get(h_name, [])
+
+        lineage: dict[str, Any] = {}
+        try:
+            from codegraph.database.interrogation import get_route_db_lineage
+
+            lineage = get_route_db_lineage(
+                con,
+                route_or_handler=h_canon or h_name or r_path,
+                method=r_method,
+            )
+        except Exception:
+            lineage = {}
+
+        routes.append(
+            {
+                "method": r["http_method"],
+                "path": r["route_path"],
+                "handler": r["handler_canonical_id"] or r["handler_name"],
+                "file": r["file_path"],
+                "start_line": r["line"],
+                "end_line": r["line"],
+                "framework": r["framework"],
+                "htmx_callers": htmx_callers,
+                "templates_rendered": rendered,
+                "db_reads": lineage.get("db_reads", []),
+                "db_writes": lineage.get("db_writes", []),
+                "evidence": make_evidence(
+                    file=r["file_path"],
+                    start_line=r["line"],
+                    end_line=r["line"],
+                    evidence_type="route",
+                    canonical_id=r["handler_canonical_id"],
+                ),
+            }
+        )
 
     total_count = len(routes)
     if limit is not None:

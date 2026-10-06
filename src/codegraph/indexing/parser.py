@@ -27,6 +27,9 @@ from codegraph.frameworks import (
     analyze_js_ts_mounts,
     get_python_analyzers,
 )
+from codegraph.frameworks_nestjs import analyze_nestjs_file
+from codegraph.frameworks_nextjs import analyze_nextjs_file
+from codegraph.frameworks_react import analyze_react_file
 from codegraph.semantic_decorators import analyze_symbol_decorators
 
 from .models import (
@@ -215,6 +218,9 @@ def parse(content: str, language: str, file_path: str) -> ParseResult:
     """Parse a source file in a single scoped pass."""
     if language == "python":
         return _parse_python(content, file_path)
+    if language == "html" or file_path.lower().endswith((".html", ".htm", ".jinja", ".jinja2", ".njk", ".ejs")):
+        from codegraph.indexing.templates import parse_html_template
+        return parse_html_template(content, file_path)
     if language in ("sql", "prisma"):
         source_hash = hashlib.sha256(content.encode("utf-8", errors="replace")).hexdigest()
         return ParseResult(
@@ -1360,6 +1366,48 @@ class _PythonScopeVisitor(ast.NodeVisitor):
                 self._extract_binding_from_assign(
                     target.id, node.value, node.lineno, getattr(node, "col_offset", None)
                 )
+                if target.id in ("template_name", "template") and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+                    self.bindings.append(
+                        BindingRef(
+                            target_name=node.value.value,
+                            file_path=self.file_path,
+                            line=node.lineno,
+                            column=getattr(node, "col_offset", None),
+                            scope=self.current_scope_qname or "",
+                            expr_kind="RENDERS_TEMPLATE",
+                            base_expr=self.current_scope_canonical_id or "",
+                            source_expr=node.value.value,
+                        )
+                    )
+                elif isinstance(node.value, ast.BinOp) and isinstance(node.value.op, ast.BitOr):
+                    # Unfold bitwise OR chain (e.g. prompt | llm | output_parser)
+                    pipe_steps: list[str] = []
+                    curr: ast.expr = node.value
+                    is_valid_pipe = True
+                    while isinstance(curr, ast.BinOp) and isinstance(curr.op, ast.BitOr):
+                        r_text = ast.unparse(curr.right).strip() if hasattr(ast, "unparse") else ""
+                        if not r_text or isinstance(curr.right, ast.Constant):
+                            is_valid_pipe = False
+                            break
+                        pipe_steps.append(r_text)
+                        curr = curr.left
+                    l_text = ast.unparse(curr).strip() if hasattr(ast, "unparse") else ""
+                    if is_valid_pipe and l_text and not isinstance(curr, ast.Constant):
+                        pipe_steps.append(l_text)
+                        pipe_steps.reverse()
+                        if len(pipe_steps) >= 2:
+                            self.bindings.append(
+                                BindingRef(
+                                    target_name=target.id,
+                                    file_path=self.file_path,
+                                    line=node.lineno,
+                                    column=getattr(node, "col_offset", None),
+                                    scope=self.current_scope_qname or "",
+                                    expr_kind="LCEL_PIPELINE",
+                                    base_expr="|".join(pipe_steps),
+                                    source_expr=json.dumps(pipe_steps),
+                                )
+                            )
             elif (
                 isinstance(target, ast.Attribute)
                 and isinstance(target.value, ast.Name)
@@ -1574,6 +1622,39 @@ class _PythonScopeVisitor(ast.NodeVisitor):
         caller_qname = self.current_scope_qname or None
         caller_canon = self.current_scope_canonical_id
         end_ln = node.end_lineno or node.lineno
+
+        # Python View -> Template rendering (Flask render_template, Django render, FastAPI TemplateResponse)
+        template_name: str | None = None
+        if isinstance(node.func, ast.Name):
+            if node.func.id == "render_template" and node.args:
+                if isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
+                    template_name = node.args[0].value
+            elif node.func.id == "render" and len(node.args) >= 2:
+                if isinstance(node.args[1], ast.Constant) and isinstance(node.args[1].value, str):
+                    template_name = node.args[1].value
+        elif isinstance(node.func, ast.Attribute):
+            if node.func.attr == "TemplateResponse" and node.args:
+                if isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
+                    template_name = node.args[0].value
+                elif len(node.args) >= 2 and isinstance(node.args[1], ast.Constant) and isinstance(node.args[1].value, str):
+                    template_name = node.args[1].value
+                for kw in node.keywords:
+                    if kw.arg in ("name", "template_name") and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
+                        template_name = kw.value.value
+
+        if template_name:
+            self.bindings.append(
+                BindingRef(
+                    target_name=template_name,
+                    file_path=self.file_path,
+                    line=node.lineno,
+                    column=getattr(node, "col_offset", None),
+                    scope=caller_qname or "",
+                    expr_kind="RENDERS_TEMPLATE",
+                    base_expr=caller_canon or "",
+                    source_expr=template_name,
+                )
+            )
 
         if isinstance(node.func, ast.Name):
             callee_name = node.func.id
@@ -2010,6 +2091,106 @@ class _PythonScopeVisitor(ast.NodeVisitor):
                             subscript_key=ev_str,
                         )
                     )
+            # Celery / Background task / Ray remote task invocation (.delay(), .apply_async(), .s(), .si(), .signature(), .remote())
+            if attr_name in ("delay", "apply_async", "s", "si", "signature", "remote"):
+                task_callee = recv_clean.split(".")[-1]
+                if task_callee and task_callee not in ("self", "cls"):
+                    self.calls.append(
+                        CallRef(
+                            callee=task_callee,
+                            qualified_callee=recv_clean,
+                            line=node.lineno,
+                            end_line=end_ln,
+                            source_file=self.file_path,
+                            confidence="HIGH",
+                            caller_symbol=caller_qname,
+                            caller_canonical_id=caller_canon,
+                            receiver=recv_clean if "." in recv_clean else None,
+                        )
+                    )
+                    dispatch_kind = "RAY_REMOTE" if attr_name == "remote" else "CELERY_DISPATCH"
+                    self.bindings.append(
+                        BindingRef(
+                            target_name=task_callee,
+                            file_path=self.file_path,
+                            line=node.lineno,
+                            column=getattr(node, "col_offset", None),
+                            scope=caller_qname or "",
+                            expr_kind=dispatch_kind,
+                            base_expr=attr_name,
+                            source_expr=recv_clean,
+                        )
+                    )
+            elif attr_name == "send_task" and node.args and isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
+                full_task = node.args[0].value
+                task_short = full_task.split(".")[-1]
+                self.calls.append(
+                    CallRef(
+                        callee=task_short,
+                        qualified_callee=full_task,
+                        line=node.lineno,
+                        end_line=end_ln,
+                        source_file=self.file_path,
+                        confidence="HIGH",
+                        caller_symbol=caller_qname,
+                        caller_canonical_id=caller_canon,
+                        receiver=full_task if "." in full_task else None,
+                    )
+                )
+                self.bindings.append(
+                    BindingRef(
+                        target_name=task_short,
+                        file_path=self.file_path,
+                        line=node.lineno,
+                        column=getattr(node, "col_offset", None),
+                        scope=caller_qname or "",
+                        expr_kind="CELERY_DISPATCH",
+                        base_expr="send_task",
+                        source_expr=full_task,
+                    )
+                )
+            elif attr_name == "connect" and node.args and hasattr(ast, "unparse"):
+                receiver_node = node.args[0]
+                receiver_name = ast.unparse(receiver_node).strip()
+                sender_name = ""
+                for kw in node.keywords:
+                    if kw.arg == "sender":
+                        if isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
+                            sender_name = kw.value.value
+                        elif isinstance(kw.value, (ast.Name, ast.Attribute)):
+                            sender_name = ast.unparse(kw.value).strip()
+                self.bindings.append(
+                    BindingRef(
+                        target_name=receiver_name,
+                        file_path=self.file_path,
+                        line=node.lineno,
+                        column=getattr(node, "col_offset", None),
+                        scope=self.current_scope_qname or "",
+                        expr_kind="DJANGO_SIGNAL_RECEIVER",
+                        base_expr=recv_clean,
+                        source_expr=sender_name,
+                    )
+                )
+            elif attr_name in ("send", "send_robust") and hasattr(ast, "unparse"):
+                sender_name = ""
+                for kw in node.keywords:
+                    if kw.arg == "sender":
+                        if isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
+                            sender_name = kw.value.value
+                        elif isinstance(kw.value, (ast.Name, ast.Attribute)):
+                            sender_name = ast.unparse(kw.value).strip()
+                self.bindings.append(
+                    BindingRef(
+                        target_name=recv_clean,
+                        file_path=self.file_path,
+                        line=node.lineno,
+                        column=getattr(node, "col_offset", None),
+                        scope=self.current_scope_qname or "",
+                        expr_kind="DJANGO_SIGNAL_SEND",
+                        base_expr=attr_name,
+                        source_expr=sender_name,
+                    )
+                )
 
             q_callee = f"{resolved_recv}.{attr_name}" if resolved_recv else attr_name
             self.calls.append(
@@ -2041,6 +2222,26 @@ class _PythonScopeVisitor(ast.NodeVisitor):
                     receiver=sub_recv,
                 )
             )
+
+        # Agent tool registration (e.g. AgentExecutor(tools=[...]), create_openai_tools_agent(..., tools=[...]))
+        for kw in node.keywords:
+            if kw.arg in ("tools", "functions") and isinstance(kw.value, (ast.List, ast.Tuple)):
+                func_label = ast.unparse(node.func).strip() if hasattr(ast, "unparse") else ""
+                for elt in kw.value.elts:
+                    t_name = ast.unparse(elt).strip() if hasattr(ast, "unparse") else ""
+                    if t_name:
+                        self.bindings.append(
+                            BindingRef(
+                                target_name=t_name,
+                                file_path=self.file_path,
+                                line=node.lineno,
+                                column=getattr(node, "col_offset", None),
+                                scope=caller_qname or "",
+                                expr_kind="AGENT_TOOL_REGISTRATION",
+                                base_expr=func_label,
+                                source_expr=t_name,
+                            )
+                        )
 
         self.generic_visit(node)
 
@@ -3012,6 +3213,44 @@ def _parse_js_ts(content: str, language: str, file_path: str) -> ParseResult:
                         receiver=sub_recv,
                     )
                 )
+
+    # Framework file-level enhancements (NestJS and Next.js)
+    if "@" in content:
+        nest_res = analyze_nestjs_file(content, file_path, module)
+        if nest_res.routes:
+            routes.extend(nest_res.routes)
+        if nest_res.mounts:
+            mounts.extend(nest_res.mounts)
+        if nest_res.bindings:
+            bindings.extend(nest_res.bindings)
+
+    next_res = analyze_nextjs_file(content, file_path, module)
+    if next_res.routes:
+        seen_ep_ids = {r.endpoint_id for r in routes}
+        for nr in next_res.routes:
+            if nr.endpoint_id not in seen_ep_ids:
+                routes.append(nr)
+                seen_ep_ids.add(nr.endpoint_id)
+    if next_res.bindings:
+        bindings.extend(next_res.bindings)
+
+    # React and JSX component architecture (Pillar 4)
+    react_res = analyze_react_file(content, file_path, module)
+    sym_indices = {s.canonical_id: i for i, s in enumerate(symbols)}
+    for sym in react_res.components:
+        if sym.canonical_id in sym_indices:
+            symbols[sym_indices[sym.canonical_id]] = sym
+        else:
+            seen_canonical.add(sym.canonical_id)
+            symbols.append(sym)
+    for h_sym in react_res.hooks:
+        if h_sym.canonical_id in sym_indices:
+            symbols[sym_indices[h_sym.canonical_id]] = h_sym
+        else:
+            seen_canonical.add(h_sym.canonical_id)
+            symbols.append(h_sym)
+    if react_res.bindings:
+        bindings.extend(react_res.bindings)
 
     symbols.sort(key=lambda s: (s.start_line, s.canonical_id))
     return ParseResult(

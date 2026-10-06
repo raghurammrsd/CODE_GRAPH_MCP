@@ -5,7 +5,10 @@
       "args": [
         "mcp",
         "serve"
-      ]
+      ],
+      "env": {
+        "CODEGRAPH_DISABLE_PARENT_WATCHDOG": "1"
+      }
     }
   }
 }

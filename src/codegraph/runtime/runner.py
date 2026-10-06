@@ -35,13 +35,35 @@ const fs = require('fs');
 
 const logPath = {escaped_log_path};
 
-function emitEvent(event) {{
+let _cg_buffer = [];
+let _cg_last_flush = Date.now();
+const _CG_BATCH_SIZE = 50;
+const _CG_FLUSH_INTERVAL_MS = 1500;
+
+function _cg_flush_buffer() {{
+  if (_cg_buffer.length === 0) return;
+  const content = _cg_buffer.join('');
+  _cg_buffer = [];
+  _cg_last_flush = Date.now();
   try {{
-    fs.appendFileSync(logPath, JSON.stringify(event) + '\\n');
+    fs.appendFileSync(logPath, content);
   }} catch (_) {{}}
 }}
 
+function emitEvent(event) {{
+  try {{
+    _cg_buffer.push(JSON.stringify(event) + '\\n');
+    if (_cg_buffer.length >= _CG_BATCH_SIZE || (Date.now() - _cg_last_flush) >= _CG_FLUSH_INTERVAL_MS) {{
+      _cg_flush_buffer();
+    }}
+  }} catch (_) {{}}
+}}
+
+setInterval(_cg_flush_buffer, _CG_FLUSH_INTERVAL_MS);
+process.on('exit', _cg_flush_buffer);
+
 function hookServer(serverProto) {{
+
   const origEmit = serverProto.emit;
   serverProto.emit = function(event, req, res) {{
     if (event === 'request' && req && res) {{
@@ -87,23 +109,64 @@ process.on('uncaughtExceptionMonitor', (err) => {{
 
 
 def _generate_python_interceptor(output_jsonl: Path) -> str:
-    """Generate lightweight Python WSGI/ASGI/FastAPI request interceptor."""
+    """Generate lightweight Python WSGI/ASGI/FastAPI request interceptor with in-memory buffering."""
     escaped_log_path = repr(str(output_jsonl))
     return f"""# CodeGraph Python Runtime Interceptor
-import sys
+import atexit
 import json
+import os
+import sys
+import threading
 import time
 
 LOG_PATH = {escaped_log_path}
 
+_cg_buffer = []
+_cg_lock = threading.Lock()
+_cg_last_flush = time.time()
+_cg_batch_size = 50
+_cg_flush_interval = 1.5
+
+def _cg_flush():
+    global _cg_last_flush
+    lines = None
+    with _cg_lock:
+        if _cg_buffer:
+            lines = "".join(_cg_buffer)
+            _cg_buffer.clear()
+            _cg_last_flush = time.time()
+    if lines:
+        try:
+            with open(LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(lines)
+        except Exception:
+            pass
+
 def emit_event(event):
     try:
-        with open(LOG_PATH, "a", encoding="utf-8") as f:
-            f.write(json.dumps(event) + "\\n")
+        line = json.dumps(event) + "\\n"
+        should_flush = False
+        with _cg_lock:
+            _cg_buffer.append(line)
+            if len(_cg_buffer) >= _cg_batch_size or (time.time() - _cg_last_flush) >= _cg_flush_interval:
+                should_flush = True
+        if should_flush:
+            _cg_flush()
     except Exception:
         pass
 
-# Intercept uncaught exceptions
+def _cg_bg_flusher():
+    while True:
+        time.sleep(_cg_flush_interval)
+        if _cg_buffer:
+            _cg_flush()
+
+_cg_flusher_thread = threading.Thread(target=_cg_bg_flusher, daemon=True)
+_cg_flusher_thread.start()
+atexit.register(_cg_flush)
+
+
+# 1. Intercept uncaught exceptions
 _orig_excepthook = sys.excepthook
 def _cg_excepthook(exc_type, exc_value, exc_traceback):
     emit_event({{
@@ -118,6 +181,92 @@ def _cg_excepthook(exc_type, exc_value, exc_traceback):
     return _orig_excepthook(exc_type, exc_value, exc_traceback)
 
 sys.excepthook = _cg_excepthook
+
+# 2. Intercept SQLite query executions
+try:
+    import sqlite3
+    _orig_connect = sqlite3.connect
+
+    def _cg_connect(*args, **kwargs):
+        con = _orig_connect(*args, **kwargs)
+        def _sql_trace(statement):
+            if statement and isinstance(statement, str) and statement.strip():
+                emit_event({{
+                    "trace_id": "tr_sql_" + str(int(time.time())),
+                    "span_id": "sp_sql_" + str(id(con)),
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                    "sql": statement,
+                    "duration_ms": 1.0,
+                    "service_name": "python_dev_server",
+                    "source_format": "otel",
+                }})
+        try:
+            con.set_trace_callback(_sql_trace)
+        except Exception:
+            pass
+        return con
+
+    sqlite3.connect = _cg_connect
+except Exception:
+    pass
+
+
+# 3. Intercept SQLAlchemy engine query executions if imported
+try:
+    import sqlalchemy.event
+    import sqlalchemy.engine
+
+    @sqlalchemy.event.listens_for(sqlalchemy.engine.Engine, "after_cursor_execute")
+    def _cg_after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+        if statement and str(statement).strip():
+            emit_event({{
+                "trace_id": "tr_sql_" + str(int(time.time())),
+                "span_id": "sp_sql_" + str(id(cursor)),
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "sql": str(statement),
+                "duration_ms": 1.0,
+                "service_name": "python_dev_server",
+                "source_format": "otel",
+            }})
+except Exception:
+    pass
+
+# 4. Intercept Werkzeug/Flask dev server requests
+try:
+    import werkzeug.serving
+    _orig_run_simple = werkzeug.serving.run_simple
+
+    def _cg_run_simple(hostname, port, application, *args, **kwargs):
+        def _wrapped_app(environ, start_response):
+            path = environ.get("PATH_INFO", "/")
+            method = environ.get("REQUEST_METHOD", "GET")
+            status_box = [200]
+            def _wrapped_sr(status, headers, exc_info=None):
+                try:
+                    status_box[0] = int(status.split()[0])
+                except Exception:
+                    pass
+                return start_response(status, headers, exc_info)
+            st = time.time()
+            try:
+                return application(environ, _wrapped_sr)
+            finally:
+                emit_event({{
+                    "trace_id": "tr_http_" + str(int(time.time())),
+                    "span_id": "sp_http_" + str(int(time.time())),
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                    "http_method": method,
+                    "route": path,
+                    "status_code": status_box[0],
+                    "duration_ms": (time.time() - st) * 1000.0,
+                    "service_name": "python_dev_server",
+                    "source_format": "otel",
+                }})
+        return _orig_run_simple(hostname, port, _wrapped_app, *args, **kwargs)
+
+    werkzeug.serving.run_simple = _cg_run_simple
+except Exception:
+    pass
 """
 
 

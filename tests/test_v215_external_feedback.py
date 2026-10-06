@@ -485,7 +485,7 @@ def test_issue4_get_context_default_and_tight_budget_enforcement(tmp_path: Path)
         assert required_meta_key in default_pkt["budget"], f"Missing {required_meta_key} in budget"
 
     assert default_pkt["selected_tokens"] <= 4000
-    assert len(default_pkt["selected_files"]) <= 15
+    assert len(default_pkt["selected_files"]) <= 25
     assert default_pkt["selected_lines"] <= 500
     assert 0.0 <= default_pkt["coverage_score"] <= 1.0
     assert isinstance(default_pkt["truncated"], bool)

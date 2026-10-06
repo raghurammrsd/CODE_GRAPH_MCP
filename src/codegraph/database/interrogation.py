@@ -485,7 +485,7 @@ def find_db_writers(
     res = _find_table_accessors(
         con,
         target,
-        ("WRITES_TABLE", "WRITES_COLUMN"),
+        ("WRITES_TABLE", "WRITES_COLUMN", "WRITES_COLLECTION"),
         include_upstream_routes=True,
     )
     res["writers"] = res["direct_accessors"]
@@ -505,7 +505,7 @@ def find_db_readers(
     res = _find_table_accessors(
         con,
         target,
-        ("READS_TABLE", "READS_COLUMN"),
+        ("READS_TABLE", "READS_COLUMN", "READS_COLLECTION"),
         include_upstream_routes=True,
     )
     res["readers"] = res["direct_accessors"]
@@ -1106,3 +1106,389 @@ def get_db_impact(
         "impacts": impact_items,
         "results": impact_items,
     })
+
+
+def _normalize_table_name(raw: str) -> str:
+    if not raw:
+        return ""
+    clean = raw.strip().strip('"`')
+    if clean.startswith("db."):
+        parts = clean.split(".")
+        cand = parts[-1].strip('"`')
+        return "UNKNOWN" if cand.upper() == "UNKNOWN" else cand.lower()
+    cand = clean.split(".")[-1].strip('"`')
+    return "UNKNOWN" if cand.upper() == "UNKNOWN" else cand.lower()
+
+
+def _normalize_col_name(raw: str) -> str:
+    clean = raw.strip().strip('"`')
+    return clean.split(".")[-1].strip('"`').lower()
+
+
+def _infer_table_from_column_target(tgt: str) -> str:
+    clean = tgt.strip().strip('"`')
+    parts = clean.split(".")
+    if len(parts) >= 2:
+        cand = parts[-2].strip('"`')
+        return "UNKNOWN" if cand.upper() == "UNKNOWN" else cand.lower()
+    return ""
+
+
+def _aggregate_table_access(raw_items: list[dict[str, Any]], max_cols: int) -> list[dict[str, Any]]:
+    by_table: dict[str, dict[str, Any]] = {}
+    for item in raw_items:
+        t = item["table"]
+        if not t:
+            continue
+        if t not in by_table:
+            by_table[t] = {
+                "table": t,
+                "columns": set(),
+                "operations": set(),
+                "evidence_classes": set(),
+                "confidences": set(),
+                "call_chains": [],
+                "evidence": [],
+            }
+        entry = by_table[t]
+        for c in item.get("columns", []):
+            if c:
+                entry["columns"].add(c)
+        if item.get("operation"):
+            entry["operations"].add(item["operation"])
+        entry["evidence_classes"].add(item.get("evidence_class", "AST_VERIFIED"))
+        entry["confidences"].add(item.get("confidence", "HIGH"))
+        if item.get("call_chain"):
+            entry["call_chains"].append(item["call_chain"])
+        if item.get("evidence"):
+            entry["evidence"].append({
+                "file": item.get("file", ""),
+                "line": item.get("line", 0),
+                "snippet": item.get("evidence", ""),
+            })
+
+    results: list[dict[str, Any]] = []
+    for t_name in sorted(by_table.keys()):
+        data = by_table[t_name]
+        sorted_cols = sorted(list(data["columns"]))[:max_cols]
+        ops = set(data["operations"])
+        # If specific mutation operations exist, drop generic "WRITE"
+        if len(ops) > 1 and "WRITE" in ops and any(x in ops for x in ("INSERT", "UPDATE", "DELETE", "CREATE", "DROP", "ALTER")):
+            ops.remove("WRITE")
+        # If specific read operations exist, drop generic "READ"
+        if len(ops) > 1 and "READ" in ops and "SELECT" in ops:
+            ops.remove("READ")
+
+        sorted_ops = sorted(list(ops))
+        ev_classes = data["evidence_classes"]
+
+        if "UNKNOWN" in ev_classes:
+            synth_ev = "UNKNOWN"
+            synth_conf = "UNKNOWN"
+        elif "POSSIBLE" in ev_classes or "AMBIGUOUS" in ev_classes:
+            synth_ev = "POSSIBLE"
+            synth_conf = "LOW"
+        elif "DATAFLOW_VERIFIED" in ev_classes:
+            synth_ev = "DATAFLOW_VERIFIED"
+            synth_conf = "HIGH"
+        elif "FRAMEWORK_VERIFIED" in ev_classes:
+            synth_ev = "FRAMEWORK_VERIFIED"
+            synth_conf = "HIGH"
+        else:
+            synth_ev = "AST_VERIFIED"
+            synth_conf = "HIGH"
+
+        shortest_chain = min(data["call_chains"], key=len) if data["call_chains"] else []
+
+        results.append({
+            "table": t_name,
+            "columns": sorted_cols,
+            "operations": sorted_ops,
+            "evidence_class": synth_ev,
+            "confidence": synth_conf,
+            "call_chain": shortest_chain,
+            "evidence": data["evidence"][:10],
+        })
+
+    return results
+
+
+def get_route_db_lineage(
+    con: sqlite3.Connection,
+    route_or_handler: str,
+    method: str | None = None,
+    *,
+    max_depth: int = 4,
+    max_tables: int = 25,
+    max_columns_per_table: int = 50,
+) -> dict[str, Any]:
+    """Deterministically trace route or handler through services, repositories, and ORM/SQL down to database mutations and reads.
+
+    Enforces bounded BFS (max_depth=4), cycle protection via visited set, deterministic ordering (table ASC, column ASC),
+    strict output budgets, and preserves epistemic states (AST_VERIFIED, STATIC_VERIFIED, DATAFLOW_VERIFIED, FRAMEWORK_VERIFIED, POSSIBLE, UNKNOWN).
+    """
+    raw = (route_or_handler or "").strip()
+    if not raw:
+        return {
+            "status": "ok",
+            "route": "",
+            "method": (method or "").upper() or "ANY",
+            "handler": "",
+            "db_reads": [],
+            "db_writes": [],
+            "tables": [],
+            "evidence_class": "STATIC_VERIFIED",
+        }
+
+    clean_target = raw
+    req_method = (method or "").strip().upper() or None
+
+    if " " in clean_target:
+        parts = clean_target.split(" ", 1)
+        if parts[0].upper() in ("GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"):
+            req_method = req_method or parts[0].upper()
+            clean_target = parts[1].strip()
+
+    route_query = (
+        "SELECT route_path, http_method, handler_name, handler_canonical_id, file_path, line "
+        "FROM framework_routes WHERE route_path = ? OR endpoint_id = ?"
+    )
+    params: list[Any] = [clean_target, clean_target]
+    if req_method:
+        route_query += " AND UPPER(http_method) = ?"
+        params.append(req_method)
+
+    try:
+        route_rows = con.execute(route_query, params).fetchall()
+    except sqlite3.OperationalError:
+        route_rows = []
+
+    if not route_rows and req_method:
+        try:
+            route_rows = con.execute(
+                "SELECT route_path, http_method, handler_name, handler_canonical_id, file_path, line "
+                "FROM framework_routes WHERE route_path = ? OR endpoint_id = ?",
+                (clean_target, clean_target),
+            ).fetchall()
+        except sqlite3.OperationalError:
+            route_rows = []
+
+    seeds: list[tuple[str, str]] = []
+    route_info: dict[str, Any] = {}
+
+    if route_rows:
+        primary_r = route_rows[0]
+        route_info = {
+            "route": str(primary_r["route_path"]),
+            "method": str(primary_r["http_method"] or req_method or "").upper(),
+            "file": str(primary_r["file_path"]),
+            "line": int(primary_r["line"]),
+        }
+        for rr in route_rows:
+            h_cid = str(rr["handler_canonical_id"] or "")
+            h_name = str(rr["handler_name"] or "")
+            if h_cid:
+                seeds.append((h_cid, h_name or h_cid.split(".")[-1]))
+            elif h_name:
+                seeds.append((h_name, h_name))
+    else:
+        try:
+            sym_rows = con.execute(
+                "SELECT canonical_id, qualified_name, name, file_path, start_line FROM symbols "
+                "WHERE canonical_id = ? OR qualified_name = ? OR name = ?",
+                (clean_target, clean_target, clean_target),
+            ).fetchall()
+        except sqlite3.OperationalError:
+            sym_rows = []
+        if sym_rows:
+            for sr in sym_rows:
+                cid = str(sr["canonical_id"] or sr["qualified_name"] or sr["name"])
+                seeds.append((cid, str(sr["name"])))
+        else:
+            seeds.append((clean_target, clean_target))
+
+    visited: set[str] = set()
+    queue: deque[tuple[str, int, list[str]]] = deque()
+    for s_id, s_disp in seeds:
+        if s_id not in visited:
+            visited.add(s_id)
+            queue.append((s_id, 0, [s_disp]))
+
+    raw_reads: list[dict[str, Any]] = []
+    raw_writes: list[dict[str, Any]] = []
+
+    while queue:
+        curr_sym, depth, chain = queue.popleft()
+        if depth > max_depth:
+            continue
+
+        curr_bare = curr_sym.split(".")[-1]
+
+        # 1. Query db_queries table
+        try:
+            q_rows = con.execute(
+                "SELECT query_id, caller_symbol_id, operation, relationship, table_name, table_canonical_id, "
+                "columns_json, file_path, start_line, end_line, evidence, confidence, evidence_class, status "
+                "FROM db_queries "
+                "WHERE caller_symbol_id = ? OR caller_symbol_id LIKE ? OR caller_symbol_id LIKE ? OR caller_symbol_id = ?",
+                (curr_sym, f"%.{curr_sym}", f"{curr_sym}.%", curr_bare),
+            ).fetchall()
+        except sqlite3.OperationalError:
+            q_rows = []
+
+        for qr in q_rows:
+            op = str(qr["operation"] or "").upper()
+            rel = str(qr["relationship"] or "")
+            tbl_raw = str(qr["table_name"] or qr["table_canonical_id"] or "")
+            tbl_name = _normalize_table_name(tbl_raw)
+            if not tbl_name:
+                continue
+
+            cols_raw: list[Any] = []
+            try:
+                cols_raw = json.loads(qr["columns_json"] or "[]")
+            except Exception:
+                cols_raw = []
+            cols = [_normalize_col_name(str(c)) for c in cols_raw if str(c).strip()]
+
+            ev_cls = str(qr["evidence_class"] or "AST_VERIFIED")
+            conf = str(qr["confidence"] or "HIGH")
+            item = {
+                "table": tbl_name,
+                "columns": cols,
+                "operation": op,
+                "evidence_class": ev_cls,
+                "confidence": conf,
+                "call_chain": list(chain),
+                "file": str(qr["file_path"]),
+                "line": int(qr["start_line"]),
+                "evidence": redact_secrets(str(qr["evidence"])),
+            }
+
+            if op in ("SELECT", "FETCH", "READ", "FIND") or rel in ("READS_TABLE", "READS_COLUMN"):
+                raw_reads.append(item)
+            elif op in ("INSERT", "UPDATE", "DELETE", "WRITE", "SAVE", "CREATE", "DROP", "ALTER") or rel in ("WRITES_TABLE", "WRITES_COLUMN"):
+                raw_writes.append(item)
+            elif op == "UNKNOWN" or rel == "UNKNOWN_TABLE" or ev_cls == "UNKNOWN":
+                raw_writes.append(item)
+                raw_reads.append(item)
+
+        # 2. Query graph_edges table for outgoing edges from curr_sym
+        try:
+            edge_rows = con.execute(
+                "SELECT source, target, relationship, confidence, file, start_line, end_line, evidence, evidence_class, reason "
+                "FROM graph_edges WHERE source = ? OR source = ?",
+                (curr_sym, curr_bare),
+            ).fetchall()
+        except sqlite3.OperationalError:
+            edge_rows = []
+
+        for er in edge_rows:
+            rel = str(er["relationship"])
+            tgt = str(er["target"])
+            ev_cls = str(er["evidence_class"] or "AST_VERIFIED")
+            conf = str(er["confidence"] or "HIGH")
+            ev_str = redact_secrets(str(er["evidence"] or ""))
+
+            if rel in ("READS_TABLE", "READS_COLUMN"):
+                tbl_name = _normalize_table_name(tgt) if rel == "READS_TABLE" else _infer_table_from_column_target(tgt)
+                col_name = _normalize_col_name(tgt) if rel == "READS_COLUMN" else None
+                if tbl_name:
+                    raw_reads.append({
+                        "table": tbl_name,
+                        "columns": [col_name] if col_name else [],
+                        "operation": "SELECT",
+                        "evidence_class": ev_cls,
+                        "confidence": conf,
+                        "call_chain": list(chain),
+                        "file": str(er["file"]),
+                        "line": int(er["start_line"]),
+                        "evidence": ev_str,
+                    })
+            elif rel in ("WRITES_TABLE", "WRITES_COLUMN"):
+                tbl_name = _normalize_table_name(tgt) if rel == "WRITES_TABLE" else _infer_table_from_column_target(tgt)
+                col_name = _normalize_col_name(tgt) if rel == "WRITES_COLUMN" else None
+                if tbl_name:
+                    raw_writes.append({
+                        "table": tbl_name,
+                        "columns": [col_name] if col_name else [],
+                        "operation": "WRITE",
+                        "evidence_class": ev_cls,
+                        "confidence": conf,
+                        "call_chain": list(chain),
+                        "file": str(er["file"]),
+                        "line": int(er["start_line"]),
+                        "evidence": ev_str,
+                    })
+            elif rel in ("UNKNOWN_TABLE", "POSSIBLE_TABLE"):
+                tbl_name = _normalize_table_name(tgt)
+                if tbl_name:
+                    u_item = {
+                        "table": tbl_name,
+                        "columns": [],
+                        "operation": "UNKNOWN",
+                        "evidence_class": "UNKNOWN" if rel == "UNKNOWN_TABLE" else "POSSIBLE",
+                        "confidence": "UNKNOWN" if rel == "UNKNOWN_TABLE" else "LOW",
+                        "call_chain": list(chain),
+                        "file": str(er["file"]),
+                        "line": int(er["start_line"]),
+                        "evidence": ev_str,
+                    }
+                    raw_writes.append(u_item)
+                    raw_reads.append(u_item)
+            elif rel in (
+                "CALLS",
+                "INJECTS",
+                "PROVIDES",
+                "RESOLVES_DEPENDENCY",
+                "DISPATCHES_TO",
+                "ROUTES_TO",
+                "HANDLED_BY",
+                "CALLS_CELERY_TASK",
+                "DISPATCHES_SIGNAL",
+            ):
+                if depth + 1 <= max_depth and tgt not in visited:
+                    visited.add(tgt)
+                    next_disp = tgt.split(".")[-1]
+                    queue.append((tgt, depth + 1, chain + [next_disp]))
+
+        # 3. Class method expansion
+        try:
+            def_rows = con.execute(
+                "SELECT target FROM graph_edges WHERE (source = ? OR source = ?) AND relationship = 'DEFINES'",
+                (curr_sym, curr_bare),
+            ).fetchall()
+            for dr in def_rows:
+                dtgt = str(dr["target"])
+                if depth + 1 <= max_depth and dtgt not in visited:
+                    visited.add(dtgt)
+                    queue.append((dtgt, depth + 1, chain + [dtgt.split(".")[-1]]))
+        except sqlite3.OperationalError:
+            pass
+
+    aggregated_reads = _aggregate_table_access(raw_reads, max_columns_per_table)[:max_tables]
+    aggregated_writes = _aggregate_table_access(raw_writes, max_columns_per_table)[:max_tables]
+
+    all_tables = sorted(list(set(r["table"] for r in aggregated_reads) | set(w["table"] for w in aggregated_writes)))
+
+    all_ev_classes = set(r["evidence_class"] for r in aggregated_reads) | set(w["evidence_class"] for w in aggregated_writes)
+    if "UNKNOWN" in all_ev_classes:
+        overall_ev = "UNKNOWN"
+    elif "POSSIBLE" in all_ev_classes:
+        overall_ev = "POSSIBLE"
+    elif all_ev_classes:
+        overall_ev = "AST_VERIFIED"
+    else:
+        overall_ev = "STATIC_VERIFIED"
+
+    return {
+        "status": "ok",
+        "route": route_info.get("route", clean_target),
+        "method": route_info.get("method", req_method or "ANY"),
+        "handler": seeds[0][0] if seeds else clean_target,
+        "db_reads": aggregated_reads,
+        "db_writes": aggregated_writes,
+        "tables": all_tables,
+        "evidence_class": overall_ev,
+    }
+

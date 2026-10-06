@@ -66,6 +66,31 @@ _RECOGNIZED_DECORATOR_SPECS: tuple[SemanticDecoratorSpec, ...] = (
         semantic_role="PROVIDES",
         patterns=("provide", "di.provide", "provider", "singleton", "di.singleton"),
     ),
+    SemanticDecoratorSpec(
+        framework="langchain",
+        semantic_role="TOOL_HANDLER",
+        patterns=("tool", "langchain.tools.tool", "langchain_core.tools.tool", "agents.tool"),
+    ),
+    SemanticDecoratorSpec(
+        framework="llama_index",
+        semantic_role="TOOL_HANDLER",
+        patterns=("function_tool", "llama_index.core.tools.function_tool"),
+    ),
+    SemanticDecoratorSpec(
+        framework="ray",
+        semantic_role="TASK_HANDLER",
+        patterns=("ray.remote", "remote"),
+    ),
+    SemanticDecoratorSpec(
+        framework="prefect",
+        semantic_role="TASK_HANDLER",
+        patterns=("prefect.task", "prefect.flow", "task", "flow"),
+    ),
+    SemanticDecoratorSpec(
+        framework="zenml",
+        semantic_role="TASK_HANDLER",
+        patterns=("step", "pipeline"),
+    ),
 )
 
 
@@ -132,12 +157,12 @@ def analyze_symbol_decorators(
                 if "." in raw_expr:
                     base = raw_expr.split(".")[0]
                     # Verify base is imported or standard framework name
-                    if base in import_map or base in ("app", "celery", "click", "django", "typer", "di", "inject"):
+                    if base in import_map or base in ("app", "celery", "click", "django", "typer", "di", "inject", "ray", "langchain", "llama_index", "prefect", "zenml"):
                         grounded_name = raw_expr
                         matched_spec = spec
                         break
                 else:
-                    # Bare name (e.g. shared_task, receiver, command, inject, provide, singleton)
+                    # Bare name (e.g. shared_task, receiver, command, inject, provide, singleton, tool)
                     # Verify it was imported from the framework or known pattern
                     if raw_expr in import_map:
                         imp_mod, imp_orig = import_map[raw_expr]
@@ -146,7 +171,7 @@ def analyze_symbol_decorators(
                             grounded_name = f"{imp_mod}.{orig_or_raw}"
                             matched_spec = spec
                             break
-                    elif raw_expr in ("inject", "provide", "singleton"):
+                    elif raw_expr in ("inject", "provide", "singleton", "receiver", "tool", "function_tool", "remote", "step", "flow"):
                         grounded_name = raw_expr
                         matched_spec = spec
                         break
@@ -242,6 +267,12 @@ def analyze_symbol_decorators(
                     dyn_reason = "dynamic_event_name"
             if event_names:
                 metadata["events"] = event_names
+            for kw in kw_nodes:
+                if kw.arg == "sender":
+                    if isinstance(kw.value, (ast.Name, ast.Attribute)) and hasattr(ast, "unparse"):
+                        metadata["sender"] = ast.unparse(kw.value)
+                    elif isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
+                        metadata["sender"] = kw.value.value
 
         elif matched_spec.semantic_role == "COMMAND_HANDLER":
             # Extract command name

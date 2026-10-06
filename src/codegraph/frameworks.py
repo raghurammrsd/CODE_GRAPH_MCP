@@ -55,12 +55,12 @@ def normalize_route_path(route_path: str, framework: str) -> str:
     if framework == "flask":
         # Match <[type:]param>
         return re.sub(r"<(?:\w+:)?([A-Za-z_][\w]*)>", r"{\1}", raw)
-    elif framework == "express":
+    elif framework in ("express", "nestjs"):
         # Match :param
         return re.sub(r":([A-Za-z_][\w]*)", r"{\1}", raw)
     elif framework == "nextjs":
         # Match [[...param]] or [...param] or [param]
-        return re.sub(r"\[(?:\.\.\.)?([A-Za-z_][\w]*)\]", r"{\1}", raw)
+        return re.sub(r"\[{1,2}(?:\.\.\.)?([A-Za-z_][\w]*)\]{1,2}", r"{\1}", raw)
     return raw
 
 
@@ -652,11 +652,12 @@ def get_python_analyzers(imports_modules: set[str]) -> list[FrameworkAnalyzer]:
 
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # JavaScript / TypeScript Framework Analyzers
 # ---------------------------------------------------------------------------
 
 _EXPRESS_CALL_RE = re.compile(
-    r"\b([A-Za-z_$][\w$]*)\.(get|post|put|delete|patch|options|head|all)\s*\(\s*['\"]([^'\"]+)['\"]\s*,\s*([A-Za-z_$][\w$.]*)",
+    r"\b([A-Za-z_$][\w$]*)\.(get|post|put|delete|patch|options|head|all)\s*\(\s*['\"]([^'\"]+)['\"]\s*,\s*(.+)",
     re.IGNORECASE,
 )
 
@@ -675,6 +676,169 @@ _EXPRESS_IGNORE_USE = {
     "cookieparser",
     "bodyparser",
 }
+
+_NON_HANDLER_CALLS = {
+    "async",
+    "await",
+    "function",
+    "if",
+    "return",
+    "try",
+    "catch",
+    "switch",
+    "while",
+    "for",
+    "throw",
+    "res.send",
+    "res.json",
+    "res.status",
+    "res.sendstatus",
+    "res.redirect",
+    "res.setheader",
+    "res.cookie",
+    "res.end",
+    "next",
+    "console.log",
+    "console.error",
+    "console.warn",
+    "console.info",
+    "object.assign",
+    "promise.all",
+    "promise.resolve",
+    "promise.reject",
+    "require",
+    "typeof",
+    "then",
+    "settimeout",
+    "cleartimeout",
+    "setinterval",
+    "clearinterval",
+}
+
+
+def split_js_arguments(args_str: str) -> list[str]:
+    """Split comma-separated JavaScript arguments respecting nested parens, brackets, braces, and quotes."""
+    args: list[str] = []
+    current: list[str] = []
+    depth_paren = 0
+    depth_bracket = 0
+    depth_brace = 0
+    in_quote = False
+    quote_char = ""
+    escape = False
+
+    for ch in args_str:
+        if escape:
+            current.append(ch)
+            escape = False
+            continue
+        if ch == "\\":
+            current.append(ch)
+            escape = True
+            continue
+        if in_quote:
+            current.append(ch)
+            if ch == quote_char:
+                in_quote = False
+            continue
+        if ch in ('"', "'", "`"):
+            in_quote = True
+            quote_char = ch
+            current.append(ch)
+            continue
+
+        if ch == "(":
+            depth_paren += 1
+        elif ch == ")":
+            if depth_paren == 0 and depth_bracket == 0 and depth_brace == 0:
+                # Trailing closing paren of router call reached
+                break
+            depth_paren = max(0, depth_paren - 1)
+        elif ch == "[":
+            depth_bracket += 1
+        elif ch == "]":
+            depth_bracket = max(0, depth_bracket - 1)
+        elif ch == "{":
+            depth_brace += 1
+        elif ch == "}":
+            depth_brace = max(0, depth_brace - 1)
+
+        if ch == "," and depth_paren == 0 and depth_bracket == 0 and depth_brace == 0:
+            arg = "".join(current).strip()
+            if arg:
+                args.append(arg)
+            current = []
+        else:
+            current.append(ch)
+
+    arg = "".join(current).strip()
+    if arg:
+        args.append(arg)
+    return args
+
+
+def _clean_middleware_token(raw_tok: str) -> str:
+    """Extract clean identifier from middleware expression, e.g. requireRoles('admin') -> requireRoles."""
+    tok = raw_tok.strip()
+    if tok.startswith("[") and tok.endswith("]"):
+        tok = tok[1:-1].strip()
+    m = re.match(r"^([A-Za-z_$][\w$]*)\s*(?:\(|$)", tok)
+    if m:
+        return m.group(1)
+    return tok.split("(")[0].strip()
+
+
+def _fallback_handler_name(route_path: str) -> str:
+    """Generate a readable fallback handler name from the route path."""
+    clean_parts = [p for p in route_path.strip("/").split("/") if p and not p.startswith(":") and not p.startswith("{")]
+    if clean_parts:
+        return f"{clean_parts[-1]}_handler"
+    return "root_handler"
+
+
+def _resolve_express_handler_and_middleware(
+    raw_args: str,
+    route_path: str,
+) -> tuple[str, str, list[str]]:
+    """Look past middleware to resolve the terminal route handler and list of middlewares."""
+    args = split_js_arguments(raw_args)
+    if not args:
+        name = _fallback_handler_name(route_path)
+        return name, name, []
+
+    # Intermediate arguments are middleware
+    middlewares: list[str] = []
+    for mw in args[:-1]:
+        clean_mw = _clean_middleware_token(mw)
+        if clean_mw:
+            middlewares.append(clean_mw)
+
+    last_arg = args[-1].strip()
+
+    # Case 1: Simple named identifier or member access, e.g. uploadInvoiceFile or controller.uploadInvoiceFile
+    id_match = re.match(r"^([A-Za-z_$][\w$.]*)$", last_arg)
+    if id_match:
+        expr = id_match.group(1)
+        name = expr.split(".")[-1]
+        return name, expr, middlewares
+
+    # Case 2: Arrow function or function expression, e.g. async (req, res) => uploadInvoiceFile(req, res)
+    # Search for business function calls inside the function body
+    calls = re.findall(r"\b([A-Za-z_$][\w$.]*)\s*\(", last_arg)
+    mw_set = set(middlewares)
+    for call in calls:
+        clean_call = call.split(".")[-1]
+        if (
+            call.lower() not in _NON_HANDLER_CALLS
+            and clean_call.lower() not in _NON_HANDLER_CALLS
+            and clean_call not in mw_set
+        ):
+            return clean_call, call, middlewares
+
+    # Case 3: Anonymous inline handler without distinct call
+    name = _fallback_handler_name(route_path)
+    return name, name, middlewares
+
 
 _NEXT_ROUTE_EXPORT_RE = re.compile(
     r"export\s+(?:async\s+)?function\s+(GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)\s*\("
@@ -702,10 +866,11 @@ def analyze_js_ts_line(
         if method == "ALL":
             method = "ANY"
         route_path = m.group(3)
-        handler_expr = m.group(4)
-        handler_name = handler_expr.split(".")[-1]
+        raw_args = m.group(4)
+        handler_name, handler_expr, middlewares = _resolve_express_handler_and_middleware(raw_args, route_path)
         handler_canon = f"{module}.{handler_expr}"
         norm = normalize_route_path(route_path, "express")
+        mw_str = f" (middleware: {', '.join(middlewares)})" if middlewares else ""
 
         routes.append(
             RouteDetection(
@@ -720,7 +885,7 @@ def analyze_js_ts_line(
                 column=m.start(),
                 confidence="HIGH",
                 resolution_status="RESOLVED",
-                evidence=f"Express route registration {m.group(0)}",
+                evidence=f"Express route registration {router_obj}.{method.lower()}('{route_path}', ...){mw_str}",
                 module=module,
                 router_name=router_obj,
             )

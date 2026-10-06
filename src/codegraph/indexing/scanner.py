@@ -43,6 +43,12 @@ LANGUAGES = {
     ".tsx": "typescript",
     ".sql": "sql",
     ".prisma": "prisma",
+    ".html": "html",
+    ".htm": "html",
+    ".jinja": "html",
+    ".jinja2": "html",
+    ".njk": "html",
+    ".ejs": "html",
 }
 
 

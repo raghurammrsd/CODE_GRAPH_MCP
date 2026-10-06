@@ -521,7 +521,7 @@ def has_potential_orm_models(content: str, file_path: str, language: str = "pyth
     if language == "python" or file_path.endswith(".py"):
         return any(tok in content for tok in _PYTHON_ORM_MODEL_TOKENS)
     if language in ("javascript", "typescript") or file_path.endswith((".js", ".jsx", ".ts", ".tsx")):
-        return any(tok in content for tok in ("Entity", "define(", ".init(", "model(", "Schema("))
+        return any(tok in content for tok in ("Entity", "define(", ".init(", "model(", "Schema(", "pgTable", "mysqlTable", "sqliteTable"))
     return False
 
 
@@ -1294,7 +1294,11 @@ def _record_sqlalchemy_column(
             if acname == "ForeignKey" and arg.args:
                 fk_target = _ast_const_str(arg.args[0])
             else:
-                data_type = acname
+                if arg.args and isinstance(arg.args[0], (ast.Constant, ast.UnaryOp)):
+                    arg_str = _ast_const_str(arg.args[0]) or (str(arg.args[0].value) if isinstance(arg.args[0], ast.Constant) else "")
+                    data_type = f"{acname}({arg_str})" if arg_str else acname
+                else:
+                    data_type = acname
 
     col_cid = build_db_canonical_id(
         DatabaseEntityKind.COLUMN,
@@ -1683,6 +1687,12 @@ def _record_django_field(
         dialect=dialect,
         schema=schema,
     )
+    max_len_node = _get_kwarg(call_node, "max_length")
+    effective_data_type = field_type
+    if max_len_node is not None:
+        if isinstance(max_len_node, ast.Constant) and isinstance(max_len_node.value, int):
+            effective_data_type = f"{field_type}({max_len_node.value})"
+
     res.entities.append(
         DatabaseEntity(
             canonical_id=col_cid,
@@ -1692,7 +1702,7 @@ def _record_django_field(
             schema_name=schema,
             table_name=table_name,
             column_name=col_name,
-            data_type=field_type,
+            data_type=effective_data_type,
             nullable=nullable,
             is_primary_key=is_pk,
             is_unique=is_unique,
@@ -2813,9 +2823,14 @@ def _extract_prisma_schema(
     index_generation: int,
     res: DatabaseExtractionResult,
 ) -> None:
+    ds_m = re.search(r'datasource\s+\w+\s*\{[\s\S]*?provider\s*=\s*"([^"]+)"', content)
+    if ds_m:
+        dialect = normalize_dialect(ds_m.group(1))
+
     for m in re.finditer(r"model\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{([\s\S]*?)\}", content):
         model_name = m.group(1)
         body = m.group(2)
+        model_line = content[: m.start()].count("\n") + 1
         map_m = re.search(r'@@map\(\s*"([^"]+)"\s*\)', body)
         tbl_name = (map_m.group(1) if map_m else _pluralize_table(_camel_to_snake(model_name))).lower()
         tbl_cid = build_db_canonical_id(
@@ -2836,8 +2851,8 @@ def _extract_prisma_schema(
                 orm_model_id=model_cid,
                 framework="prisma",
                 file_path=file_path,
-                start_line=1,
-                end_line=1,
+                start_line=model_line,
+                end_line=model_line,
                 evidence=f"model {model_name}",
                 evidence_class="FRAMEWORK_VERIFIED",
             )
@@ -2853,8 +2868,8 @@ def _extract_prisma_schema(
                 orm_model_id=model_cid,
                 framework="prisma",
                 file_path=file_path,
-                start_line=1,
-                end_line=1,
+                start_line=model_line,
+                end_line=model_line,
                 evidence=f"model {model_name}",
                 evidence_class="FRAMEWORK_VERIFIED",
             )
@@ -2867,14 +2882,551 @@ def _extract_prisma_schema(
                 evidence_class="FRAMEWORK_VERIFIED",
                 confidence="HIGH",
                 file=file_path,
-                start_line=1,
-                end_line=1,
+                start_line=model_line,
+                end_line=model_line,
                 evidence=f"model {model_name} -> {tbl_name}",
                 status="FACT",
                 parser_version=PARSER_VERSION,
                 index_generation=index_generation,
             )
         )
+
+        # Pre-scan model body for @relation(fields: [...]) to accurately mark FK columns
+        fk_fields: set[str] = set()
+        for r_m in re.finditer(r'@relation\([\s\S]*?fields:\s*\[([A-Za-z0-9_,\s]+)\]', body):
+            for fld in r_m.group(1).split(","):
+                clean_fld = fld.strip()
+                if clean_fld:
+                    fk_fields.add(clean_fld)
+
+        body_start_idx = m.start() + content[m.start() :].find("{") + 1
+        current_offset = body_start_idx
+        for line in body.splitlines():
+            clean = line.strip()
+            field_line = content[:current_offset].count("\n") + 1
+            current_offset += len(line) + 1
+            if not clean or clean.startswith(("//", "@@")):
+                continue
+            field_m = re.match(
+                r"^([A-Za-z_][A-Za-z0-9_]*)\s+([A-Za-z0-9_]+)(\?)?(\[\])?\s*(.*)$",
+                clean,
+            )
+            if not field_m:
+                continue
+            field_name = field_m.group(1)
+            raw_type = field_m.group(2)
+            is_optional = bool(field_m.group(3))
+            field_attrs = field_m.group(5)
+
+            if raw_type not in (
+                "String", "Int", "BigInt", "Float", "Decimal", "Boolean",
+                "DateTime", "Json", "Bytes",
+            ) and "@relation" in field_attrs and "fields:" not in field_attrs:
+                continue
+
+            map_field_m = re.search(r'@map\(\s*"([^"]+)"\s*\)', field_attrs)
+            col_name = (map_field_m.group(1) if map_field_m else field_name).lower()
+
+            is_pk = bool("@id" in field_attrs or field_name == "id")
+            is_unique = bool("@unique" in field_attrs)
+            nullable = bool(is_optional)
+
+            def_m = re.search(r'@default\(([^)]*)\)', field_attrs)
+            default_val = def_m.group(1).strip() if def_m else None
+
+            tgt_column = None
+            fk_m = re.search(r'@relation\([\s\S]*?references:\s*\[([A-Za-z0-9_,\s]+)\]', field_attrs)
+            if fk_m:
+                tgt_col_raw = fk_m.group(1).split(",")[0].strip()
+                tgt_column = tgt_col_raw
+
+            is_fk = bool(field_name in fk_fields or col_name in fk_fields or tgt_column)
+
+            col_cid = build_db_canonical_id(
+                DatabaseEntityKind.COLUMN,
+                table=tbl_name,
+                column=col_name,
+                dialect=dialect,
+                schema=schema,
+            )
+
+            res.entities.append(
+                DatabaseEntity(
+                    canonical_id=col_cid,
+                    kind=DatabaseEntityKind.COLUMN.value,
+                    name=col_name,
+                    dialect=dialect,
+                    schema_name=schema,
+                    table_name=tbl_name,
+                    column_name=col_name,
+                    data_type=raw_type,
+                    nullable=nullable,
+                    default_value=default_val,
+                    is_primary_key=is_pk,
+                    is_foreign_key=is_fk,
+                    is_unique=is_unique,
+                    target_table=None,
+                    target_column=tgt_column,
+                    orm_model_id=model_cid,
+                    framework="prisma",
+                    file_path=file_path,
+                    start_line=field_line,
+                    end_line=field_line,
+                    evidence=clean,
+                    evidence_class="FRAMEWORK_VERIFIED",
+                )
+            )
+
+            res.edges.append(
+                RelationshipRecord(
+                    source=tbl_cid,
+                    target=col_cid,
+                    relationship="MAPS_TO_COLUMN",
+                    evidence_class="FRAMEWORK_VERIFIED",
+                    confidence="HIGH",
+                    file=file_path,
+                    start_line=field_line,
+                    end_line=field_line,
+                    evidence=f"{tbl_name}.{col_name}",
+                    status="FACT",
+                    parser_version=PARSER_VERSION,
+                    index_generation=index_generation,
+                )
+            )
+
+
+_DRIZZLE_TABLE_RE = re.compile(
+    r"\b(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(pgTable|mysqlTable|sqliteTable)\s*\(\s*['\"`]([^'\"`]+)['\"`]\s*,\s*\{"
+)
+
+
+def _extract_drizzle_schema(
+    content: str,
+    file_path: str,
+    module_name: str,
+    dialect: str,
+    schema: str,
+    index_generation: int,
+    res: DatabaseExtractionResult,
+) -> None:
+    for m in _DRIZZLE_TABLE_RE.finditer(content):
+        var_name = m.group(1)
+        helper_fn = m.group(2)
+        tbl_name = m.group(3).strip().lower()
+
+        start_pos = m.end() - 1
+        depth = 0
+        end_pos = start_pos
+        for idx in range(start_pos, len(content)):
+            c = content[idx]
+            if c == "{":
+                depth += 1
+            elif c == "}":
+                depth -= 1
+                if depth == 0:
+                    end_pos = idx
+                    break
+        body = content[start_pos + 1 : end_pos]
+        line_no = content[: m.start()].count("\n") + 1
+
+        tbl_dialect = "postgres" if helper_fn == "pgTable" else ("mysql" if helper_fn == "mysqlTable" else "sqlite")
+        tbl_cid = build_db_canonical_id(
+            DatabaseEntityKind.TABLE,
+            table=tbl_name,
+            dialect=tbl_dialect,
+            schema=schema,
+        )
+        model_cid = f"drizzle.{var_name}"
+
+        res.entities.append(
+            DatabaseEntity(
+                canonical_id=model_cid,
+                kind=DatabaseEntityKind.ORM_MODEL.value,
+                name=var_name,
+                dialect=tbl_dialect,
+                schema_name=schema,
+                table_name=tbl_name,
+                orm_model_id=model_cid,
+                framework="drizzle",
+                file_path=file_path,
+                start_line=line_no,
+                end_line=line_no,
+                evidence=f"{var_name} = {helper_fn}('{tbl_name}')",
+                evidence_class="FRAMEWORK_VERIFIED",
+            )
+        )
+        res.entities.append(
+            DatabaseEntity(
+                canonical_id=tbl_cid,
+                kind=DatabaseEntityKind.TABLE.value,
+                name=tbl_name,
+                dialect=tbl_dialect,
+                schema_name=schema,
+                table_name=tbl_name,
+                orm_model_id=model_cid,
+                framework="drizzle",
+                file_path=file_path,
+                start_line=line_no,
+                end_line=line_no,
+                evidence=f"{var_name} = {helper_fn}('{tbl_name}')",
+                evidence_class="FRAMEWORK_VERIFIED",
+            )
+        )
+        res.edges.append(
+            RelationshipRecord(
+                source=model_cid,
+                target=tbl_cid,
+                relationship="MAPS_TO_TABLE",
+                evidence_class="FRAMEWORK_VERIFIED",
+                confidence="HIGH",
+                file=file_path,
+                start_line=line_no,
+                end_line=line_no,
+                evidence=f"{var_name} -> {tbl_name}",
+                status="FACT",
+                parser_version=PARSER_VERSION,
+                index_generation=index_generation,
+            )
+        )
+
+        # Parse column definitions supporting multi-line chained method calls
+        col_entries = re.finditer(
+            r"(?:^|\n)\s*([A-Za-z_$][\w$]*)\s*:\s*([A-Za-z_$][\w$]*)\s*\(([\s\S]*?)(?=(?:\n\s*[A-Za-z_$][\w$]*\s*:|\Z))",
+            body,
+        )
+        for ce in col_entries:
+            prop_key = ce.group(1)
+            col_type = ce.group(2)
+            rest = ce.group(3)
+
+            arg_m = re.match(r"^\s*['\"`]([^'\"`]+)['\"`]", rest)
+            arg_col_name = arg_m.group(1) if arg_m else None
+            col_name = (arg_col_name if arg_col_name else prop_key).lower()
+
+            is_pk = bool(".primaryKey(" in rest or prop_key == "id")
+            is_unq = bool(".unique(" in rest)
+            nullable = not bool(".notNull(" in rest or is_pk)
+
+            def_val = None
+            if ".defaultNow(" in rest:
+                def_val = "now()"
+            elif ".default(" in rest:
+                dm = re.search(r'\.default\(([^)]*)\)', rest)
+                if dm:
+                    def_val = dm.group(1).strip()
+
+            tgt_tbl = None
+            tgt_col = None
+            if ".references(" in rest:
+                ref_m = re.search(r'\.references\(\s*(?:\(\)\s*=>\s*)?([A-Za-z_$][\w$]*)\.([A-Za-z_$][\w$]*)', rest)
+                if ref_m:
+                    tgt_tbl = ref_m.group(1).lower()
+                    tgt_col = ref_m.group(2).lower()
+
+            col_cid = build_db_canonical_id(
+                DatabaseEntityKind.COLUMN,
+                table=tbl_name,
+                column=col_name,
+                dialect=tbl_dialect,
+                schema=schema,
+            )
+            res.entities.append(
+                DatabaseEntity(
+                    canonical_id=col_cid,
+                    kind=DatabaseEntityKind.COLUMN.value,
+                    name=col_name,
+                    dialect=tbl_dialect,
+                    schema_name=schema,
+                    table_name=tbl_name,
+                    column_name=col_name,
+                    data_type=col_type,
+                    nullable=nullable,
+                    default_value=def_val,
+                    is_primary_key=is_pk,
+                    is_foreign_key=bool(tgt_tbl),
+                    is_unique=is_unq,
+                    target_table=tgt_tbl,
+                    target_column=tgt_col,
+                    orm_model_id=model_cid,
+                    framework="drizzle",
+                    file_path=file_path,
+                    start_line=line_no,
+                    end_line=line_no,
+                    evidence=f"{prop_key}: {col_type}",
+                    evidence_class="FRAMEWORK_VERIFIED",
+                )
+            )
+            res.edges.append(
+                RelationshipRecord(
+                    source=tbl_cid,
+                    target=col_cid,
+                    relationship="MAPS_TO_COLUMN",
+                    evidence_class="FRAMEWORK_VERIFIED",
+                    confidence="HIGH",
+                    file=file_path,
+                    start_line=line_no,
+                    end_line=line_no,
+                    evidence=f"{tbl_name}.{col_name}",
+                    status="FACT",
+                    parser_version=PARSER_VERSION,
+                    index_generation=index_generation,
+                )
+            )
+
+
+def _extract_mongoose_schema(
+    content: str,
+    file_path: str,
+    module_name: str,
+    index_generation: int,
+    res: DatabaseExtractionResult,
+    model_to_table: dict[str, str],
+) -> None:
+    if "mongoose" not in content and "Schema" not in content and "model" not in content:
+        return
+
+    res.detected_dialects.add("mongodb")
+
+    schema_blocks: dict[str, tuple[str, int, int]] = {}
+    objects: dict[str, tuple[str, int, int]] = {}
+
+    # 1. Discover all top-level object declarations: const/let/var/export const <name>[: type] = { ... }
+    for m in re.finditer(
+        r"(?:(?:export\s+)?(?:const|let|var))\s+([A-Za-z_$][\w$]*)(?:\s*:\s*[^=;]+)?\s*=\s*\{",
+        content,
+    ):
+        name = m.group(1)
+        start = m.end() - 1
+        depth = 0
+        end = start
+        for idx in range(start, len(content)):
+            if content[idx] == "{":
+                depth += 1
+            elif content[idx] == "}":
+                depth -= 1
+                if depth == 0:
+                    end = idx
+                    break
+        start_ln = content.count("\n", 0, m.start()) + 1
+        end_ln = content.count("\n", 0, end) + 1
+        objects[name] = (content[start + 1 : end], start_ln, end_ln)
+
+    # 2. Discover all Schema declarations: const/let/var/export <name>[: type] = new (mongoose.)?Schema(...)
+    for m in re.finditer(
+        r"(?:(?:export\s+)?(?:const|let|var)\s+)?([A-Za-z_$][\w$]*)(?:\s*:\s*[^=;]+)?\s*=\s*new\s+(?:mongoose\.)?Schema\s*(?:<[^>]+>)?\s*\(\s*([A-Za-z_$][\w$]*|\{)?",
+        content,
+    ):
+        s_var = m.group(1)
+        arg = m.group(2)
+        if arg == "{":
+            start_pos = m.end() - 1
+            depth = 0
+            end_pos = start_pos
+            for idx in range(start_pos, len(content)):
+                c = content[idx]
+                if c == "{":
+                    depth += 1
+                elif c == "}":
+                    depth -= 1
+                    if depth == 0:
+                        end_pos = idx
+                        break
+            schema_body = content[start_pos + 1 : end_pos]
+            start_ln = content.count("\n", 0, m.start()) + 1
+            end_ln = content.count("\n", 0, end_pos) + 1
+            schema_blocks[s_var] = (schema_body, start_ln, end_ln)
+        elif arg and arg in objects:
+            schema_blocks[s_var] = objects[arg]
+
+    for mm in re.finditer(
+        r"(?:(?:(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)(?:\s*:\s*[^=;]+)?\s*=\s*)|(?:export\s+default\s+))?(?:mongoose\.)?model\s*(?:<[^>]+>)?\s*\(\s*['\"]([A-Za-z0-9_]+)['\"]\s*(?:,\s*([^\),\n]+))?",
+        content,
+    ):
+        var_name = mm.group(1)
+        model_name = mm.group(2)
+        raw_schema_arg = (mm.group(3) or "").strip()
+        schema_var = raw_schema_arg
+
+        coll_name = _pluralize_table(_camel_to_snake(model_name)).lower()
+        if var_name:
+            model_to_table[var_name] = coll_name
+        model_to_table[model_name] = coll_name
+        model_to_table[model_name.lower()] = coll_name
+
+        m_line = content.count("\n", 0, mm.start()) + 1
+        tbl_cid = f"db.UNKNOWN.UNKNOWN.{coll_name}"
+        mdl_cid = f"{tbl_cid}.{model_name}"
+
+        res.entities.append(
+            DatabaseEntity(
+                kind=DatabaseEntityKind.TABLE,
+                dialect="mongodb",
+                schema_name="UNKNOWN",
+                table_name=coll_name,
+                canonical_id=tbl_cid,
+                name=coll_name,
+                file_path=file_path,
+                start_line=m_line,
+                end_line=m_line,
+                confidence="HIGH",
+                evidence=redact_secrets(mm.group(0)),
+                evidence_class="FRAMEWORK_VERIFIED",
+                status="FACT",
+            )
+        )
+
+        res.entities.append(
+            DatabaseEntity(
+                kind=DatabaseEntityKind.ORM_MODEL,
+                dialect="mongodb",
+                schema_name="UNKNOWN",
+                table_name=coll_name,
+                canonical_id=mdl_cid,
+                name=model_name,
+                target_table=coll_name,
+                file_path=file_path,
+                start_line=m_line,
+                end_line=m_line,
+                confidence="HIGH",
+                evidence=redact_secrets(mm.group(0)),
+                evidence_class="FRAMEWORK_VERIFIED",
+                status="FACT",
+            )
+        )
+
+        res.edges.append(
+            RelationshipRecord(
+                source=mdl_cid,
+                target=tbl_cid,
+                relationship="MAPS_TO_COLLECTION",
+                confidence="HIGH",
+                evidence_class="FRAMEWORK_VERIFIED",
+                status="FACT",
+                file=file_path,
+                start_line=m_line,
+                end_line=m_line,
+                evidence=redact_secrets(mm.group(0)),
+                reason=f"mongoose_model_to_collection:{coll_name}",
+                parser_version=PARSER_VERSION,
+                index_generation=index_generation,
+            )
+        )
+
+        # Resolve body: schema_blocks, objects, or inline
+        body_tuple: tuple[str, int, int] | None = None
+        if schema_var in schema_blocks:
+            body_tuple = schema_blocks[schema_var]
+        elif schema_var in objects:
+            body_tuple = objects[schema_var]
+        elif "{" in content[mm.start() : mm.start() + 200]:
+            # Inline schema: new Schema({ ... }) or { ... }
+            inline_start = content.find("{", mm.start())
+            if inline_start != -1 and inline_start < mm.start() + 200:
+                depth = 0
+                end_pos = inline_start
+                for idx in range(inline_start, len(content)):
+                    c = content[idx]
+                    if c == "{":
+                        depth += 1
+                    elif c == "}":
+                        depth -= 1
+                        if depth == 0:
+                            end_pos = idx
+                            break
+                body_tuple = (
+                    content[inline_start + 1 : end_pos],
+                    content.count("\n", 0, inline_start) + 1,
+                    content.count("\n", 0, end_pos) + 1,
+                )
+
+        if body_tuple is not None:
+            body, s_start, s_end = body_tuple
+            for f_match in re.finditer(
+                r"([A-Za-z_$][\w$]*)\s*:\s*(?:\{\s*([^}]+)\}|([A-Za-z0-9_$.]+))",
+                body,
+            ):
+                f_name = f_match.group(1)
+                f_inner = f_match.group(2)
+                f_direct = f_match.group(3)
+                f_type = "Mixed"
+                f_rest = ""
+                if f_inner:
+                    type_m = re.search(r"type\s*:\s*([A-Za-z0-9_$.]+)", f_inner)
+                    f_type = type_m.group(1) if type_m else "Mixed"
+                    f_rest = f_inner
+                elif f_direct:
+                    f_type = f_direct
+
+                col_cid = f"{tbl_cid}.{f_name}"
+                is_req = bool(re.search(r"required\s*:\s*true", f_rest, re.IGNORECASE))
+                is_uniq = bool(re.search(r"unique\s*:\s*true", f_rest, re.IGNORECASE))
+                ref_match = re.search(r"ref\s*:\s*['\"]([A-Za-z0-9_]+)['\"]", f_rest)
+                target_coll: str | None = None
+                if ref_match:
+                    ref_model = ref_match.group(1)
+                    target_coll = _pluralize_table(_camel_to_snake(ref_model)).lower()
+
+                res.entities.append(
+                    DatabaseEntity(
+                        kind=DatabaseEntityKind.COLUMN,
+                        dialect="mongodb",
+                        schema_name="UNKNOWN",
+                        table_name=coll_name,
+                        column_name=f_name,
+                        data_type=f_type,
+                        nullable=bool(not is_req),
+                        is_primary_key=bool(f_name == "_id"),
+                        is_unique=bool(is_uniq),
+                        is_foreign_key=bool(target_coll is not None),
+                        target_table=target_coll,
+                        canonical_id=col_cid,
+                        name=f_name,
+                        file_path=file_path,
+                        start_line=s_start,
+                        end_line=s_end,
+                        confidence="HIGH",
+                        evidence=redact_secrets(f_match.group(0)),
+                        evidence_class="FRAMEWORK_VERIFIED",
+                        status="FACT",
+                    )
+                )
+
+                res.edges.append(
+                    RelationshipRecord(
+                        source=tbl_cid,
+                        target=col_cid,
+                        relationship="MAPS_TO_COLUMN",
+                        confidence="HIGH",
+                        evidence_class="FRAMEWORK_VERIFIED",
+                        status="FACT",
+                        file=file_path,
+                        start_line=s_start,
+                        end_line=s_end,
+                        evidence=redact_secrets(f_match.group(0)),
+                        reason=f"mongoose_schema_field:{f_name}",
+                        parser_version=PARSER_VERSION,
+                        index_generation=index_generation,
+                    )
+                )
+
+                if target_coll:
+                    res.edges.append(
+                        RelationshipRecord(
+                            source=col_cid,
+                            target=f"db.UNKNOWN.UNKNOWN.{target_coll}",
+                            relationship="FOREIGN_KEY_TO",
+                            confidence="HIGH",
+                            evidence_class="FRAMEWORK_VERIFIED",
+                            status="FACT",
+                            file=file_path,
+                            start_line=s_start,
+                            end_line=s_end,
+                            evidence=redact_secrets(f_match.group(0)),
+                            reason=f"mongoose_ref:{target_coll}",
+                            parser_version=PARSER_VERSION,
+                            index_generation=index_generation,
+                        )
+                    )
 
 
 def _extract_js_ts_database(
@@ -2887,23 +3439,68 @@ def _extract_js_ts_database(
     index_generation: int,
     res: DatabaseExtractionResult,
 ) -> None:
-    del model_to_table
+    _extract_drizzle_schema(
+        content,
+        file_path,
+        module_name,
+        dialect,
+        schema,
+        index_generation,
+        res,
+    )
+    _extract_mongoose_schema(
+        content,
+        file_path,
+        module_name,
+        index_generation,
+        res,
+        model_to_table,
+    )
+
     lines = content.splitlines()
+    active_scope: str = module_name
+
     for line_no, raw_line in enumerate(lines, start=1):
         ev = redact_secrets(raw_line.strip())
-        # Prisma client: prisma.user.findMany / prisma.order.create / update / delete
+
+        fn_match = re.search(
+            r"(?:async\s+)?function\s+([A-Za-z_$][\w$]*)|(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>",
+            raw_line,
+        )
+        if fn_match:
+            fn_name = fn_match.group(1) or fn_match.group(2)
+            if fn_name:
+                active_scope = f"{module_name}.{fn_name}"
+        else:
+            meth_match = re.search(
+                r"^\s*(?:public\s+|private\s+|protected\s+)?(?:async\s+)?([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*(?::\s*[^{]+)?\{",
+                raw_line,
+            )
+            if meth_match:
+                m_name = meth_match.group(1)
+                if m_name not in ("if", "for", "while", "switch", "catch", "constructor"):
+                    active_scope = f"{module_name}.{m_name}"
+
+        # 1. Prisma Client: (this.|ctx.|db.)?prisma.<model>.<action>(...)
         for pm in re.finditer(
-            r"\bprisma\.([a-zA-Z_][a-zA-Z0-9_]*)\.(findMany|findUnique|findFirst|count|create|createMany|update|updateMany|upsert|delete|deleteMany)\b",
+            r"\b(?:this\.|ctx\.|db\.)?prisma\.([a-zA-Z_][a-zA-Z0-9_]*)\.(findMany|findUnique|findUniqueOrThrow|findFirst|findFirstOrThrow|count|aggregate|groupBy|create|createMany|createManyAndReturn|update|updateMany|upsert|delete|deleteMany)\b",
             raw_line,
         ):
             model_prop = pm.group(1)
             method = pm.group(2)
-            tbl = _pluralize_table(_camel_to_snake(model_prop))
-            is_read = method.startswith(("find", "count"))
+            tbl = model_to_table.get(
+                model_prop,
+                model_to_table.get(
+                    model_prop.lower(),
+                    _pluralize_table(_camel_to_snake(model_prop)),
+                ),
+            ).lower()
+
+            is_read = method.startswith(("find", "count", "aggregate", "groupBy"))
             op = "SELECT" if is_read else ("INSERT" if "create" in method else ("DELETE" if "delete" in method else "UPDATE"))
             rel = "READS_TABLE" if is_read else "WRITES_TABLE"
             _emit_query_fact_and_edges(
-                caller_id=module_name,
+                caller_id=active_scope,
                 operation=op,
                 relationship=rel,
                 table_name=tbl,
@@ -2923,7 +3520,71 @@ def _extract_js_ts_database(
                 index_generation=index_generation,
                 res=res,
             )
-        # Knex: knex("users").select / insert / update / del
+
+        # 2. Drizzle Query Builder: db.select().from(tableVar) / db.insert(tableVar) / db.update / db.delete
+        for dm in re.finditer(
+            r"\bdb(?:\.[a-zA-Z0-9_]+)?\.(select|insert|update|delete)\s*(?:\([^)]*\))?(?:\s*\.from\s*\(\s*([A-Za-z_$][\w$]*)\s*\)|\s*\(\s*([A-Za-z_$][\w$]*)\s*\))",
+            raw_line,
+        ):
+            action = dm.group(1)
+            table_var = dm.group(2) or dm.group(3)
+            if table_var:
+                tbl = model_to_table.get(table_var, table_var).lower()
+                is_read = (action == "select")
+                op = "SELECT" if is_read else ("INSERT" if action == "insert" else ("DELETE" if action == "delete" else "UPDATE"))
+                rel = "READS_TABLE" if is_read else "WRITES_TABLE"
+                _emit_query_fact_and_edges(
+                    caller_id=active_scope,
+                    operation=op,
+                    relationship=rel,
+                    table_name=tbl,
+                    columns=(),
+                    read_columns=(),
+                    framework="drizzle",
+                    normalized_sql=f"{op} {tbl}",
+                    dialect=dialect,
+                    schema=schema,
+                    file_path=file_path,
+                    start_line=line_no,
+                    end_line=line_no,
+                    evidence=ev,
+                    confidence="HIGH",
+                    evidence_class="FRAMEWORK_VERIFIED",
+                    status="FACT",
+                    index_generation=index_generation,
+                    res=res,
+                )
+
+        # 3. Drizzle Relational Queries: db.query.<tableVar>.(findMany|findFirst)(...)
+        for dqm in re.finditer(
+            r"\bdb(?:\.[a-zA-Z0-9_]+)?\.query\.([A-Za-z_$][\w$]*)\.(findMany|findFirst)\b",
+            raw_line,
+        ):
+            table_var = dqm.group(1)
+            tbl = model_to_table.get(table_var, table_var).lower()
+            _emit_query_fact_and_edges(
+                caller_id=active_scope,
+                operation="SELECT",
+                relationship="READS_TABLE",
+                table_name=tbl,
+                columns=(),
+                read_columns=(),
+                framework="drizzle",
+                normalized_sql=f"SELECT {tbl}",
+                dialect=dialect,
+                schema=schema,
+                file_path=file_path,
+                start_line=line_no,
+                end_line=line_no,
+                evidence=ev,
+                confidence="HIGH",
+                evidence_class="FRAMEWORK_VERIFIED",
+                status="FACT",
+                index_generation=index_generation,
+                res=res,
+            )
+
+        # 4. Knex: knex("users").select / insert / update / del
         for km in re.finditer(
             r'\bknex\(\s*["\']([a-zA-Z0-9_]+)["\']\s*\)\.(select|where|first|insert|update|del|delete)\b',
             raw_line,
@@ -2934,7 +3595,7 @@ def _extract_js_ts_database(
             op = "SELECT" if is_read else ("INSERT" if method == "insert" else ("DELETE" if method in ("del", "delete") else "UPDATE"))
             rel = "READS_TABLE" if is_read else "WRITES_TABLE"
             _emit_query_fact_and_edges(
-                caller_id=module_name,
+                caller_id=active_scope,
                 operation=op,
                 relationship=rel,
                 table_name=tbl,
@@ -2954,3 +3615,37 @@ def _extract_js_ts_database(
                 index_generation=index_generation,
                 res=res,
             )
+
+        # 5. Mongoose Document Queries: Model.(find|findOne|findById|create|updateOne|deleteOne|...)
+        for mgm in re.finditer(
+            r"\b([A-Z][a-zA-Z0-9_]*)\.(find|findOne|findById|countDocuments|aggregate|create|insertOne|insertMany|updateOne|updateMany|deleteOne|deleteMany|findByIdAndUpdate|findByIdAndDelete)\b",
+            raw_line,
+        ):
+            model_ident = mgm.group(1)
+            action = mgm.group(2)
+            if model_ident in model_to_table or f"{model_ident.lower()}s" in model_to_table.values():
+                tbl = model_to_table.get(model_ident, _pluralize_table(_camel_to_snake(model_ident))).lower()
+                is_read = action.startswith(("find", "count", "aggregate"))
+                op = "SELECT" if is_read else ("INSERT" if "create" in action or "insert" in action else ("DELETE" if "delete" in action else "UPDATE"))
+                rel = "READS_COLLECTION" if is_read else "WRITES_COLLECTION"
+                _emit_query_fact_and_edges(
+                    caller_id=active_scope,
+                    operation=op,
+                    relationship=rel,
+                    table_name=tbl,
+                    columns=(),
+                    read_columns=(),
+                    framework="mongoose",
+                    normalized_sql=f"{op} {tbl}",
+                    dialect="mongodb",
+                    schema="UNKNOWN",
+                    file_path=file_path,
+                    start_line=line_no,
+                    end_line=line_no,
+                    evidence=ev,
+                    confidence="HIGH",
+                    evidence_class="FRAMEWORK_VERIFIED",
+                    status="FACT",
+                    index_generation=index_generation,
+                    res=res,
+                )

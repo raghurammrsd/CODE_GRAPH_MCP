@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 620" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #0d1117; rx: 16px; }
+      .card { fill: #161b22; stroke: #30363d; stroke-width: 1.2; rx: 10px; }
+      .card-glow { fill: #161b22; stroke: #2ea043; stroke-width: 1.5; rx: 10px; }
+      .card-blue { fill: #161b22; stroke: #388bfd; stroke-width: 1.5; rx: 10px; }
+      .card-purple { fill: #161b22; stroke: #a371f7; stroke-width: 1.5; rx: 10px; }
+      .card-gold { fill: #161b22; stroke: #d29922; stroke-width: 1.5; rx: 10px; }
+      .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 21px; font-weight: 700; fill: #f0f6fc; }
+      .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13px; fill: #8b949e; }
+      .header-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13.5px; font-weight: 700; fill: #58a6ff; }
+      .header-green { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13.5px; font-weight: 700; fill: #3fb950; }
+      .header-purple { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13.5px; font-weight: 700; fill: #d2a8ff; }
+      .header-gold { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13.5px; font-weight: 700; fill: #f2cc60; }
+      .body-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 11px; fill: #c9d1d9; }
+      .code-lbl { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 10.5px; fill: #79c0ff; }
+      .code-green { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 10.5px; fill: #7ee787; }
+      .code-badge { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 9.5px; font-weight: 700; fill: #f0f6fc; }
+      .badge-bg { fill: #238636; rx: 4px; }
+      .badge-bg-blue { fill: #1f6feb; rx: 4px; }
+      .badge-bg-purple { fill: #8957e5; rx: 4px; }
+      .badge-bg-gold { fill: #9e6a03; rx: 4px; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1100" height="620" />
+
+  <!-- Top Title & Subtitle -->
+  <text class="title" x="32" y="38">🧠 CodeGraph MCP — Comprehensive Full-Stack Architecture &amp; Intelligence Pipeline</text>
+  <text class="subtitle" x="32" y="60">Deterministic AST-Verified Semantics, PyTorch / AI-ML Lineage, Sub-15ms Live Watcher, Full-Stack Bridge &amp; 70 Verified MCP Tools</text>
+
+  <!-- LAYER 1: CLIENTS & AGENTS (Top bar) -->
+  <rect class="card" x="28" y="78" width="1044" height="66" />
+  <rect class="badge-bg-blue" x="42" y="90" width="60" height="18" />
+  <text class="code-badge" x="48" y="103">CLIENTS</text>
+  <text class="header-title" x="112" y="104">AI Coding Agents &amp; Editor Environments</text>
+  <text class="body-text" x="42" y="128">
+    <tspan fill="#58a6ff" font-weight="700">Cursor</tspan> • <tspan fill="#58a6ff" font-weight="700">Claude Code</tspan> • <tspan fill="#58a6ff" font-weight="700">GitHub Copilot</tspan> • <tspan fill="#58a6ff" font-weight="700">Antigravity</tspan> • <tspan fill="#58a6ff" font-weight="700">Cline / Roo Code</tspan> • <tspan fill="#58a6ff" font-weight="700">Windsurf</tspan> • <tspan fill="#58a6ff" font-weight="700">Codex CLI</tspan> • <tspan fill="#58a6ff" font-weight="700">Gemini CLI</tspan>
+  </text>
+  <text class="code-lbl" x="690" y="128">Model Context Protocol (stdio / SSE HTTP transport on :8765)</text>
+
+  <!-- COLUMN 1: Full-Stack Web & Bridge -->
+  <rect class="card-glow" x="28" y="156" width="248" height="434" />
+  <rect class="badge-bg" x="42" y="172" width="68" height="18" />
+  <text class="code-badge" x="48" y="185">PILLAR 1</text>
+  <text class="header-green" x="118" y="186">Full-Stack Bridge</text>
+  <text class="code-lbl" x="42" y="210">Frontend ↔ Backend Mapping</text>
+  <text class="body-text" x="42" y="230">• <tspan fill="#7ee787">React Client Extraction:</tspan></text>
+  <text class="code-green" x="52" y="248">fetch&lt;T&gt; / axios / useSWR</text>
+  <text class="code-green" x="52" y="264">useQuery / $fetch (Nuxt/Vue)</text>
+  <text class="body-text" x="42" y="286">• <tspan fill="#7ee787">Backend Route Normalizer:</tspan></text>
+  <text class="body-text" x="52" y="304">FastAPI, Express, Django, Flask</text>
+  <text class="body-text" x="52" y="320">NestJS (@Controller, @Get)</text>
+  <text class="body-text" x="52" y="336">Next.js Server Actions &amp; App Router</text>
+  <text class="body-text" x="42" y="358">• <tspan fill="#f0883e" font-weight="700">API Drift Engine (codegraph api-drift):</tspan></text>
+  <text class="body-text" x="52" y="376">✔ Field name &amp; nullability drift</text>
+  <text class="body-text" x="52" y="392">✔ TS Interface vs Pydantic / Zod</text>
+  <text class="body-text" x="52" y="408">✔ Orphaned client endpoints</text>
+  <text class="body-text" x="42" y="432">• <tspan fill="#7ee787">Template &amp; CSS Linkage:</tspan></text>
+  <text class="body-text" x="52" y="450">Jinja2, Nunjucks, EJS, HTML templates</text>
+  <text class="body-text" x="52" y="466">Tailwind &amp; CSS class extraction</text>
+  <text class="body-text" x="42" y="492" fill="#8b949e">Resolves FETCHES_ROUTE &amp; CALLS</text>
+  <text class="code-lbl" x="42" y="560">DATAFLOW_VERIFIED edges</text>
+
+  <!-- COLUMN 2: PyTorch & AI/ML Stack -->
+  <rect class="card-purple" x="294" y="156" width="248" height="434" />
+  <rect class="badge-bg-purple" x="308" y="172" width="60" height="18" />
+  <text class="code-badge" x="316" y="185">AI / ML</text>
+  <text class="header-purple" x="376" y="186">PyTorch &amp; Agents</text>
+  <text class="code-lbl" x="308" y="210">AI/ML Semantic Intelligence</text>
+  <text class="body-text" x="308" y="230">• <tspan fill="#d2a8ff">PyTorch nn.Module Resolution:</tspan></text>
+  <text class="code-lbl" x="318" y="248">model(x) → forward(x)</text>
+  <text class="code-lbl" x="318" y="264">submodule(x) invocation trace</text>
+  <text class="code-lbl" x="318" y="280">DISPATCHES_FORWARD edge</text>
+  <text class="body-text" x="308" y="302">• <tspan fill="#d2a8ff">LangChain &amp; LlamaIndex:</tspan></text>
+  <text class="body-text" x="318" y="320">@tool / @function_tool bindings</text>
+  <text class="body-text" x="318" y="336">LCEL pipe flows: prompt | llm | out</text>
+  <text class="code-lbl" x="318" y="352">CHAINS_TO pipeline traces</text>
+  <text class="body-text" x="308" y="374">• <tspan fill="#d2a8ff">Distributed Ray Tasks:</tspan></text>
+  <text class="body-text" x="318" y="392">@ray.remote &amp; task.remote() calls</text>
+  <text class="code-lbl" x="318" y="408">DISPATCHES_RAY_TASK edge</text>
+  <text class="body-text" x="308" y="430">• <tspan fill="#d2a8ff">Async Background Workers:</tspan></text>
+  <text class="body-text" x="318" y="448">Celery (@task, delay()), BullMQ</text>
+  <text class="body-text" x="318" y="464">RQ, Dramatiq task queues</text>
+  <text class="body-text" x="308" y="492" fill="#8b949e">Tracks AI Agent tool dispatch &amp;</text>
+  <text class="body-text" x="308" y="508" fill="#8b949e">model execution end-to-end</text>
+  <text class="code-lbl" x="308" y="560">AST_VERIFIED / POSSIBLE</text>
+
+  <!-- COLUMN 3: Database, Impact & Refactor -->
+  <rect class="card-gold" x="560" y="156" width="248" height="434" />
+  <rect class="badge-bg-gold" x="574" y="172" width="68" height="18" />
+  <text class="code-badge" x="580" y="185">PILLAR 2</text>
+  <text class="header-gold" x="650" y="186">Impact &amp; Database</text>
+  <text class="code-lbl" x="574" y="210">PR Blast Radius &amp; Lineage</text>
+  <text class="body-text" x="574" y="230">• <tspan fill="#f2cc60">Database Deep Intelligence:</tspan></text>
+  <text class="body-text" x="584" y="248">Prisma, Drizzle, SQLAlchemy</text>
+  <text class="body-text" x="584" y="264">Django ORM, Mongoose (MongoDB)</text>
+  <text class="code-lbl" x="584" y="280">READS_TABLE / WRITES_TABLE</text>
+  <text class="body-text" x="574" y="302">• <tspan fill="#f2cc60">PR Blast Radius Engine (impact):</tspan></text>
+  <text class="body-text" x="584" y="320">Full downstream transitive callers</text>
+  <text class="body-text" x="584" y="336">PR Risk Score (0-100: LOW..CRITICAL)</text>
+  <text class="body-text" x="584" y="352">Breaking change detection flags</text>
+  <text class="body-text" x="584" y="368">Smart test command generator</text>
+  <text class="body-text" x="574" y="390">• <tspan fill="#f2cc60">Safe Refactoring (safe_rename):</tspan></text>
+  <text class="body-text" x="584" y="408">Pre-flight AST syntax check</text>
+  <text class="body-text" x="584" y="424">Atomic sibling swap (os.replace)</text>
+  <text class="body-text" x="584" y="440">Rollback manifest &amp; lock</text>
+  <text class="body-text" x="574" y="462">• <tspan fill="#f2cc60">Git Intelligence (git-state/diff):</tspan></text>
+  <text class="body-text" x="584" y="480">Structural AST diffs &amp; merge conflicts</text>
+  <text class="body-text" x="574" y="508" fill="#8b949e">Sub-5ms commit diff fast path</text>
+  <text class="code-lbl" x="574" y="560">11 DB Tools • 6 Git Tools</text>
+
+  <!-- COLUMN 4: Live Watcher & Storage Engine -->
+  <rect class="card-blue" x="824" y="156" width="248" height="434" />
+  <rect class="badge-bg-blue" x="838" y="172" width="68" height="18" />
+  <text class="code-badge" x="844" y="185">PILLAR 3</text>
+  <text class="header-title" x="914" y="186">Live Watcher &amp; WAL</text>
+  <text class="code-lbl" x="838" y="210">Sub-15ms Incremental Sync</text>
+  <text class="body-text" x="838" y="230">• <tspan fill="#58a6ff">Zero-Heat Kernel Push Watcher:</tspan></text>
+  <text class="body-text" x="848" y="248">macOS FSEvents / Linux inotify</text>
+  <text class="body-text" x="848" y="264">Windows ReadDirectoryChangesW</text>
+  <text class="body-text" x="848" y="280">250ms sliding debounce window</text>
+  <text class="body-text" x="838" y="302">• <tspan fill="#58a6ff">Sub-15ms Incremental Reindex:</tspan></text>
+  <text class="body-text" x="848" y="320">SHA-256 digest skip cache</text>
+  <text class="body-text" x="848" y="336">Touches only modified files</text>
+  <text class="code-lbl" x="848" y="352">Indexer.reindex_paths([paths])</text>
+  <text class="body-text" x="838" y="374">• <tspan fill="#58a6ff">Instant In-Memory Cache Busting:</tspan></text>
+  <text class="body-text" x="848" y="392">Purges _PARSE_CACHE &amp; _GRAPH_CACHE</text>
+  <text class="body-text" x="848" y="408">Evicts context_cache table</text>
+  <text class="body-text" x="838" y="430">• <tspan fill="#58a6ff">Lock-Free SQLite Concurrency:</tspan></text>
+  <text class="code-lbl" x="848" y="448">PRAGMA journal_mode = WAL</text>
+  <text class="code-lbl" x="848" y="464">PRAGMA synchronous = NORMAL</text>
+  <text class="code-lbl" x="848" y="480">PRAGMA busy_timeout = 30000</text>
+  <text class="body-text" x="838" y="508" fill="#8b949e">100% Local-First • Zero Remote Calls</text>
+  <text class="code-lbl" x="838" y="560">70 Verified MCP Tools Total</text>
+</svg>

@@ -676,3 +676,34 @@ def test_dynamic_index_hot_reload_after_codegraph_init(tmp_path: Path) -> None:
         assert explicit_reload["symbols"] >= 3
 
     asyncio.run(_exercise_hot_reload())
+
+
+def test_is_parent_alive_container_and_init() -> None:
+    """Verify that is_parent_alive handles PID 1 / container / daemon environments gracefully."""
+    from codegraph.process_lifecycle import is_parent_alive
+
+    assert is_parent_alive(1) is True
+    assert is_parent_alive(0) is True
+    assert is_parent_alive(-1) is True
+    assert is_parent_alive(os.getpid()) is True
+    # Non-existent PID should report False
+    assert is_parent_alive(9999999) is False
+
+
+def test_watchdog_loop_disabled_parent(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Verify that CODEGRAPH_DISABLE_PARENT_WATCHDOG prevents false-positive shutdowns."""
+    from codegraph.process_lifecycle import MCPLifecycleController
+
+    monkeypatch.setenv("CODEGRAPH_DISABLE_PARENT_WATCHDOG", "1")
+    controller = MCPLifecycleController(
+        repository=tmp_path,
+        poll_interval_sec=0.05,
+    )
+    # Set parent PID to a non-existent PID
+    object.__setattr__(controller.record, "parent_pid", 9999999)
+
+    # Start controller briefly and check that it does NOT shut down
+    controller.start()
+    time.sleep(0.15)
+    assert controller.shutdown_reason is None
+    controller.shutdown("test_done")

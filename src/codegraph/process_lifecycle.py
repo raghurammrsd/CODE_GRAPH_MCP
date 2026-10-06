@@ -541,16 +541,28 @@ def is_parent_alive(
 ) -> bool:
     """Return True if the parent process `parent_pid` is still alive and owns this child."""
     if parent_pid <= 1:
-        return False
+        # PID 0 and 1 represent init / systemd / launchd / container root; always considered alive
+        return True
 
-    if sys.platform != "win32":
-        actual_ppid = current_ppid if current_ppid is not None else os.getppid()
-        if actual_ppid != parent_pid:
-            # Reparented to PID 1 / launchd / systemd --user
-            return False
+    # 1. Direct probe whether parent PID exists via os.kill(pid, 0)
+    try:
+        os.kill(parent_pid, 0)
+    except ProcessLookupError:
+        # ESRCH: Process does not exist; parent is definitely dead
+        return False
+    except PermissionError:
+        # EPERM: Process exists, but caller lacks permissions to signal it (e.g. sandbox/different user)
+        return True
+    except OSError:
+        # Other OS error: safe fallback is alive
+        return True
 
     live = get_live_process_info(parent_pid)
-    if live is None or live.is_zombie:
+    if live is None:
+        # If OS inspection was restricted (e.g. sandbox blocking proc_pidinfo),
+        # but os.kill succeeded above, the process is alive.
+        return True
+    if live.is_zombie:
         return False
 
     if parent_create_token and live.create_token and live.create_token != parent_create_token:
@@ -964,16 +976,22 @@ class MCPLifecycleController:
 
     def _watchdog_loop(self) -> None:
         """Low-overhead event-backed watchdog detecting parent termination or closed stdin."""
+        disable_parent_watchdog = (
+            os.environ.get("CODEGRAPH_DISABLE_PARENT_WATCHDOG", "").strip().lower()
+            in ("1", "true", "yes")
+            or self.record.parent_pid <= 1
+        )
         while not self._stop_event.wait(timeout=self.poll_interval_sec):
             if _is_stream_closed_or_eof(sys.stdin):
                 self.shutdown("stdin_closed")
                 return
-            if not is_parent_alive(
-                self.record.parent_pid,
-                self.record.parent_create_token,
-            ):
-                self.shutdown("parent_process_terminated")
-                return
+            if not disable_parent_watchdog:
+                if not is_parent_alive(
+                    self.record.parent_pid,
+                    self.record.parent_create_token,
+                ):
+                    self.shutdown("parent_process_terminated")
+                    return
 
     def _atexit_cleanup(self) -> None:
         self.shutdown("atexit")

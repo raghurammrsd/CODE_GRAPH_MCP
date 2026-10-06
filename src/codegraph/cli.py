@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import sys
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 
@@ -54,7 +55,14 @@ def main(
     ] = False,
 ) -> None:
     """Evidence-backed local codebase intelligence for MCP clients and AI agents."""
-    pass
+    if sys.platform == "win32":
+        try:
+            if hasattr(sys.stdout, "reconfigure"):
+                sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+            if hasattr(sys.stderr, "reconfigure"):
+                sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
 
 
 def _resolve_repo(
@@ -233,10 +241,57 @@ def init(
 
 
 @app.command()
+def watch(
+    path: Annotated[Path | None, typer.Argument(help="Repository path to watch (default: current directory)")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    debounce_ms: Annotated[int, typer.Option("--debounce", "--debounce-ms", help="Debounce delay in milliseconds")] = 250,
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Suppress real-time change logs")] = False,
+    verbose: Annotated[bool, typer.Option("--verbose", "-v", help="Show verbose reindex logs")] = False,
+) -> None:
+    """Watch repository for changes and update index in real-time (< 15ms per file)."""
+    target_repo = _resolve_repo(path, repository)
+    from codegraph.watcher import RepositoryWatcher
+
+    def _on_batch_complete(res: dict[str, Any]) -> None:
+        if quiet:
+            return
+        reindexed = res.get("reindexed", [])
+        deleted = res.get("deleted", [])
+        skipped = res.get("skipped", [])
+        ms = res.get("elapsed_ms", 0.0)
+        gen = res.get("generation")
+        gen_str = f" [gen {gen}]" if gen is not None else ""
+
+        parts: list[str] = []
+        if reindexed:
+            parts.append(f"reindexed {len(reindexed)} file(s): {', '.join(str(p) for p in reindexed[:3])}{'...' if len(reindexed) > 3 else ''}")
+        if deleted:
+            parts.append(f"removed {len(deleted)} file(s): {', '.join(str(p) for p in deleted[:3])}{'...' if len(deleted) > 3 else ''}")
+        if verbose and skipped:
+            parts.append(f"skipped {len(skipped)} unchanged file(s)")
+
+        if parts:
+            typer.echo(f"[WATCH] {'; '.join(parts)} in {ms:.1f}ms{gen_str}")
+        elif verbose:
+            typer.echo(f"[WATCH] Clean flush in {ms:.1f}ms{gen_str}")
+
+    typer.echo(f"Watching {target_repo.resolve()} for changes (debounce {debounce_ms}ms)... Press Ctrl+C to stop.")
+    watcher = RepositoryWatcher(
+        target_repo,
+        debounce_delay_sec=debounce_ms / 1000.0,
+        on_batch_complete=_on_batch_complete,
+    )
+    watcher.run_forever()
+
+
+@app.command()
 def search(
     query: str,
     repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
     top_k: int = 10,
+    ext: Annotated[str | None, typer.Option("--ext", "-e", help="Comma-separated file extensions (e.g. ts,tsx,jsx)")] = None,
+    package: Annotated[str | None, typer.Option("--package", "-p", help="Monorepo package scope filter (e.g. dundoo-react)")] = None,
+    path_prefix: Annotated[str | None, typer.Option("--path-prefix", help="Subdirectory path prefix filter")] = None,
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
     """Search indexed code with exact evidence."""
@@ -261,8 +316,42 @@ def search(
             )
         )
         return
+
+    file_types = [e.strip().lstrip(".") for e in ext.split(",") if e.strip()] if ext else None
+    effective_path_filter: str | None = path_prefix
+    if package:
+        from codegraph.monorepo import discover_workspace
+        ws = discover_workspace(repo)
+        pkg_info = ws.packages.get(package)
+        if pkg_info:
+            effective_path_filter = pkg_info.root_path
+        else:
+            effective_path_filter = package
+
     with _indexer(repo).session() as con:
-        result = [r.as_dict() for r in search_code(con, query, top_k)]
+        if file_types or effective_path_filter:
+            from codegraph.search.hybrid import search_code as search_code_rich
+            raw_hits = search_code_rich(
+                con,
+                query,
+                repo_path=repo,
+                path_filter=effective_path_filter,
+                file_types=file_types,
+                top_k=top_k,
+            )
+            result = [
+                {
+                    "file": str(h.get("path") or h.get("file") or ""),
+                    "start_line": int(str(h.get("line") or h.get("start_line") or "1")),
+                    "end_line": int(str(h.get("line") or h.get("end_line") or "1")),
+                    "symbol": str(h.get("symbol") or ""),
+                    "score": float(str(h.get("score") or "1.0")),
+                    "snippet": str(h.get("snippet") or h.get("matched_text") or ""),
+                }
+                for h in raw_hits
+            ]
+        else:
+            result = [r.as_dict() for r in search_code(con, query, top_k)]
     typer.echo(
         json.dumps(result, indent=2)
         if json_output
@@ -497,6 +586,93 @@ def routes(
                 typer.echo(f"  [{r['http_method']}] {r['route_path']} -> {r['handler']} ({r['file']}:{r['line']}) [{r['framework']}]")
 
 
+@app.command("schema-drift")
+def schema_drift(
+    route: Annotated[str | None, typer.Option("--route", help="Route path or endpoint to check for schema drift")] = None,
+    handler: Annotated[str | None, typer.Option("--handler", "-h", help="Handler symbol to check for schema drift")] = None,
+    table: Annotated[str | None, typer.Option("--table", "-t", help="Target table name (optional, inferred from mutation lineage)")] = None,
+    schema: Annotated[str | None, typer.Option("--schema", "-s", help="Schema class name (optional, inferred from handler signature)")] = None,
+    path: Annotated[Path | None, typer.Argument(help="Repository path (default: current directory)")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output raw JSON array")] = False,
+) -> None:
+    """Detect Pydantic / Form validation drift against destination database table columns."""
+    from codegraph.database.schema_drift import detect_schema_drift
+
+    repo = _resolve_repo(path, repository)
+    if not _ensure_indexed(repo):
+        return
+    target = route or handler or ""
+    if not target:
+        typer.echo("Error: Please specify --route or --handler to check for schema drift.")
+        raise typer.Exit(code=1)
+    with _indexer(repo).session() as con:
+        res = detect_schema_drift(con, repo, route_or_handler=target, target_table=table, schema_name=schema)
+    if json_output:
+        typer.echo(json.dumps(res, indent=2))
+    else:
+        if res.get("status") == "error":
+            typer.echo(f"Error: {res.get('error')}")
+            raise typer.Exit(code=1)
+        typer.echo(f"Schema Drift Report for {target} -> {res.get('target_table')} ({res.get('schema_name')}):")
+        typer.echo(f"  Mode:         {res.get('schema_mode', 'STATIC_TYPED')}")
+        recon = res.get("runtime_reconciliation", {})
+        if recon.get("is_observed"):
+            typer.echo(f"  Runtime SQL:  Observed ({recon.get('observation_count')} query executions)")
+            if recon.get("last_sql_sample"):
+                typer.echo(f"  Sample Query: {recon.get('last_sql_sample')}")
+        else:
+            typer.echo("  Runtime SQL:  NOT_OBSERVED_AT_RUNTIME (Run dev server or ingest traces to observe live queries)")
+        typer.echo(f"  Total Issues: {res.get('drift_count')} (Critical: {res.get('critical_count')}, Warning: {res.get('warning_count')}, Info: {res.get('info_count')})")
+        for iss in res.get("issues", []):
+            typer.echo(f"  [{iss['severity']}] {iss['drift_type']} on '{iss['field_name']}': {iss['message']}")
+
+
+@app.command("api-drift")
+def api_drift_cmd(
+    path: Annotated[Path | None, typer.Argument(help="Repository path (default: current directory)")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output raw JSON")] = False,
+) -> None:
+    """Detect cross-language client-server API contract drift (404s, 405s, and TypeScript-to-Backend type drift)."""
+    from codegraph.api_drift import detect_api_contract_drift
+
+    repo = _resolve_repo(path, repository)
+    if not _ensure_indexed(repo):
+        return
+
+    with _indexer(repo).session() as con:
+        report = detect_api_contract_drift(con, repo)
+
+    if json_output:
+        typer.echo(json.dumps(report.as_dict(), indent=2))
+    else:
+        if not report.has_drift:
+            typer.echo("No API contract drift detected.")
+            typer.echo(f"Verified {report.total_client_calls} client data fetches against {report.total_backend_routes} backend routes ({report.matched_calls} matched).")
+        else:
+            typer.echo(f"API Contract Drift Detected ({len(report.drifts)} issues):")
+            typer.echo(f"Client Calls: {report.total_client_calls} | Backend Routes: {report.total_backend_routes} | Matched: {report.matched_calls}\n")
+            for d in report.drifts:
+                typer.echo(f"  [{d.severity}] {d.kind}")
+                typer.echo(f"    Client:  {d.client_method} {d.client_route} ({d.client_file}:{d.client_line})")
+                if d.backend_route:
+                    typer.echo(f"    Backend: {d.backend_route} -> {d.backend_handler} ({d.backend_file})")
+                if d.field_name:
+                    typer.echo(f"    Field:   {d.field_name} (Client: {d.client_field_type} vs Backend: {d.backend_field_type})")
+                typer.echo(f"    Message: {d.message}\n")
+
+
+@app.command("api_drift", hidden=True)
+def api_drift_alias(
+    path: Annotated[Path | None, typer.Argument(help="Repository path")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output raw JSON")] = False,
+) -> None:
+    """Alias for api-drift."""
+    api_drift_cmd(path=path, repository=repository, json_output=json_output)
+
+
 @app.command()
 def imports(
     path: Annotated[str | None, typer.Argument(help="Repository-relative file path to inspect imports for (default: inspect all imports)")] = None,
@@ -625,6 +801,38 @@ def run_cmd(
 
     exit_code = run_with_telemetry(full_cmd, repository=repo, sample_rate=sample_rate)
     raise typer.Exit(code=exit_code)
+
+
+@app.command("ingest")
+def ingest_cli_cmd(
+    source: Annotated[Path, typer.Argument(help="Path to OpenTelemetry JSON/JSONL, SQL query log, or trace file")],
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    format: Annotated[str, typer.Option("--format", "-f", help="Trace format: auto | otel | json | sql_log")] = "auto",
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON result")] = False,
+) -> None:
+    """Ingest runtime traces (OpenTelemetry, JSON, or SQL query logs) into repository index."""
+    repo = _resolve_repo(None, repository)
+    if not _ensure_indexed(repo):
+        raise typer.Exit(code=1)
+
+    if not source.exists():
+        cli_echo(f"Error: Trace source file '{source}' does not exist.")
+        raise typer.Exit(code=1)
+
+    content = source.read_text(encoding="utf-8", errors="replace")
+    indexer = _indexer(repo)
+    with indexer.session() as con:
+        from codegraph.runtime.ingestor import ingest_runtime_traces
+
+        res = ingest_runtime_traces(con, content, repository=repo, format=format)
+
+    if json_output:
+        cli_echo(json.dumps(res, indent=2), json_mode=True)
+    else:
+        cli_echo("Runtime Ingestion Complete:")
+        cli_echo(f"  Events Ingested:  {res.get('events_ingested', 0)}")
+        cli_echo(f"  Edges Upserted:   {res.get('edges_upserted', 0)}")
+        cli_echo(f"  Generation:       {res.get('runtime_generation', 1)}")
 
 
 def _run_server(
@@ -1409,8 +1617,69 @@ def git_diff_cmd(
             cli_echo(f"Affected Tests:  {len(s_rep.affected_tests)} ({', '.join(s_rep.affected_tests[:5])})")
 
 
-@app.command("git-impact")
-def git_impact_cmd(
+@app.command("impact")
+def impact_cmd(
+    base: Annotated[str, typer.Option("--base", "-b", help="Base Git ref (default: HEAD~1)")] = "HEAD~1",
+    head: Annotated[str, typer.Option("--head", "-h", help="Head Git ref (default: HEAD)")] = "HEAD",
+    symbol: Annotated[str | None, typer.Option("--symbol", "-s", help="Analyze blast radius for a specific symbol on-demand")] = None,
+    depth: Annotated[int, typer.Option("--depth", "-d", help="Max caller traversal depth")] = 2,
+    max_results: Annotated[int, typer.Option("--max-results", "-m", help="Max items per category")] = 30,
+    tree: Annotated[bool, typer.Option("--tree", "-t", help="Display visual impact tree")] = False,
+    path: Annotated[Path | None, typer.Argument(help="Repository path (default: current directory)")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON format")] = False,
+) -> None:
+    """Compute deep downstream change impact across callers, frontend UI, framework routes, tests, and DB."""
+    from codegraph.change_impact import get_deep_change_impact
+
+    repo = _resolve_repo(path, repository)
+    indexer = _indexer(repo)
+
+    with indexer.session() as con:
+        imp = get_deep_change_impact(
+            repo, con, base=base, head=head, max_depth=depth, max_results=max_results, symbol=symbol
+        )
+
+    if json_output:
+        cli_echo(json.dumps(imp.as_dict(), indent=2), json_mode=True)
+    else:
+        target_title = f"Symbol '{symbol}'" if symbol else f"Git Diff: {base} -> {head}"
+        cli_echo(f"Semantic Change Impact Analysis: {target_title}")
+        cli_echo(f"  PR Risk Level:        [{imp.risk_level}] (Score: {imp.blast_radius_score} / 100)")
+        cli_echo(f"  Total Impacted Items: {imp.total_impacted_count}")
+        cli_echo(f"  Direct Callers:       {len(imp.direct_callers)}")
+        cli_echo(f"  Transitive Callers:   {len(imp.transitive_callers)}")
+        if imp.affected_frontend_components:
+            cli_echo(f"  Frontend UI Impact:   {len(imp.affected_frontend_components)} components")
+        cli_echo(f"  Affected Routes:      {len(imp.affected_routes)}")
+        cli_echo(f"  Covering Tests:       {len(imp.affected_tests)}")
+        cli_echo(f"  DB Writers:           {len(imp.db_writers)}")
+        cli_echo(f"  Monorepo Packages:    {len(imp.affected_packages)}")
+
+        if imp.breaking_change_flags:
+            cli_echo(f"\n  ⚠️  Breaking Risk Flags: {', '.join(imp.breaking_change_flags)}")
+
+        if imp.recommended_test_command:
+            cli_echo(f"\n  🎯 Recommended Test Run: {imp.recommended_test_command}")
+
+        if tree or imp.total_impacted_count > 0:
+            cli_echo("\nImpact Tree:")
+            for s in imp.changed_symbols[:10]:
+                cli_echo(f"  └── [{s.get('change_type', 'MODIFIED')}] {s.get('path', '')}::{s.get('name', '')}")
+            for fe in imp.affected_frontend_components[:5]:
+                cli_echo(f"      ├── UI: {fe.file}::{fe.name} (fetches route)")
+            for c in imp.direct_callers[:8]:
+                cli_echo(f"      ├── CALLER: {c.file}::{c.name} (depth 1)")
+            for r in imp.affected_routes[:5]:
+                cli_echo(f"      ├── ROUTE: {r.name} -> {r.file}")
+            for t in imp.affected_tests[:5]:
+                cli_echo(f"      ├── TEST: {t.file}::{t.name}")
+            for db in imp.db_writers[:5]:
+                cli_echo(f"      └── DB: {db.relationship} {db.name} in {db.file}")
+
+
+@app.command("git-impact", hidden=True)
+def git_impact_alias(
     base: Annotated[str, typer.Argument(help="Base Git ref (default: HEAD~1)")] = "HEAD~1",
     head: Annotated[str, typer.Argument(help="Head Git ref (default: HEAD)")] = "HEAD",
     depth: Annotated[int, typer.Option("--depth", "-d", help="Max caller traversal depth")] = 2,
@@ -1420,40 +1689,17 @@ def git_impact_cmd(
     repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Output JSON format")] = False,
 ) -> None:
-    """Compute deep downstream change impact across callers, callees, framework routes, tests, and DB."""
-    from codegraph.change_impact import get_deep_change_impact
-
-    repo = _resolve_repo(path, repository)
-    indexer = _indexer(repo)
-
-    with indexer.session() as con:
-        imp = get_deep_change_impact(repo, con, base=base, head=head, max_depth=depth, max_results=max_results)
-
-    if json_output:
-        cli_echo(json.dumps(imp.as_dict(), indent=2), json_mode=True)
-    else:
-        cli_echo(f"Deep Change Impact Analysis: {base} -> {head}")
-        cli_echo(f"Blast Radius Score:   {imp.blast_radius_score} / 100")
-        cli_echo(f"Total Impacted Items: {imp.total_impacted_count}")
-        cli_echo(f"Direct Callers:       {len(imp.direct_callers)}")
-        cli_echo(f"Transitive Callers:   {len(imp.transitive_callers)}")
-        cli_echo(f"Affected Routes:      {len(imp.affected_routes)}")
-        cli_echo(f"Covering Tests:       {len(imp.affected_tests)}")
-        cli_echo(f"DB Writers:           {len(imp.db_writers)}")
-        cli_echo(f"Monorepo Packages:    {len(imp.affected_packages)}")
-
-        if tree or imp.total_impacted_count > 0:
-            cli_echo("\nImpact Tree:")
-            for s in imp.changed_symbols[:10]:
-                cli_echo(f"  └── 📄 [{s.get('change_type', 'MODIFIED')}] {s.get('path', '')}::{s.get('name', '')}")
-            for c in imp.direct_callers[:8]:
-                cli_echo(f"      ├── 📞 CALLER: {c.file}::{c.name} (depth 1)")
-            for r in imp.affected_routes[:5]:
-                cli_echo(f"      ├── 🌐 ROUTE: {r.name} -> {r.file}")
-            for t in imp.affected_tests[:5]:
-                cli_echo(f"      ├── 🧪 TEST: {t.file}::{t.name}")
-            for db in imp.db_writers[:5]:
-                cli_echo(f"      └── 💾 DB: {db.relationship} {db.name} in {db.file}")
+    """Backward-compatible alias for codegraph impact."""
+    impact_cmd(
+        base=base,
+        head=head,
+        depth=depth,
+        max_results=max_results,
+        tree=tree,
+        path=path,
+        repository=repository,
+        json_output=json_output,
+    )
 
 
 @app.command("git-conflicts")
@@ -1477,7 +1723,7 @@ def git_conflicts_cmd(
         cli_echo(json.dumps(rep.as_dict(), indent=2), json_mode=True)
     else:
         cli_echo(f"Semantic Conflict Analysis: {base} <-> {head}")
-        cli_echo(f"Status:          {'⚠️ CONFLICTS DETECTED' if rep.has_conflicts else '✅ CLEAN (0 conflicts)'}")
+        cli_echo(f"Status:          {'[!] CONFLICTS DETECTED' if rep.has_conflicts else '[OK] CLEAN (0 conflicts)'}")
         cli_echo(f"Total Conflicts: {rep.total_conflicts}")
         cli_echo(f"Summary:         {rep.summary}")
         if rep.conflicts:
@@ -1550,6 +1796,496 @@ def symbol_history_cli_cmd(
             cli_echo(f"    Evidence: {ev.evidence} (confidence: {ev.confidence})")
 
 
+refactor_app = typer.Typer(no_args_is_help=True, help="Deterministic, syntax-validated AST refactoring and atomic rollback.")
+app.add_typer(refactor_app, name="refactor")
+
+
+@refactor_app.command("rename")
+def refactor_rename_cli_cmd(
+    target: Annotated[str, typer.Argument(help="Exact symbol name or qualified name to rename")],
+    new_name: Annotated[str, typer.Argument(help="New valid Python identifier name")],
+    apply: Annotated[bool, typer.Option("--apply", help="Apply changes atomically to disk (default is dry-run)")] = False,
+    force: Annotated[bool, typer.Option("--force", help="Force rename despite UNKNOWN/POSSIBLE uncertainty")] = False,
+    path: Annotated[Path | None, typer.Option("--path", "-p", help="Repository path")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON format")] = False,
+) -> None:
+    """Perform deterministic, syntax-validated, transaction-safe AST rename."""
+    from codegraph.refactor.renamer import execute_safe_rename
+
+    repo = _resolve_repo(path, repository)
+    indexer = _indexer(repo)
+
+    with indexer.session() as con:
+        result = execute_safe_rename(
+            repository=repo,
+            con=con,
+            target=target,
+            new_name=new_name,
+            dry_run=not apply,
+            force_uncertain=force,
+        )
+
+    if json_output:
+        cli_echo(json.dumps(result.to_dict(), indent=2), json_mode=True)
+    else:
+        cli_echo(f"Refactor Status:      {result.status}")
+        cli_echo(f"Target:               {result.target_symbol} -> {result.new_name}")
+        cli_echo(f"Risk:                 {result.risk}")
+        cli_echo(f"Files Changed:        {result.files_changed}")
+        cli_echo(f"Spans Count:          {result.spans_count}")
+        if result.rollback_id:
+            cli_echo(f"Rollback ID:          {result.rollback_id}")
+        if result.uncertainty_reasons:
+            cli_echo("\nUncertainty Reasons:")
+            for reason in result.uncertainty_reasons:
+                cli_echo(f"  - {reason}")
+        if result.tests_affected:
+            cli_echo(f"Affected Tests:       {', '.join(result.tests_affected)}")
+        if result.routes_affected:
+            cli_echo(f"Affected Routes:      {', '.join(result.routes_affected)}")
+        if result.diffs:
+            cli_echo("\nUnified Diffs:")
+            for p, diff in result.diffs.items():
+                cli_echo(f"--- {p} ---")
+                cli_echo(diff)
+        if result.errors:
+            cli_echo("\nErrors:")
+            for err in result.errors:
+                cli_echo(f"  ! {err}")
+
+
+@refactor_app.command("undo")
+def refactor_undo_cli_cmd(
+    transaction_id: Annotated[str, typer.Argument(help="Transaction ID to rollback")],
+    path: Annotated[Path | None, typer.Option("--path", "-p", help="Repository path")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON format")] = False,
+) -> None:
+    """Atomically rollback an applied refactoring transaction."""
+    from codegraph.refactor.models import RefactorStatus
+    from codegraph.refactor.transactions import rollback_refactor
+
+    repo = _resolve_repo(path, repository)
+    result = rollback_refactor(repo, transaction_id)
+    if result.status == RefactorStatus.ROLLED_BACK:
+        try:
+            indexer = _indexer(repo)
+            indexer.index()
+        except Exception:
+            pass
+
+    if json_output:
+        cli_echo(json.dumps(result.to_dict(), indent=2), json_mode=True)
+    else:
+        cli_echo(f"Rollback Status: {result.status}")
+        cli_echo(f"Transaction ID:  {transaction_id}")
+        cli_echo(f"Files Restored:  {result.files_changed}")
+        if result.errors:
+            cli_echo("\nErrors:")
+            for err in result.errors:
+                cli_echo(f"  ! {err}")
+
+
+# ---------------------------------------------------------------------------
+# Async Queue Subcommands
+# ---------------------------------------------------------------------------
+async_app = typer.Typer(
+    no_args_is_help=True,
+    help="Asynchronous message queues, distributed task linking, and cross-service traces.",
+)
+app.add_typer(async_app, name="async")
+
+
+@async_app.command("queues")
+def async_queues_cli_cmd(
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON result")] = False,
+) -> None:
+    """List all detected asynchronous message queues, topics, and task channels."""
+    from codegraph.async_queue.traversal import list_async_queues
+
+    repo = _resolve_repo(None, repository)
+    if not _ensure_indexed(repo):
+        raise typer.Exit(code=1)
+
+    indexer = _indexer(repo)
+    with indexer.session() as con:
+        queues = list_async_queues(con)
+
+    if json_output:
+        cli_echo(json.dumps(queues, indent=2), json_mode=True)
+    else:
+        if not queues:
+            cli_echo("No asynchronous queues, topics, or task channels detected.")
+            return
+
+        cli_echo(f"Found {len(queues)} async queue(s):\n")
+        for q in queues:
+            cli_echo(
+                f"  [{q['system'].upper()}] {q['destination']} "
+                f"(producers: {q['producer_count']}, consumers: {q['consumer_count']}, links: {q['link_count']})"
+            )
+
+
+@async_app.command("trace")
+def async_trace_cli_cmd(
+    entrypoint: Annotated[str, typer.Argument(help="Entrypoint symbol, handler, or queue topic name")],
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    depth: Annotated[int, typer.Option("--depth", "-d", help="Max traversal depth")] = 5,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON result")] = False,
+) -> None:
+    """Trace cross-process asynchronous execution flow starting from an entrypoint."""
+    from codegraph.async_queue.traversal import trace_async_flow
+
+    repo = _resolve_repo(None, repository)
+    if not _ensure_indexed(repo):
+        raise typer.Exit(code=1)
+
+    indexer = _indexer(repo)
+    with indexer.session() as con:
+        result = trace_async_flow(con, entrypoint, max_depth=depth)
+
+    if json_output:
+        cli_echo(json.dumps(result, indent=2), json_mode=True)
+    else:
+        if result.get("status") != "ok":
+            cli_echo(f"No async flow found starting from '{entrypoint}'.")
+            return
+
+        cli_echo(f"Async Flow Trace for '{entrypoint}':\n")
+        cli_echo(f"  Producers:      {result['producers_count']}")
+        cli_echo(f"  Consumers:      {result['consumers_count']}")
+        cli_echo(f"  Downstream DB:  {result['downstream_ops_count']}\n")
+        cli_echo("Execution Steps:")
+        for step in result.get("flow_steps", []):
+            cli_echo(
+                f"  [{step['step']}] {step['source']} --({step['relationship']})--> {step['target']} "
+                f"[{step.get('evidence_class', 'AST_VERIFIED')}] ({step.get('file', '')}:{step.get('line', '')})"
+            )
+
+
+@async_app.command("ingest-traces")
+def async_ingest_traces_cli_cmd(
+    traces_file: Annotated[Path, typer.Argument(help="Path to JSON file containing OpenTelemetry spans (OTLP or flat JSON)")],
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON result")] = False,
+) -> None:
+    """Idempotently ingest OpenTelemetry traces and reconcile distributed links with the static graph."""
+    from codegraph.async_queue.otel_parser import parse_otel_spans
+    from codegraph.async_queue.reconciler import OTelTraceReconciler
+
+    repo = _resolve_repo(None, repository)
+    if not _ensure_indexed(repo):
+        raise typer.Exit(code=1)
+
+    if not traces_file.exists():
+        cli_echo(f"Error: traces file '{traces_file}' not found.")
+        raise typer.Exit(code=1)
+
+    try:
+        content = traces_file.read_text(encoding="utf-8")
+        spans = parse_otel_spans(content)
+    except Exception as exc:
+        cli_echo(f"Failed to read/parse traces file: {exc}")
+        raise typer.Exit(code=1) from exc
+
+    indexer = _indexer(repo)
+    with indexer.session() as con:
+        reconciler = OTelTraceReconciler(con)
+        res = reconciler.reconcile_spans(spans)
+
+    if json_output:
+        cli_echo(json.dumps(res.to_dict(), indent=2), json_mode=True)
+    else:
+        cli_echo("OpenTelemetry Trace Ingestion Summary:\n")
+        cli_echo(f"  Spans Ingested:       {res.spans_ingested}")
+        cli_echo(f"  Spans Deduplicated:   {res.spans_deduplicated}")
+        cli_echo(f"  Links Upgraded:       {res.links_upgraded} (to OTEL_DISTRIBUTED_VERIFIED)")
+        cli_echo(f"  Cross-Repo Observed:  {res.links_created_runtime_only} (RUNTIME_ONLY_OBSERVED)")
+        if res.details:
+            cli_echo("\nReconciliation Details:")
+            for d in res.details:
+                cli_echo(f"  * {d.get('action')}: {d.get('destination')} (p50={d.get('p50_ms')}ms, p95={d.get('p95_ms')}ms)")
+
+
+# ---------------------------------------------------------------------------
+# Database Intelligence Subcommands
+# ---------------------------------------------------------------------------
+db_app = typer.Typer(
+    no_args_is_help=True,
+    help="Database intelligence: tables, columns, ORM models, schema, and impact analysis.",
+)
+app.add_typer(db_app, name="db")
+
+
+@db_app.command("tables")
+def db_tables_cli_cmd(
+    path: Annotated[Path | None, typer.Argument(help="Repository path or table name filter")] = None,
+    table: Annotated[str | None, typer.Option("--table", "-t", help="Filter by table name")] = None,
+    dialect: Annotated[str | None, typer.Option("--dialect", "-d", help="Filter by SQL dialect")] = None,
+    schema: Annotated[str | None, typer.Option("--schema", "-s", help="Filter by schema name")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON result")] = False,
+) -> None:
+    """Discover database tables and views in the repository."""
+    from codegraph.database.interrogation import find_db_tables
+
+    target_table = table
+    repo_path = path
+    if path is not None and not path.exists() and not table:
+        target_table = str(path)
+        repo_path = None
+    repo = _resolve_repo(repo_path, repository)
+    if not _ensure_indexed(repo):
+        raise typer.Exit(code=1)
+
+    indexer = _indexer(repo)
+    with indexer.session() as con:
+        res = find_db_tables(con, repo, name=target_table, dialect=dialect, schema=schema)
+
+    if json_output:
+        cli_echo(json.dumps(res, indent=2), json_mode=True)
+    else:
+        tables = res.get("tables", [])
+        if not tables:
+            cli_echo("No database tables found.")
+            return
+        cli_echo(f"Found {len(tables)} database table(s):")
+        for t in tables:
+            models = f" -> ORM: {', '.join(t['orm_models'])}" if t.get("orm_models") else ""
+            schema_prefix = f"{t['schema_name']}." if t.get("schema_name") else ""
+            cli_echo(f"  • {schema_prefix}{t['table_name']} ({t.get('dialect', 'sql')}) [{t.get('framework', 'db')}]{models} at {t.get('file')}:{t.get('start_line')}")
+
+
+@db_app.command("columns")
+def db_columns_cli_cmd(
+    target: Annotated[str | None, typer.Argument(help="Table name, column name, or repository path")] = None,
+    table: Annotated[str | None, typer.Option("--table", "-t", help="Filter by table name")] = None,
+    column: Annotated[str | None, typer.Option("--column", "-c", help="Filter by column name")] = None,
+    path: Annotated[Path | None, typer.Option("--path", "-p", help="Repository path")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON result")] = False,
+) -> None:
+    """Discover database columns, data types, nullability, PK/FK flags, and ORM field mappings."""
+    from codegraph.database.interrogation import find_db_columns
+
+    target_table = table
+    target_column = column
+    repo_path = path
+    if target is not None:
+        p = Path(target)
+        if p.exists() and p.is_dir() and repo_path is None:
+            repo_path = p
+        elif not target_table:
+            if "." in target:
+                parts = target.split(".", 1)
+                target_table = parts[0]
+                target_column = parts[1]
+            else:
+                target_table = target
+
+    repo = _resolve_repo(repo_path, repository)
+    if not _ensure_indexed(repo):
+        raise typer.Exit(code=1)
+
+    indexer = _indexer(repo)
+    with indexer.session() as con:
+        res = find_db_columns(con, repo, table=target_table, column=target_column)
+
+    if json_output:
+        cli_echo(json.dumps(res, indent=2), json_mode=True)
+    else:
+        cols = res.get("columns", [])
+        if not cols:
+            cli_echo("No database columns found.")
+            return
+        cli_echo(f"Found {len(cols)} database column(s):")
+        for c in cols:
+            pk = " [PK]" if c.get("is_primary_key") else ""
+            fk = f" [FK -> {c.get('target_table')}.{c.get('target_column')}]" if c.get("is_foreign_key") else ""
+            nullable = " NULL" if c.get("nullable") else " NOT NULL"
+            cli_echo(f"  • {c.get('table_name')}.{c.get('column_name')}: {c.get('data_type')}{nullable}{pk}{fk} ({c.get('file')}:{c.get('start_line')})")
+
+
+@db_app.command("models")
+def db_models_cli_cmd(
+    path: Annotated[Path | None, typer.Argument(help="Repository path or model filter")] = None,
+    model: Annotated[str | None, typer.Option("--model", "-m", help="Filter by model name")] = None,
+    framework: Annotated[str | None, typer.Option("--framework", "-f", help="Filter by ORM framework")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON result")] = False,
+) -> None:
+    """Discover ORM models and classes mapped to database tables."""
+    from codegraph.database.interrogation import find_db_models
+
+    target_model = model
+    repo_path = path
+    if path is not None and not path.exists() and not model:
+        target_model = str(path)
+        repo_path = None
+    repo = _resolve_repo(repo_path, repository)
+    if not _ensure_indexed(repo):
+        raise typer.Exit(code=1)
+
+    indexer = _indexer(repo)
+    with indexer.session() as con:
+        res = find_db_models(con, repo, model=target_model, framework=framework)
+
+    if json_output:
+        cli_echo(json.dumps(res, indent=2), json_mode=True)
+    else:
+        models_list = res.get("models", [])
+        if not models_list:
+            cli_echo("No ORM models found.")
+            return
+        cli_echo(f"Found {len(models_list)} ORM model(s):")
+        for m in models_list:
+            tbl = f" -> Table: {m.get('table_name')}" if m.get("table_name") else ""
+            cli_echo(f"  • {m.get('name')} [{m.get('framework')}]{tbl} ({m.get('file')}:{m.get('start_line')})")
+
+
+@db_app.command("schema")
+def db_schema_cli_cmd(
+    target: Annotated[str | None, typer.Argument(help="Table name to inspect, or repository path")] = None,
+    table: Annotated[str | None, typer.Option("--table", "-t", help="Inspect single table in detail")] = None,
+    dialect: Annotated[str | None, typer.Option("--dialect", "-d", help="Filter by SQL dialect")] = None,
+    schema_name: Annotated[str | None, typer.Option("--schema", "-s", help="Filter by schema name")] = None,
+    path: Annotated[Path | None, typer.Option("--path", "-p", help="Repository path")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON result")] = False,
+) -> None:
+    """Inspect full database schema overview or deep table metadata."""
+    from codegraph.database.interrogation import get_db_schema, get_db_table
+
+    target_table = table
+    repo_path = path
+    if target is not None:
+        p = Path(target)
+        if p.exists() and p.is_dir() and repo_path is None:
+            repo_path = p
+        elif not target_table:
+            target_table = target
+
+    repo = _resolve_repo(repo_path, repository)
+    if not _ensure_indexed(repo):
+        raise typer.Exit(code=1)
+
+    indexer = _indexer(repo)
+    with indexer.session() as con:
+        if target_table:
+            res = get_db_table(con, repo, table=target_table)
+        else:
+            res = get_db_schema(con, repo, dialect=dialect, schema=schema_name)
+
+    if json_output:
+        cli_echo(json.dumps(res, indent=2), json_mode=True)
+    else:
+        if target_table:
+            tbl_info = res.get("table") or {}
+            cols = res.get("columns", [])
+            cli_echo(f"Table: {target_table} ({tbl_info.get('dialect', 'sql')}) [{tbl_info.get('framework', 'db')}]")
+            cli_echo(f"Location: {tbl_info.get('file')}:{tbl_info.get('start_line')}")
+            if res.get("models"):
+                cli_echo(f"ORM Models: {', '.join(m['name'] for m in res['models'])}")
+            cli_echo(f"\nColumns ({len(cols)}):")
+            for c in cols:
+                pk = " [PK]" if c.get("is_primary_key") else ""
+                fk = f" [FK -> {c.get('target_table')}.{c.get('target_column')}]" if c.get("is_foreign_key") else ""
+                cli_echo(f"  • {c.get('column_name')}: {c.get('data_type')}{pk}{fk}")
+            if res.get("readers"):
+                cli_echo(f"\nReaders ({len(res['readers'])}):")
+                for r in res["readers"][:5]:
+                    cli_echo(f"  • {r.get('symbol')} ({r.get('file')}:{r.get('line')})")
+            if res.get("writers"):
+                cli_echo(f"\nWriters ({len(res['writers'])}):")
+                for w in res["writers"][:5]:
+                    cli_echo(f"  • {w.get('symbol')} ({w.get('file')}:{w.get('line')})")
+        else:
+            cli_echo("Database Schema Overview:")
+            cli_echo(f"  Tables:        {len(res.get('tables', []))}")
+            cli_echo(f"  Columns:       {len(res.get('columns', []))}")
+            cli_echo(f"  ORM Models:    {len(res.get('models', []))}")
+            cli_echo(f"  Relationships: {len(res.get('relationships', []))}")
+            cli_echo(f"  Migrations:    {len(res.get('migrations', []))}")
+            if res.get("tables"):
+                cli_echo("\nTables:")
+                for t in res["tables"][:15]:
+                    cli_echo(f"  • {t.get('table_name')} ({t.get('dialect', 'sql')})")
+                if len(res["tables"]) > 15:
+                    cli_echo(f"  ... and {len(res['tables']) - 15} more tables")
+
+
+@db_app.command("impact")
+def db_impact_cli_cmd(
+    target: Annotated[str, typer.Argument(help="Table name or Table.column to analyze downstream impact for")],
+    column: Annotated[str | None, typer.Option("--column", "-c", help="Column name if target is a table")] = None,
+    path: Annotated[Path | None, typer.Option("--path", "-p", help="Repository path")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON result")] = False,
+) -> None:
+    """Analyze bidirectional downstream impact of table/column modifications on code, routes, and tests."""
+    from codegraph.database.interrogation import get_db_impact
+
+    target_table = target
+    target_column = column
+    if "." in target and not target_column:
+        parts = target.split(".", 1)
+        target_table = parts[0]
+        target_column = parts[1]
+
+    repo = _resolve_repo(path, repository)
+    if not _ensure_indexed(repo):
+        raise typer.Exit(code=1)
+
+    indexer = _indexer(repo)
+    with indexer.session() as con:
+        res = get_db_impact(con, repo, table=target_table, column=target_column)
+
+    if json_output:
+        cli_echo(json.dumps(res, indent=2), json_mode=True)
+    else:
+        cli_echo(f"Database Impact Analysis for {target}:")
+        cli_echo(f"  Direct Readers:    {len(res.get('readers', []))}")
+        cli_echo(f"  Direct Writers:    {len(res.get('writers', []))}")
+        cli_echo(f"  Reachable Routes:  {len(res.get('routes', []))}")
+        cli_echo(f"  Impacted Tests:    {len(res.get('tests', []))}")
+        if res.get("routes"):
+            cli_echo("\nReachable Routes:")
+            for r in res["routes"]:
+                cli_echo(f"  • [{r.get('http_method')}] {r.get('route_path')} -> {r.get('handler')}")
+        if res.get("tests"):
+            cli_echo("\nImpacted Tests:")
+            for t in res["tests"]:
+                cli_echo(f"  • {t.get('test_symbol')} ({t.get('file')}:{t.get('line')})")
+
+
+@db_app.command("drift")
+def db_drift_cli_cmd(
+    route: Annotated[str | None, typer.Option("--route", help="Route path or endpoint to check for schema drift")] = None,
+    handler: Annotated[str | None, typer.Option("--handler", "-h", help="Handler symbol to check for schema drift")] = None,
+    table: Annotated[str | None, typer.Option("--table", "-t", help="Target table name (optional, inferred from mutation lineage)")] = None,
+    schema: Annotated[str | None, typer.Option("--schema", "-s", help="Schema class name (optional, inferred from handler signature)")] = None,
+    path: Annotated[Path | None, typer.Argument(help="Repository path (default: current directory)")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output raw JSON array")] = False,
+) -> None:
+    """Detect Pydantic / Form validation drift against destination database table columns."""
+    schema_drift(route=route, handler=handler, table=table, schema=schema, path=path, repository=repository, json_output=json_output)
+
+
+@db_app.command("ingest")
+def db_ingest_cli_cmd(
+    source: Annotated[Path, typer.Argument(help="Path to OpenTelemetry JSON/JSONL, SQL query log, or trace file")],
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    format: Annotated[str, typer.Option("--format", "-f", help="Trace format: auto | otel | json | sql_log")] = "auto",
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON result")] = False,
+) -> None:
+    """Ingest runtime database query logs or OpenTelemetry traces into repository index."""
+    ingest_cli_cmd(source=source, repository=repository, format=format, json_output=json_output)
+
+
 
 if __name__ == "__main__":
     app()
+

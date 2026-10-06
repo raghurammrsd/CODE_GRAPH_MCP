@@ -3847,7 +3847,7 @@ codegraph status .</pre>
         </section>
 
         <h3 class="editorial-h3" id="tools-core" style="margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border);">
-          Core Symbol Inspection &amp; Context Tools (24)
+          Core Symbol Inspection &amp; Context Tools (31)
         </h3>
         <p class="editorial-p">Canonical symbol resolution, bounded context packets, file slices, and evidence verification.</p>
 
@@ -4497,7 +4497,7 @@ codegraph status .</pre>
             <span class="tool-heading-code">get_context</span>
             <span class="cat-tag-pill core">CORE</span>
           </div>
-          <p class="editorial-p">Compile a token-bounded, coverage-optimized ContextPacket containing verified symbols, compressed relationships, routes, DI providers, packages, and related tests. Primary input: `query` (natural-language question, symbol, or task description; `task` is also supported as a compatibility alias for string or structured TaskSpec dict). Budget controls: `max_tokens` (default 4000, hard cap 20000), `max_files` (default 15, hard cap 30), `max_lines` (default 500, hard cap 1500). Preserves UNKNOWN, POSSIBLE, and AMBIGUOUS states explicitly. Does not return full raw files; use targeted get_file or read_file only if exact omitted lines are needed afterward.</p>
+          <p class="editorial-p">Compile a token-bounded, coverage-optimized ContextPacket containing verified symbols, compressed relationships, routes, DI providers, packages, and related tests. Primary input: `query` (natural-language question, symbol, or task description; `task` is also supported as a compatibility alias for string or structured TaskSpec dict). Budget controls: `max_tokens` (default 4000, hard cap 20000), `max_files` (default 25, hard cap 40), `max_lines` (default 500, hard cap 1500). Preserves UNKNOWN, POSSIBLE, and AMBIGUOUS states explicitly. Does not return full raw files; use targeted get_file or read_file only if exact omitted lines are needed afterward.</p>
           <div class="tool-prob-note">
             <strong>Resolves:</strong> Investigating a bug, route flow, DI chain, or multi-file feature in one bounded call
           </div>
@@ -4546,7 +4546,7 @@ codegraph status .</pre>
                       <td class="code-font">max_files</td>
                       <td class="type-font">integer</td>
                       <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">15</td>
+                      <td class="type-font">25</td>
                       <td>Max Files</td>
                     </tr>
 
@@ -4562,7 +4562,7 @@ codegraph status .</pre>
                       <td class="code-font">top_k</td>
                       <td class="type-font">integer</td>
                       <td><span class="tag-opt">Optional</span></td>
-                      <td class="type-font">15</td>
+                      <td class="type-font">25</td>
                       <td>Top K</td>
                     </tr>
 
@@ -5763,8 +5763,448 @@ codegraph status .</pre>
           </div>
         </section>
 
+        <!-- Tool Entry: safe_rename -->
+        <section class="tool-doc-card" id="tool-safe_rename">
+          <div class="tool-doc-head-row">
+            <span class="tool-heading-code">safe_rename</span>
+            <span class="cat-tag-pill core">CORE</span>
+          </div>
+          <p class="editorial-p">Perform a deterministic, syntax-validated, transaction-safe AST rename of a symbol across the repository. Use when renaming a function, method, or class across multiple files safely with in-memory preview diffs. Does not prove runtime equivalence beyond AST syntax validation and statically verified references.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Renaming a function, method, or class safely across multiple files without breaking references
+          </div>
+
+          <div class="tool-mini-title">Parameters Schema</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                
+                    <tr>
+                      <td class="code-font">target</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-req">Required</span></td>
+                      <td class="type-font">-</td>
+                      <td>Target</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">new_name</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-req">Required</span></td>
+                      <td class="type-font">-</td>
+                      <td>New Name</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">dry_run</td>
+                      <td class="type-font">boolean</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">True</td>
+                      <td>Dry Run</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">force_uncertain</td>
+                      <td class="type-font">boolean</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">False</td>
+                      <td>Force Uncertain</td>
+                    </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Client Invocation</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>MCP Client / Agent Call</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
+            </div>
+            <pre class="code-text-pre">safe_rename(target=&quot;AuthService&quot;, new_name=&quot;AuthenticationService&quot;, dry_run=True)</pre>
+          </div>
+
+          <div class="tool-mini-title">Return Model: <code>RefactorResult</code></div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">status</td><td class="type-font">string</td><td>Status</td></tr><tr><td class="code-font">target_symbol</td><td class="type-font">string</td><td>Target Symbol</td></tr><tr><td class="code-font">new_name</td><td class="type-font">string</td><td>New Name</td></tr><tr><td class="code-font">risk</td><td class="type-font">string</td><td>Risk</td></tr><tr><td class="code-font">files_changed</td><td class="type-font">array</td><td>Files Changed</td></tr><tr><td class="code-font">spans_count</td><td class="type-font">integer</td><td>Spans Count</td></tr><tr><td class="code-font">diffs</td><td class="type-font">string</td><td>Diffs</td></tr><tr><td class="code-font">rollback_id</td><td class="type-font">string</td><td>Rollback Id</td></tr><tr><td class="code-font">errors</td><td class="type-font">string</td><td>Errors</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ev-boundary-row">
+            <div class="ev-note-card">
+              <strong>Evidence Guarantee</strong>
+              Token-exact replacement with in-memory ast.parse syntax validation and atomic rollback manifest.
+            </div>
+            <div class="ev-note-card">
+              <strong>Epistemic Boundary</strong>
+              Does not prove semantic preservation beyond AST syntax validation and statically verified references.
+            </div>
+          </div>
+        </section>
+
+        <!-- Tool Entry: rollback_refactor -->
+        <section class="tool-doc-card" id="tool-rollback_refactor">
+          <div class="tool-doc-head-row">
+            <span class="tool-heading-code">rollback_refactor</span>
+            <span class="cat-tag-pill core">CORE</span>
+          </div>
+          <p class="editorial-p">Atomically rollback an applied refactoring transaction using its rollback manifest ID. Use when reverting an applied refactoring transaction to restore original source files cleanly. Does not restore files if they were modified externally after refactoring was applied.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Undoing an applied refactoring transaction cleanly to restore original code bytes
+          </div>
+
+          <div class="tool-mini-title">Parameters Schema</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                
+                    <tr>
+                      <td class="code-font">transaction_id</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-req">Required</span></td>
+                      <td class="type-font">-</td>
+                      <td>Transaction Id</td>
+                    </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Client Invocation</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>MCP Client / Agent Call</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
+            </div>
+            <pre class="code-text-pre">rollback_refactor(transaction_id=&quot;rf_12345&quot;)</pre>
+          </div>
+
+          <div class="tool-mini-title">Return Model: <code>RefactorResult</code></div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">status</td><td class="type-font">string</td><td>Status</td></tr><tr><td class="code-font">target_symbol</td><td class="type-font">string</td><td>Target Symbol</td></tr><tr><td class="code-font">new_name</td><td class="type-font">string</td><td>New Name</td></tr><tr><td class="code-font">files_changed</td><td class="type-font">array</td><td>Files Changed</td></tr><tr><td class="code-font">rollback_id</td><td class="type-font">string</td><td>Rollback Id</td></tr><tr><td class="code-font">errors</td><td class="type-font">string</td><td>Errors</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ev-boundary-row">
+            <div class="ev-note-card">
+              <strong>Evidence Guarantee</strong>
+              Precondition SHA-256 validation and atomic file replacement with os.replace.
+            </div>
+            <div class="ev-note-card">
+              <strong>Epistemic Boundary</strong>
+              Cannot rollback if files were modified externally after refactoring was applied.
+            </div>
+          </div>
+        </section>
+
+        <!-- Tool Entry: get_live_services -->
+        <section class="tool-doc-card" id="tool-get_live_services">
+          <div class="tool-doc-head-row">
+            <span class="tool-heading-code">get_live_services</span>
+            <span class="cat-tag-pill core">CORE</span>
+          </div>
+          <p class="editorial-p">Detect and attribute active localhost services, ports, PIDs, frameworks, and workspace sub-packages with zero idle CPU. Use when diagnosing running dev servers or multi-service architectures. Does not prove live HTTP response payloads or application layer health.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Identifying running backend and frontend dev servers
+          </div>
+
+          <div class="tool-mini-title">Parameters Schema</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5" style="color:var(--text-dim); font-style:italic;">No arguments required.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Client Invocation</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>MCP Client / Agent Call</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
+            </div>
+            <pre class="code-text-pre">get_live_services()</pre>
+          </div>
+
+          <div class="tool-mini-title">Return Model: <code>dict[str, Any]</code></div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">live_services</td><td class="type-font">string</td><td>Live Services</td></tr><tr><td class="code-font">configured_services</td><td class="type-font">string</td><td>Configured Services</td></tr><tr><td class="code-font">count</td><td class="type-font">integer</td><td>Count</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ev-boundary-row">
+            <div class="ev-note-card">
+              <strong>Evidence Guarantee</strong>
+              Kernel socket table inspection and static configuration discovery with 5-second TTL cache.
+            </div>
+            <div class="ev-note-card">
+              <strong>Epistemic Boundary</strong>
+              Does not prove live HTTP response payloads or application layer health.
+            </div>
+          </div>
+        </section>
+
+        <!-- Tool Entry: check_db_drift -->
+        <section class="tool-doc-card" id="tool-check_db_drift">
+          <div class="tool-doc-head-row">
+            <span class="tool-heading-code">check_db_drift</span>
+            <span class="cat-tag-pill core">CORE</span>
+          </div>
+          <p class="editorial-p">Detect database schema drift between migration files, live database state, and code ORM models with zero idle CPU. Flags unmapped tables, missing columns, and migration version state. Use when verifying whether database migrations are up to date with code models. Does not execute SQL data assertions or validate column constraints against live row data.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Verifying whether database migrations are up to date with code models
+          </div>
+
+          <div class="tool-mini-title">Parameters Schema</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5" style="color:var(--text-dim); font-style:italic;">No arguments required.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Client Invocation</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>MCP Client / Agent Call</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
+            </div>
+            <pre class="code-text-pre">check_db_drift()</pre>
+          </div>
+
+          <div class="tool-mini-title">Return Model: <code>dict[str, Any]</code></div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">status</td><td class="type-font">string</td><td>Status</td></tr><tr><td class="code-font">unmapped_tables</td><td class="type-font">array</td><td>Unmapped Tables</td></tr><tr><td class="code-font">missing_columns</td><td class="type-font">array</td><td>Missing Columns</td></tr><tr><td class="code-font">migration_version</td><td class="type-font">string</td><td>Migration Version</td></tr><tr><td class="code-font">is_drifted</td><td class="type-font">string</td><td>Is Drifted</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ev-boundary-row">
+            <div class="ev-note-card">
+              <strong>Evidence Guarantee</strong>
+              Comparison of SQLite/PostgreSQL schemas and migration folder state with 5-second TTL cache.
+            </div>
+            <div class="ev-note-card">
+              <strong>Epistemic Boundary</strong>
+              Does not execute SQL data assertions or validate column constraints against live row data.
+            </div>
+          </div>
+        </section>
+
+        <!-- Tool Entry: get_distributed_trace -->
+        <section class="tool-doc-card" id="tool-get_distributed_trace">
+          <div class="tool-doc-head-row">
+            <span class="tool-heading-code">get_distributed_trace</span>
+            <span class="cat-tag-pill core">CORE</span>
+          </div>
+          <p class="editorial-p">Stitch and reconstruct multi-service distributed execution trees across frontend, backend, and database boundaries for a specific W3C trace ID. Use when tracing cross-service requests or debugging multi-service latency bottlenecks. Does not capture unobserved code paths or untraced sidecar requests.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Tracing an end-to-end user request from UI click to backend SQL execution
+          </div>
+
+          <div class="tool-mini-title">Parameters Schema</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                
+                    <tr>
+                      <td class="code-font">trace_id</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-req">Required</span></td>
+                      <td class="type-font">-</td>
+                      <td>Trace Id</td>
+                    </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Client Invocation</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>MCP Client / Agent Call</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
+            </div>
+            <pre class="code-text-pre">get_distributed_trace(trace_id=&quot;4bf92f3577b34da6a3ce929d0e0e4736&quot;)</pre>
+          </div>
+
+          <div class="tool-mini-title">Return Model: <code>dict[str, Any]</code></div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">trace_id</td><td class="type-font">string</td><td>Trace Id</td></tr><tr><td class="code-font">status</td><td class="type-font">string</td><td>Status</td></tr><tr><td class="code-font">root_span</td><td class="type-font">string</td><td>Root Span</td></tr><tr><td class="code-font">total_spans</td><td class="type-font">string</td><td>Total Spans</td></tr><tr><td class="code-font">services_involved</td><td class="type-font">string</td><td>Services Involved</td></tr><tr><td class="code-font">timeline</td><td class="type-font">integer</td><td>Timeline</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ev-boundary-row">
+            <div class="ev-note-card">
+              <strong>Evidence Guarantee</strong>
+              W3C traceparent stitching across multi-service runtime observations.
+            </div>
+            <div class="ev-note-card">
+              <strong>Epistemic Boundary</strong>
+              Does not capture unobserved code paths or untraced sidecar requests.
+            </div>
+          </div>
+        </section>
+
+        <!-- Tool Entry: check_api_drift -->
+        <section class="tool-doc-card" id="tool-check_api_drift">
+          <div class="tool-doc-head-row">
+            <span class="tool-heading-code">check_api_drift</span>
+            <span class="cat-tag-pill core">CORE</span>
+          </div>
+          <p class="editorial-p">Detect client-server API contract drift between frontend fetch or axios calls and backend route registrations. Flags orphaned client endpoints (404s) and HTTP method mismatches (405s). Use when validating frontend API calls against backend endpoints before deployment. Does not execute live HTTP requests or validate dynamic URL strings constructed via runtime interpolation.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Finding broken API endpoint paths in frontend client code
+          </div>
+
+          <div class="tool-mini-title">Parameters Schema</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5" style="color:var(--text-dim); font-style:italic;">No arguments required.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Client Invocation</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>MCP Client / Agent Call</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
+            </div>
+            <pre class="code-text-pre">check_api_drift()</pre>
+          </div>
+
+          <div class="tool-mini-title">Return Model: <code>dict[str, Any]</code></div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">status</td><td class="type-font">string</td><td>Status</td></tr><tr><td class="code-font">orphaned_client_routes</td><td class="type-font">array</td><td>Orphaned Client Routes</td></tr><tr><td class="code-font">method_mismatches</td><td class="type-font">array</td><td>Method Mismatches</td></tr><tr><td class="code-font">verified_contracts_count</td><td class="type-font">integer</td><td>Verified Contracts Count</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ev-boundary-row">
+            <div class="ev-note-card">
+              <strong>Evidence Guarantee</strong>
+              Cross-layer AST static verification comparing frontend fetch calls with backend route trees.
+            </div>
+            <div class="ev-note-card">
+              <strong>Epistemic Boundary</strong>
+              Does not execute live HTTP requests or validate dynamic URL concatenation at runtime.
+            </div>
+          </div>
+        </section>
+
+        <!-- Tool Entry: get_monorepo_packages -->
+        <section class="tool-doc-card" id="tool-get_monorepo_packages">
+          <div class="tool-doc-head-row">
+            <span class="tool-heading-code">get_monorepo_packages</span>
+            <span class="cat-tag-pill core">CORE</span>
+          </div>
+          <p class="editorial-p">Catalog monorepo workspace packages, tools (pnpm, Turborepo, npm/yarn workspaces), entry points, and inter-package dependencies. Use when mapping multi-package repository structure and package boundaries. Does not prove build system execution order or runtime dependency loading.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Mapping multi-package repository structure and package boundaries
+          </div>
+
+          <div class="tool-mini-title">Parameters Schema</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5" style="color:var(--text-dim); font-style:italic;">No arguments required.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Client Invocation</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>MCP Client / Agent Call</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
+            </div>
+            <pre class="code-text-pre">get_monorepo_packages()</pre>
+          </div>
+
+          <div class="tool-mini-title">Return Model: <code>dict[str, Any]</code></div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">tool</td><td class="type-font">string</td><td>Tool</td></tr><tr><td class="code-font">packages</td><td class="type-font">string</td><td>Packages</td></tr><tr><td class="code-font">dependency_graph</td><td class="type-font">string</td><td>Dependency Graph</td></tr><tr><td class="code-font">root_path</td><td class="type-font">string</td><td>Root Path</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ev-boundary-row">
+            <div class="ev-note-card">
+              <strong>Evidence Guarantee</strong>
+              Deterministic workspace manifest analysis across pnpm, yarn, npm, Turborepo, Cargo, and Poetry.
+            </div>
+            <div class="ev-note-card">
+              <strong>Epistemic Boundary</strong>
+              Does not prove build system execution order or runtime dependency loading.
+            </div>
+          </div>
+        </section>
+
         <h3 class="editorial-h3" id="tools-routes" style="margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border);">
-          Framework Route Discovery Tools (2)
+          Framework Route Discovery Tools (3)
         </h3>
         <p class="editorial-p">Framework-aware HTTP route mapping for FastAPI, Flask, Django, and Express.</p>
 
@@ -5924,6 +6364,94 @@ codegraph status .</pre>
             <div class="ev-note-card">
               <strong>Epistemic Boundary</strong>
               Does not prove external API gateway or reverse-proxy rewrite rules outside the repository.
+            </div>
+          </div>
+        </section>
+
+        <!-- Tool Entry: check_route_schema_drift -->
+        <section class="tool-doc-card" id="tool-check_route_schema_drift">
+          <div class="tool-doc-head-row">
+            <span class="tool-heading-code">check_route_schema_drift</span>
+            <span class="cat-tag-pill routes">ROUTES</span>
+          </div>
+          <p class="editorial-p">Use when detecting schema validation drift between a route/handler input schema (Pydantic BaseModel, Django Form, DRF Serializer) and destination database table columns. Flags MISSING_REQUIRED_COLUMN, NULLABILITY_MISMATCH, TYPE_INCOMPATIBILITY, LENGTH_CONSTRAINT_DRIFT, and UNUSED_SCHEMA_FIELD. Does not execute live requests.</p>
+          <div class="tool-prob-note">
+            <strong>Resolves:</strong> Validating route request payload models against destination database columns
+          </div>
+
+          <div class="tool-mini-title">Parameters Schema</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Status</th><th>Default</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                
+                    <tr>
+                      <td class="code-font">route</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font"></td>
+                      <td>Route</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">handler</td>
+                      <td class="type-font">string</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font"></td>
+                      <td>Handler</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">table</td>
+                      <td class="type-font">any</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">None</td>
+                      <td>Table</td>
+                    </tr>
+
+                    <tr>
+                      <td class="code-font">schema</td>
+                      <td class="type-font">any</td>
+                      <td><span class="tag-opt">Optional</span></td>
+                      <td class="type-font">None</td>
+                      <td>Schema</td>
+                    </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Client Invocation</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>MCP Client / Agent Call</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy Call</button>
+            </div>
+            <pre class="code-text-pre">check_route_schema_drift(route=&quot;/api/v1/orders/checkout&quot;)</pre>
+          </div>
+
+          <div class="tool-mini-title">Return Model: <code>dict[str, Any]</code></div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">status</td><td class="type-font">string</td><td>Status</td></tr><tr><td class="code-font">route_or_handler</td><td class="type-font">string</td><td>Route Or Handler</td></tr><tr><td class="code-font">target_table</td><td class="type-font">string</td><td>Target Table</td></tr><tr><td class="code-font">schema_name</td><td class="type-font">string</td><td>Schema Name</td></tr><tr><td class="code-font">drift_count</td><td class="type-font">integer</td><td>Drift Count</td></tr><tr><td class="code-font">critical_count</td><td class="type-font">integer</td><td>Critical Count</td></tr><tr><td class="code-font">warning_count</td><td class="type-font">integer</td><td>Warning Count</td></tr><tr><td class="code-font">info_count</td><td class="type-font">integer</td><td>Info Count</td></tr><tr><td class="code-font">issues</td><td class="type-font">string</td><td>Issues</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ev-boundary-row">
+            <div class="ev-note-card">
+              <strong>Evidence Guarantee</strong>
+              Deterministic AST and database schema entity comparison.
+            </div>
+            <div class="ev-note-card">
+              <strong>Epistemic Boundary</strong>
+              Does not execute live HTTP requests or live SQL transactions.
             </div>
           </div>
         </section>
@@ -7120,6 +7648,14 @@ Working Tree:   0 modified, 0 untracked</pre>
       { title: "check_context_freshness", sub: "MCP Tool &bull; GIT &bull; Validate whether a previously compiled context packet o...", url: "#tool-check_context_freshness" },
       { title: "trace_symbol_history", sub: "MCP Tool &bull; GIT &bull; Trace deterministic symbol evolution across Git history...", url: "#tool-trace_symbol_history" },
       { title: "detect_semantic_conflicts", sub: "MCP Tool &bull; CORE &bull; Detect semantic and contract conflicts between Git bran...", url: "#tool-detect_semantic_conflicts" },
+      { title: "safe_rename", sub: "MCP Tool &bull; CORE &bull; Perform a deterministic, syntax-validated, transaction-...", url: "#tool-safe_rename" },
+      { title: "rollback_refactor", sub: "MCP Tool &bull; CORE &bull; Atomically rollback an applied refactoring transaction ...", url: "#tool-rollback_refactor" },
+      { title: "get_live_services", sub: "MCP Tool &bull; CORE &bull; Detect and attribute active localhost services, ports, ...", url: "#tool-get_live_services" },
+      { title: "check_db_drift", sub: "MCP Tool &bull; CORE &bull; Detect database schema drift between migration files, l...", url: "#tool-check_db_drift" },
+      { title: "check_route_schema_drift", sub: "MCP Tool &bull; ROUTES &bull; Use when detecting schema validation drift between a ro...", url: "#tool-check_route_schema_drift" },
+      { title: "get_distributed_trace", sub: "MCP Tool &bull; CORE &bull; Stitch and reconstruct multi-service distributed execut...", url: "#tool-get_distributed_trace" },
+      { title: "check_api_drift", sub: "MCP Tool &bull; CORE &bull; Detect client-server API contract drift between fronten...", url: "#tool-check_api_drift" },
+      { title: "get_monorepo_packages", sub: "MCP Tool &bull; CORE &bull; Catalog monorepo workspace packages, tools (pnpm, Turbo...", url: "#tool-get_monorepo_packages" },
       { title: "codegraph init [PATH]", sub: "CLI Command &bull; Initialize repository indexing and configuration....", url: "#cli-codegraph-init-PATH" },
       { title: "codegraph index [PATH]", sub: "CLI Command &bull; Perform incremental AST & relationship indexing with 16...", url: "#cli-codegraph-index-PATH" },
       { title: "codegraph status [PATH]", sub: "CLI Command &bull; Inspect index freshness, file counts, and resource cons...", url: "#cli-codegraph-status-PATH" },

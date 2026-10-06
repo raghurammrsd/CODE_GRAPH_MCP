@@ -920,3 +920,6 @@ def detect_workspace(
         unresolved_dependencies=unresolved_dependencies,
         ambiguous_packages=ambiguous_packages,
     )
+
+
+discover_workspace = detect_workspace

@@ -17,21 +17,36 @@ from typing import Any, TextIO
 
 import typer
 
-_PROBE_GLYPHS = "✓✗⚠↻•→↓─—–"
+_PROBE_GLYPHS = "✓✗⚠↻•→↓─—–├──└──│📄📞🌐🧪💾⚠️✅❌"
 
 # Ordered replacements so multi-char patterns (e.g. "(•)") are replaced before single chars ("•")
 _UNICODE_TO_ASCII_MAP: tuple[tuple[str, str], ...] = (
     ("(•)", "(*)"),
+    ("├── ", "|-- "),
+    ("└── ", "\\-- "),
+    ("├──", "|--"),
+    ("└──", "\\--"),
+    ("├─", "|-"),
+    ("└─", "\\-"),
+    ("│", "|"),
+    ("─", "-"),
     ("✓", "[OK]"),
     ("✗", "[ERROR]"),
     ("⚠", "[WARN]"),
     ("↻", "[REPAIRED]"),
+    ("⚠️", "[WARN]"),
+    ("✅", "[OK]"),
+    ("❌", "[ERROR]"),
+    ("📄", "[FILE]"),
+    ("📞", "[CALLER]"),
+    ("🌐", "[ROUTE]"),
+    ("🧪", "[TEST]"),
+    ("💾", "[DB]"),
     ("•", "*"),
     ("→", "->"),
     ("↓", "v"),
     ("—", "--"),
     ("–", "-"),
-    ("─", "-"),
 )
 
 

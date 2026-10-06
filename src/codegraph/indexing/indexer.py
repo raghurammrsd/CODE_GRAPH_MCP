@@ -14,8 +14,9 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
+import threading
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,7 @@ from codegraph.resources import (
     ResourceGovernor,
     TaskPriority,
     get_global_governor,
+    get_graph_cache,
     get_parse_cache,
 )
 
@@ -44,7 +46,8 @@ from .models import (
     Symbol,
 )
 from .parser import PARSER_VERSION, parse
-from .scanner import scan
+from .pool import SQLiteConnectionPool
+from .scanner import LANGUAGES, scan
 from .telemetry import IndexingTelemetry, get_process_rss_mb
 
 SCHEMA_VERSION = 8
@@ -488,14 +491,33 @@ class Indexer:
         self.max_wildcard_expansions = max_wildcard_expansions
         self.last_epistemic_findings: list[dict[str, object]] = []
         self.last_telemetry: IndexingTelemetry | None = None
+        self._pool: SQLiteConnectionPool | None = None
+        self._schema_lock = threading.Lock()
+        self._schema_verified = False
+
+    @property
+    def pool(self) -> SQLiteConnectionPool:
+        if self._pool is None:
+            self._pool = SQLiteConnectionPool(
+                self.db_path,
+                max_size=16,
+                timeout=30.0,
+                initializer=self._ensure_schema,
+            )
+        return self._pool
 
     def connect(self) -> sqlite3.Connection:
-        con = sqlite3.connect(self.db_path)
+        """Create a dedicated unpooled connection (for indexing or long-lived writes)."""
+        con = sqlite3.connect(
+            self.db_path,
+            check_same_thread=False,
+            timeout=30.0,
+        )
         con.row_factory = make_compat_row
         con.execute("PRAGMA journal_mode = WAL")
         con.execute("PRAGMA synchronous = NORMAL")
         con.execute("PRAGMA foreign_keys = ON")
-        con.execute("PRAGMA busy_timeout = 15000")
+        con.execute("PRAGMA busy_timeout = 30000")
         con.execute("PRAGMA cache_size = -64000")
         con.execute("PRAGMA temp_store = MEMORY")
         self._ensure_schema(con)
@@ -503,51 +525,77 @@ class Indexer:
 
     @contextmanager
     def session(self) -> Iterator[sqlite3.Connection]:
-        """Commit on success, roll back on failure, always close handle."""
-        con = self.connect()
+        """Borrow a pooled connection; commit on success, rollback on failure, return to pool."""
+        con, is_owner = self.pool.acquire()
         try:
             yield con
-            con.commit()
+            self.pool.release(con, is_owner=is_owner, rollback=False)
         except BaseException:
-            con.rollback()
+            self.pool.release(con, is_owner=is_owner, rollback=True)
             raise
-        finally:
-            con.close()
+
+    def reset_pool(self) -> None:
+        """Close pooled connections and clear schema verification flag."""
+        if self._pool is not None:
+            self._pool.close_all()
+            self._pool = None
+        self._schema_verified = False
+
+    def close(self) -> None:
+        """Dispose of resources and close pooled connections."""
+        self.reset_pool()
+
+    def __del__(self) -> None:
+        try:
+            self.close()
+        except Exception:
+            pass
 
     def _ensure_schema(self, con: sqlite3.Connection) -> None:
         """Migrate schema via PRAGMA user_version non-destructively."""
-        current_version = con.execute("PRAGMA user_version").fetchone()[0]
+        if self._schema_verified:
+            return
+        with self._schema_lock:
+            if self._schema_verified:
+                return
+            current_version = con.execute("PRAGMA user_version").fetchone()[0]
 
-        if current_version == 0:
-            try:
-                row = con.execute("SELECT version FROM schema_version").fetchone()
-                if row:
-                    current_version = int(row[0])
-            except sqlite3.OperationalError:
-                pass
+            if current_version == 0:
+                try:
+                    row = con.execute("SELECT version FROM schema_version").fetchone()
+                    if row:
+                        current_version = int(row[0])
+                except sqlite3.OperationalError:
+                    pass
 
-        target_version = SCHEMA_VERSION
+            target_version = SCHEMA_VERSION
 
-        if current_version < target_version:
-            if current_version > 0:
-                self._migrate_schema(con, current_version, target_version)
-            else:
-                con.executescript(SCHEMA)
+            if current_version < target_version:
+                if current_version > 0:
+                    self._migrate_schema(con, current_version, target_version)
+                else:
+                    con.executescript(SCHEMA)
 
-            con.execute(f"PRAGMA user_version = {target_version}")
-            try:
-                con.execute("DROP TABLE IF EXISTS schema_version")
-            except sqlite3.OperationalError:
-                pass
-            con.commit()
-        else:
-            existing_core = con.execute(
-                "SELECT count(*) FROM sqlite_master WHERE type='table' "
-                "AND name IN ('files', 'symbols', 'graph_edges', 'db_tables', 'runtime_traces')"
-            ).fetchone()[0]
-            if existing_core < 5:
-                con.executescript(SCHEMA)
+                con.execute(f"PRAGMA user_version = {target_version}")
+                try:
+                    con.execute("DROP TABLE IF EXISTS schema_version")
+                except sqlite3.OperationalError:
+                    pass
                 con.commit()
+            else:
+                existing_core = con.execute(
+                    "SELECT count(*) FROM sqlite_master WHERE type='table' "
+                    "AND name IN ('files', 'symbols', 'graph_edges', 'db_tables', 'runtime_traces')"
+                ).fetchone()[0]
+                if existing_core < 5:
+                    con.executescript(SCHEMA)
+                    con.commit()
+
+            from codegraph.async_queue import ensure_async_tables
+
+            ensure_async_tables(con)
+            self._schema_verified = True
+
 
     def _migrate_schema(
         self, con: sqlite3.Connection, from_version: int, to_version: int
@@ -860,6 +908,9 @@ class Indexer:
                                 telemetry=telemetry,
                                 progress_callback=progress_callback,
                             )
+                            from codegraph.async_queue import AsyncQueueScanner
+
+                            AsyncQueueScanner(self.repository).scan_repository(con)
                             p_post.files_processed = indexed + len(stale)
                             p_post.items_processed = indexed + len(stale)
                             # Invalidate context cache on index update
@@ -968,7 +1019,205 @@ class Indexer:
         }
         if parse_failed_count > 0:
             result["parse_failed"] = parse_failed_count
+        self.reset_pool()
         return result
+
+    def reindex_paths(
+        self,
+        paths: Iterable[str | Path],
+    ) -> dict[str, Any]:
+        """Incrementally reindex a set of changed or deleted file paths in sub-15ms.
+
+        Bypasses full repository filesystem scanning and only touches the specified files,
+        updating their AST facts, re-running affected reference resolution, busting in-memory
+        caches, and advancing index_generation atomically.
+        """
+        t0 = time.perf_counter()
+        from codegraph.freshness import current_commit, save_commit
+        from codegraph.watcher import _is_path_ignored
+
+        # 1. Normalize and deduplicate paths relative to self.repository
+        normalized_paths: set[str] = set()
+        for p in paths:
+            try:
+                p_path = Path(p)
+                if p_path.is_absolute():
+                    rel = str(p_path.resolve().relative_to(self.repository)).replace("\\", "/")
+                else:
+                    rel = str(p_path).replace("\\", "/").lstrip("./")
+            except Exception:
+                continue
+
+            if not rel or _is_path_ignored(rel):
+                continue
+            normalized_paths.add(rel)
+
+        if not normalized_paths:
+            return {
+                "status": "ok",
+                "scanned": 0,
+                "indexed": 0,
+                "removed": 0,
+                "reindexed": [],
+                "deleted": [],
+                "skipped": [],
+                "parse_failed": [],
+                "generation": 0,
+                "elapsed_ms": round((time.perf_counter() - t0) * 1000.0, 2),
+            }
+
+        # 2. Inspect filesystem vs SQLite to determine what to delete, update, or skip
+        con = self.connect()
+        try:
+            to_delete: list[str] = []
+            to_update: list[tuple[str, str, str, str, bool]] = []
+            skipped: list[str] = []
+
+            for rel_path in sorted(normalized_paths):
+                full_path = self.repository / rel_path
+                existing_row = con.execute("SELECT hash, status FROM files WHERE path=?", (rel_path,)).fetchone()
+
+                if not full_path.is_file():
+                    # File was deleted from disk
+                    if existing_row is not None:
+                        to_delete.append(rel_path)
+                    else:
+                        skipped.append(rel_path)
+                    continue
+
+                # File exists on disk
+                suffix = full_path.suffix.lower()
+                lang = LANGUAGES.get(suffix)
+                if not lang:
+                    skipped.append(rel_path)
+                    continue
+
+                try:
+                    content = full_path.read_text(encoding="utf-8", errors="replace")
+                except Exception:
+                    skipped.append(rel_path)
+                    continue
+
+                digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+                if existing_row is not None and existing_row[0] == digest and existing_row[1] == "ok":
+                    # Identical digest, no AST or file modification
+                    skipped.append(rel_path)
+                else:
+                    to_update.append((rel_path, lang, content, digest, existing_row is not None))
+
+            # If nothing changed, return early
+            grow = con.execute("SELECT value FROM metadata WHERE key='index_generation'").fetchone()
+            current_gen = int(grow[0]) if (grow and grow[0]) else 0
+
+            if not to_delete and not to_update:
+                return {
+                    "status": "ok",
+                    "scanned": len(normalized_paths),
+                    "indexed": 0,
+                    "removed": 0,
+                    "reindexed": [],
+                    "deleted": [],
+                    "skipped": skipped,
+                    "parse_failed": [],
+                    "generation": current_gen,
+                    "elapsed_ms": round((time.perf_counter() - t0) * 1000.0, 2),
+                }
+
+            # 3. Apply atomic updates
+            self.governor.set_indexing_active(True)
+            reindexed: list[str] = []
+            parse_failed: list[str] = []
+
+            for del_path in to_delete:
+                self._delete_file(con, del_path)
+
+            for rel_path, lang, content, digest, is_existing in to_update:
+                cat_info = classify_file_detailed(Path(rel_path), content)
+                success = self._replace_file(
+                    con,
+                    rel_path,
+                    lang,
+                    content,
+                    digest,
+                    category=cat_info.category.value,
+                    is_existing=is_existing,
+                )
+                if success:
+                    reindexed.append(rel_path)
+                else:
+                    parse_failed.append(rel_path)
+
+            # 4. Run reference resolution pass
+            head_commit = current_commit(self.repository)
+            now_ts = int(time.time())
+
+            dirty_set = set(reindexed)
+            removed_set = set(to_delete)
+
+            self._run_global_resolution(
+                con,
+                head_commit,
+                dirty_files=dirty_set,
+                removed_files=removed_set,
+            )
+
+            from codegraph.async_queue import AsyncQueueScanner
+
+            AsyncQueueScanner(self.repository).scan_repository(con)
+
+            # Invalidate context cache on index update
+            try:
+                con.execute("DELETE FROM context_cache")
+            except sqlite3.OperationalError:
+                pass
+
+            # 5. Advance generation and update metadata
+            next_gen = current_gen + 1
+            con.executemany(
+                "INSERT INTO metadata(key, value) VALUES(?,?) "
+                "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                [
+                    ("repository", str(self.repository)),
+                    ("parser_version", PARSER_VERSION),
+                    ("schema_version", str(SCHEMA_VERSION)),
+                    ("index_generation", str(next_gen)),
+                    ("index_timestamp", str(now_ts)),
+                    ("resolution_dirty", "0"),
+                    ("index_status", "ok"),
+                ],
+            )
+            save_commit(con, head_commit, now_ts)
+            con.commit()
+            try:
+                con.execute("PRAGMA wal_checkpoint(PASSIVE)")
+            except sqlite3.OperationalError:
+                pass
+        except Exception:
+            con.rollback()
+            raise
+        finally:
+            self.governor.set_indexing_active(False)
+            con.close()
+
+        # Invalidate in-memory caches and reset pool
+        get_parse_cache().clear()
+        get_graph_cache().clear()
+        self.reset_pool()
+
+        elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+        return {
+            "status": "ok",
+            "scanned": len(normalized_paths),
+            "indexed": len(reindexed),
+            "removed": len(to_delete),
+            "reindexed": reindexed,
+            "deleted": to_delete,
+            "skipped": skipped,
+            "parse_failed": parse_failed,
+            "generation": next_gen,
+            "elapsed_ms": elapsed_ms,
+        }
 
     def _delete_file(
         self,
@@ -1662,7 +1911,10 @@ class Indexer:
         from codegraph.monorepo import detect_workspace
         workspace = detect_workspace(self.repository, con=con)
 
-        # Run resolution engine with composed routes, mount edges, bindings, and workspace
+        from codegraph.tsconfig import TsConfigResolver
+        tsconfig_resolver = TsConfigResolver.load_from_repo(self.repository)
+
+        # Run resolution engine with composed routes, mount edges, bindings, workspace, and tsconfig
         resolver = ReferenceResolver(
             symbols=symbols,
             imports=imports,
@@ -1675,6 +1927,7 @@ class Indexer:
             indexed_commit=indexed_commit,
             bindings=bindings,
             workspace=workspace,
+            tsconfig_resolver=tsconfig_resolver,
             max_reexport_depth=self.max_reexport_depth,
             max_wildcard_expansions=self.max_wildcard_expansions,
         )

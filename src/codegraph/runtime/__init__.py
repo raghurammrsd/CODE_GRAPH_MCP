@@ -23,6 +23,16 @@ __all__ = [
     "ReconciliationStatus",
     "RuntimeAggregatedEdge",
     "RuntimeEvent",
+    "ServiceEndpoint",
+    "discover_live_listening_ports",
+    "discover_static_configured_ports",
+    "resolve_port_to_service",
+    "SchemaDriftItem",
+    "SchemaDriftReport",
+    "detect_schema_drift",
+    "RuntimeCollectorDaemon",
+    "DistributedTraceReport",
+    "link_distributed_trace",
     "get_runtime_trace",
     "ingest_runtime_traces",
     "parse_json_runtime_events",
@@ -30,3 +40,12 @@ __all__ = [
     "parse_sql_query_logs",
     "reconcile_static_runtime",
 ]
+from .collector import RuntimeCollectorDaemon
+from .db_watcher import SchemaDriftItem, SchemaDriftReport, detect_schema_drift
+from .port_inspector import (
+    ServiceEndpoint,
+    discover_live_listening_ports,
+    discover_static_configured_ports,
+    resolve_port_to_service,
+)
+from .trace_linker import DistributedTraceReport, link_distributed_trace
