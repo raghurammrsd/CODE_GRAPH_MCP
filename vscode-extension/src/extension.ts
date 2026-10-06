@@ -224,10 +224,13 @@ class DatabaseTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   async getChildren(): Promise<vscode.TreeItem[]> {
     try {
       const data = await fetchJson(`http://127.0.0.1:${this.port}/api/status`);
-      const tables: TableItem[] = data.tables || [];
+      const tables: any[] = data.tables || [];
       return tables.map(t => {
-        const item = new vscode.TreeItem(t.table, vscode.TreeItemCollapsibleState.None);
-        item.description = `${t.framework} (${t.writers.length} writers, ${t.readers.length} readers)`;
+        const tableName = t.table || t.name || 'Table';
+        const item = new vscode.TreeItem(tableName, vscode.TreeItemCollapsibleState.None);
+        const writersCount = Array.isArray(t.writers) ? t.writers.length : 0;
+        const readersCount = Array.isArray(t.readers) ? t.readers.length : 0;
+        item.description = `${t.framework || 'Database'} (${writersCount} writers, ${readersCount} readers)`;
         return item;
       });
     } catch {

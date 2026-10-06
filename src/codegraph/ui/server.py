@@ -564,6 +564,13 @@ class CodeGraphUIRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b"Not Found")
 
+    def do_OPTIONS(self) -> None:
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "*")
+        self.end_headers()
+
     def _handle_api_drift(self) -> None:
         try:
             from codegraph.api_drift import detect_api_contract_drift
@@ -583,9 +590,17 @@ class CodeGraphUIRequestHandler(BaseHTTPRequestHandler):
                 grow = con.execute("SELECT value FROM metadata WHERE key='index_generation'").fetchone()
                 gen = int(grow[0]) if grow and grow[0] else 1
 
-                tables_raw = con.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
-                tables = [t[0] for t in tables_raw]
-
+                tables_raw = con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").fetchall()
+                tables = [
+                    {
+                        "table": str(t[0]),
+                        "name": str(t[0]),
+                        "framework": "SQLite",
+                        "writers": [],
+                        "readers": [],
+                    }
+                    for t in tables_raw
+                ]
 
             payload = {
                 "repository": str(self.indexer.repository),
@@ -594,7 +609,7 @@ class CodeGraphUIRequestHandler(BaseHTTPRequestHandler):
                 "edges": edge_count,
                 "generation": gen,
                 "status": "synchronized",
-                "tables": [{"name": t} for t in tables],
+                "tables": tables,
             }
         except Exception as exc:
             payload = {"error": str(exc), "status": "error"}
@@ -648,7 +663,6 @@ class CodeGraphUIRequestHandler(BaseHTTPRequestHandler):
 
     def _handle_api_graph(self) -> None:
         try:
-            import urllib.parse
             query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             limit = int(query.get("max_nodes", [150])[0])
             with self.indexer.session() as con:
