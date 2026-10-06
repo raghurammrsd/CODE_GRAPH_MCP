@@ -40,9 +40,16 @@ jobs:
         run: mypy benchmarks/ --ignore-missing-imports --explicit-package-bases
 
   unit-and-integration-tests:
-    name: Full Test Suite & Regression
-    runs-on: ubuntu-latest
+    name: Full Test Suite (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     needs: [lint-and-typecheck]
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,15 +64,15 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade --retries 5 pip
-          pip install --retries 5 -e '.[dev,mcp]'
-      - name: Run Pytest Test Suite
-        run: python -m pytest -v
+          pip install --retries 5 -e ".[dev,mcp]"
+      - name: Run Windows Encoding & Process Lifecycle Tests
+        run: python -m pytest tests/test_windows_and_process_lifecycle.py -v
       - name: Run Adversarial & Security Tests
         run: python -m pytest tests/test_adversarial_edge_cases.py -v
       - name: Run Determinism & Soak Tests
         run: python -m pytest tests/test_determinism_and_soak.py -v
-      - name: Run Windows Encoding & Process Lifecycle Tests
-        run: python -m pytest tests/test_windows_and_process_lifecycle.py -v
+      - name: Run Three Pillars & Full-Stack Tests
+        run: python -m pytest tests/test_pillar1_fullstack_bridge.py tests/test_pillar2_change_impact.py tests/test_pillar3_incremental_watcher.py tests/test_safe_rename.py -v
 
   production-benchmark-regression:
     name: 50-Task Production Benchmark & Baseline Regression Gate
