@@ -5,8 +5,8 @@
 <h1 align="center">CodeGraph MCP: Full-Stack Knowledge Graph & Semantic Intelligence for AI Coding Agents</h1>
 
 <p align="center">
-  <strong>Zero-Hallucination, AST-Verified Codebase Intelligence • Sub-15ms Live Watcher • 75% Context Token Reduction</strong><br>
-  <em>The ultimate Model Context Protocol (MCP) server for Cursor, Claude Code, GitHub Copilot, Antigravity, Cline, Windsurf & Codex.</em>
+  <strong>Deterministic AST-Verified Codebase Intelligence • Sub-15ms Live Watcher • Context Window Optimization</strong><br>
+  <em>Deterministic Model Context Protocol (MCP) server for Cursor, Claude Code, GitHub Copilot, Antigravity, Cline, Windsurf & Codex.</em>
 </p>
 
 <p align="center">
@@ -16,10 +16,9 @@
   <a href="tests/"><img src="https://img.shields.io/badge/pytest-980%2B%20passed%20(100%25)-brightgreen.svg?style=for-the-badge&logo=pytest" alt="Tests: 980+ passed" /></a>
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/ruff-0%20errors-success.svg?style=for-the-badge" alt="Ruff: 0 errors" /></a>
   <a href="src/codegraph/"><img src="https://img.shields.io/badge/mypy-strict%20(120%20files)-blue.svg?style=for-the-badge" alt="Mypy: strict" /></a>
-  <a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP/stargazers"><img src="https://img.shields.io/badge/Star%20on%20GitHub-loved%20by%20agents-yellow?style=for-the-badge" alt="Star us on GitHub" /></a>
 </p>
 
-> **Love CodeGraph MCP?** Please consider giving us a **Star on GitHub**! It helps AI developers discover deterministic, hallucination-free code intelligence for their pair programming agents.
+> CodeGraph MCP provides deterministic, evidence-backed repository intelligence through Abstract Syntax Trees, framework router hierarchies, database lineage, and runtime observation.
 
 <p align="center">
   <a href="https://raghurammrsd.github.io/CODE_GRAPH_MCP/"><strong>Documentation Site</strong></a> •
@@ -90,25 +89,27 @@ When AI coding agents (such as Claude Code, Cursor, or Antigravity) explore comp
 
 ## Measured Performance & Real Metrics Benchmark
 
-CodeGraph MCP has been systematically benchmarked across 50 real-world engineering tasks and enterprise repositories to quantify token consumption, hallucination suppression, and investigation latency:
+Performance and retrieval accuracy are verified across two empirical evaluation suites: a **32-task agent navigation simulation** ([`src/codegraph/tool_selection_eval.py`](src/codegraph/tool_selection_eval.py)) measuring agent trajectory efficiency, and a **50-task diagnostic benchmark** ([`benchmarks/run_v21_eval.py`](benchmarks/run_v21_eval.py)) evaluating multi-file recall, coverage, and context boundaries:
 
-| Performance Metric | Unassisted AI Agents (Raw Grep / File Dumps) | CodeGraph MCP Engine | Real Improvement |
-| :--- | :---: | :---: | :---: |
-| **Hallucination / Unsupported Claims** | 18.5% – 34.0% false assumptions | **0.0%** (AST / Framework verified) | **100% eliminated** |
-| **Context Window Consumption** | 4,500 – 18,200 tokens / task | **350 – 620 tokens / task** | **72% – 85% token savings** |
-| **Exploration Tool Calls** | 164 total tool calls | **71 tool calls** | **57% fewer tool calls** |
-| **Investigation Latency** | 14.8s average exploration | **4.8s total exploration** | **68% faster investigation** |
-| **Incremental File Reindexing** | Full scan required (1.2s – 6.5s) | **< 15ms per file (`codegraph watch`)** | **98% faster live sync** |
-| **Repository Freshness Check** | 450ms – 2,100ms disk stat checks | **< 5ms (Git commit fast path)** | **99% faster checks** |
-| **Symbol Grounding & Resolution** | Manual file scanning | **< 2ms in-memory SQLite** | **Sub-millisecond resolution** |
-| **Automated Test Suite Quality** | — | **980+ passed tests (100% pass rate)** | **Zero regressions** |
+| Performance Metric | Unassisted AI Agents (Raw Grep / File Dumps) | CodeGraph MCP Engine | Measured Result | Evaluation Suite |
+| :--- | :---: | :---: | :---: | :---: |
+| **Unsupported Relationship Claims** | 18.5% – 34.0% false edges | **0.0%** (AST / Framework verified) | **100% eliminated** | 32-Task Navigation Eval |
+| **Exploration Tool Calls** | 164 total tool calls (~5.1 / task) | **71 tool calls** (~2.2 / task) | **56.7% fewer tool calls** | 32-Task Navigation Eval |
+| **Context Consumption (Prompt Tokens)** | 3,000 – 12,000+ tokens / task | **~510 tokens** avg payload | **72% – 85% token savings** | 32-Task Navigation Eval |
+| **Direct File Token Reduction** | Full file reads required | Bounded slices via `get_file` | **41.8% token reduction** | 50-Task Retrieval Benchmark |
+| **Task Coverage & Symbol Recall** | Baseline lexical match | **88.0% coverage / 61.9% recall** | **Verified ground truth** | 50-Task Retrieval Benchmark |
+| **Incremental File Reindexing (Live)** | Full rescan required (1.2s – 6.5s) | **< 15ms per file (`codegraph watch`)** | **In-memory cache patch** | Live OS Kernel Watcher |
+| **Single-File Full Re-index (Cold CLI)** | Full rescan required (4.4s) | **3.665s** (2,504 files) | **16.9% faster** | 4-Tier Stress Benchmark |
+| **Repository Freshness Check** | 450ms – 2,100ms disk stat checks | **< 5ms (Git commit fast path)** | **99% faster checks** | Git Fast Path Check |
+| **Symbol Grounding & Resolution** | Manual file scanning | **< 2ms in-memory SQLite** | **Sub-millisecond resolution** | SQLite Indexed Lookup |
+| **Automated Test Suite Quality** | — | **980+ passed tests (100% pass rate)** | **Zero regressions** | Pytest CI/CD Suite |
 
 <p align="center">
   <img src="docs/assets/performance_comparison.svg" alt="CodeGraph MCP — Measured Context & Exploration Efficiency" width="850" />
 </p>
 
 <p align="center">
-  <img src="docs/assets/large_repo_scaling.svg" alt="CodeGraph MCP — Large Repository Scaling Across 100k, 500k, 1M LOC" width="850" />
+  <img src="docs/assets/large_repo_scaling.svg" alt="CodeGraph MCP — Large Repository Scaling up to 2,504 Files / ~120k LOC" width="850" />
 </p>
 
 ---
@@ -185,9 +186,13 @@ Zero-heat, real-time file system monitoring with sub-15ms incremental reindexing
 - **Sub-15ms Incremental Reindexing**: Bypasses full-disk traversal; only re-indexes modified files (`Indexer.reindex_paths`) and advances generation counters.
 - **Instant In-Memory Cache Busting**: Automatically purges LRU memory caches (`_PARSE_CACHE`, `_GRAPH_CACHE`) and SQLite context caches upon file mutation.
 
-## 1. What's New in v3.0.0 (Git-Aware Intelligence)
+## 1. What's New in v3.0.0
 
-Version `3.0.0` introduces compiler-grade **Git-Aware Repository Intelligence**, allowing AI agents and CI/CD pipelines to understand how code evolves across branches, commits, and working tree edits:
+Version `3.0.0` delivers major advancements in **Git-Aware Intelligence**, **Interactive Visualization**, **Engine Robustness**, and **Context Token Optimization**:
+
+### 1.1 Git-Aware Repository Intelligence
+
+Understand how code evolves across branches, commits, and working tree edits with sub-millisecond freshness verification:
 
 | Capability | CLI Command | MCP Tool | How It Solves Agent Failure Modes |
 | :--- | :--- | :--- | :--- |
@@ -198,19 +203,22 @@ Version `3.0.0` introduces compiler-grade **Git-Aware Repository Intelligence**,
 | **Context Freshness Gate** | `codegraph check-freshness [task]` | `check_context_freshness` | Determines whether previously compiled context remains `VALID`, `PARTIALLY_STALE`, or `STALE` without re-running full graph queries if unrelated files changed. |
 | **Deterministic Symbol History** | `codegraph symbol-history <sym>` | `trace_symbol_history` | Reconstructs the exact commit lifecycle of any symbol (introduced, modified, moved, renamed, or deleted) with confidence labels. |
 
----
+### 1.2 Engine Robustness & Accuracy Hardening
 
-## 1.1 What's New in v3.0.0
+- **Modern FastAPI Dependency Injection**: First-class tracking for `Annotated[..., Depends(...)]` type aliases (e.g. `SessionDep = Annotated[Session, Depends(get_db)]`, `CurrentUser`, `TokenDep`) resolving callers of DB and security providers directly to consuming route handlers.
+- **Python Syntax Auto-Repair**: Auto-recovers unparenthesized multi-exception syntax (`except A, B:`) across newer Python host runtimes so core dependency modules never fail AST extraction.
+- **Strict Endpoint Scoping**: Prevents cross-file name collisions (e.g., matching same-named endpoints across disparate router modules) to maintain 0% false edge rates.
+- **Token Budget & Noise Suppression**: Context compilation strictly adheres to `max_tokens` limits by summarizing auxiliary sections. Graph traversals automatically filter noisy tensor and dictionary primitive methods (`size`, `shape`, `stack`, `get`), keeping token payloads lean.
 
-Version `2.2.1` introduced runtime telemetry reconciliation, SQLite WAL concurrency, and multi-transport SSE resilience:
+### 1.3 Enterprise Concurrency & Runtime Interceptor
 
-| Bottleneck Solved | How It Worked Before | CodeGraph MCP v3.0.0 Solution | Impact |
-| :--- | :--- | :--- | :--- |
-| **Runtime Telemetry Cold Start** | User had to manually configure OpenTelemetry exporters or Pino JSON log streaming pipelines. | **`codegraph run <command>`**: Transparent 1-line wrapper (`codegraph run npm run dev`, `codegraph run uvicorn main:app`) injecting non-invasive hooks (`NODE_OPTIONS` / `PYTHONSTARTUP`). | **Zero code changes**; streams HTTP route hits, latencies, and exception traces directly into `.codegraph/runtime.sqlite3`. |
-| **Database Concurrency (`database is locked`)** | Concurrent agent queries and background indexers could lock the SQLite database and raise crashes. | Enforced permanent **`WAL`** mode, **`synchronous = NORMAL`**, **`busy_timeout = 15000`** (15s), **`cache_size = -64000`** (64MB), and in-memory temporary storage. | Completely eliminates `database is locked` errors during parallel AI interrogation. |
-| **Index Freshness Verification Latency** | Full-repository file hash comparisons took seconds before queries on large codebases. | **Instant Git Commit Fast Path**: Validates `git rev-parse HEAD` match + clean `git status --porcelain`. Falls back to `st_mtime < idx_at` stat checks. | Reduces freshness verification from seconds to **`< 5ms`** on clean repositories. |
-| **Enterprise Monorepo Context Saturation** | Queries on 40,000-file monorepos could emit 50,000+ tokens for all routes or tables, blowing LLM context windows. | **Bounded Pagination**: Added `limit`, `offset`, `total_count`, and `has_more` to `list_routes` and `get_db_schema`. Added `--limit` / `--offset` to CLI `routes`. | Bounded context token consumption with strict pagination safeguards. |
-| **Client Disconnection (`exit status 0xffffffff`)** | Stdio MCP pipe termination caused permanent crash loops in agent IDEs on server updates or restarts. | **Multi-Transport Resiliency**: Added **`--transport sse`** (`--port`, `--host`) to `codegraph serve` and `codegraph mcp serve`. | Enables hot-reconnecting SSE HTTP transport alongside stdio for robust IDE bridges. |
+| Capability | Mechanism | Impact |
+| :--- | :--- | :--- |
+| **Runtime Interceptor** | `codegraph run <cmd>` non-invasive wrappers (`NODE_OPTIONS` / `PYTHONSTARTUP`) | Zero application code modifications; streams live HTTP routes, latencies, and exception traces into `.codegraph/runtime.sqlite3`. |
+| **WAL Database Concurrency** | Permanent `WAL` mode, `synchronous = NORMAL`, `busy_timeout = 15000` (15s), `cache_size = -64000` (64MB) | Eliminates `database is locked` errors during parallel AI pair-programming interrogation. |
+| **Index Freshness Fast Path** | Instant verification: checks `git rev-parse HEAD` and `git status --porcelain` | Reduces index freshness verification from seconds to `< 5ms` on clean repositories. |
+| **Bounded Pagination** | `limit`, `offset`, `total_count`, and `has_more` on all route, table, and context queries | Prevents token blowups on large repositories with tens of thousands of endpoints. |
+| **Multi-Transport MCP** | Hot-reconnecting `--transport sse` alongside default `stdio` | Prevents MCP client crash loops on server restarts or IDE reconnections. |
 
 ---
 
@@ -584,27 +592,31 @@ Automate change impact directly in your CI pipeline with `.github/workflows/code
 
 ### 4-Tier Scaling Summary (`54` → `2,504` Files)
 
-Recorded using [`benchmarks/run_v217_indexing_benchmark.py`](benchmarks/run_v217_indexing_benchmark.py) on macOS `arm64`, Python `3.13` with permanent SQLite WAL concurrency:
+Empirically measured using [`benchmarks/run_v217_indexing_benchmark.py`](benchmarks/run_v217_indexing_benchmark.py) on macOS `arm64`, Python `3.13` with permanent SQLite WAL concurrency:
 
-| Workload Tier | Files | Symbols | Graph Edges | Baseline Total | v3.0.0 Total | Improvement | Peak RSS | Peak WAL | Final WAL |
+| Workload Tier | Files | Symbols | Graph Edges | Baseline Total | v3.0.0 Measured | Measured Improvement | Peak RSS | Peak WAL | Final WAL |
 | :--- | ---: | ---: | ---: | ---: | ---: | :--- | ---: | ---: | ---: |
-| **Small** | `54` | `115` | `398` | `0.527 s` | `0.325 s` | **38.3% faster (`1.62x`)** | `46.25 MB` | `1.544 MB` | `0.0 MB` |
-| **Medium** | `304` | `615` | `2,248` | `2.564 s` | `1.613 s` | **37.1% faster (`1.59x`)** | `62.67 MB` | `4.098 MB` | `0.0 MB` |
-| **Large** | `1,004` | `2,015` | `7,428` | `8.730 s` | `5.296 s` | **39.3% faster (`1.65x`)** | `103.44 MB` | `5.033 MB` | `0.0 MB` |
-| **Stress** | `2,504` | `5,015` | `18,528` | `21.983 s` | `13.395 s` | **39.1% faster (`1.64x`)** | `180.89 MB` | `6.628 MB` | `0.0 MB` |
+| **Small** | `54` | `115` | `398` | `0.527 s` | `0.447 s` | **15.2% faster (`1.18x`)** | `48.00 MB` | `1.701 MB` | `0.0 MB` |
+| **Medium** | `304` | `615` | `2,248` | `2.564 s` | `2.159 s` | **15.8% faster (`1.19x`)** | `69.72 MB` | `4.082 MB` | `0.0 MB` |
+| **Large** | `1,004` | `2,015` | `7,428` | `8.730 s` | `7.157 s` | **18.0% faster (`1.22x`)** | `127.59 MB` | `5.190 MB` | `0.0 MB` |
+| **Stress** | `2,504` | `5,015` | `18,528` | `21.983 s` | `18.937 s` | **13.9% faster (`1.16x`)** | `233.59 MB` | `6.628 MB` | `0.0 MB` |
 
 ### Stress Tier (`2,504` Files) Phase Breakdown
 
-| Phase / Metric | Legacy Baseline | v3.0.0 Release | Measured Improvement |
+| Phase / Metric | Legacy Baseline | v3.0.0 Measured | Measured Improvement |
 | :--- | ---: | ---: | :--- |
-| **Total Indexing Time** | `21.983 s` | `13.395 s` | **39.1% faster (`1.64x`)** |
-| **Database Intelligence Pass** | `4.818 s` | `0.832 s` | **82.7% faster (`5.79x`)** |
-| **Post-Processing Phase** | `13.770 s` | `7.056 s` | **48.8% faster (`1.95x`)** |
-| **Symbol Resolution Phase** | `3.133 s` | `1.107 s` | **64.7% faster (`2.83x`)** |
-| **Single-File Incremental Update** | `4.408 s` | `2.063 s` | **53.2% faster (`2.14x`)** |
-| **Throughput (`files/sec`)** | `113.9 files/s` | `186.9 files/s` | **`+64.1%` throughput** |
+| **Total Indexing Time** | `21.983 s` | `18.937 s` | **13.9% faster (`1.16x`)** |
+| **Database Intelligence Pass** | `4.818 s` | `0.893 s` | **81.5% faster (`5.40x`)** |
+| **Post-Processing Phase** | `13.770 s` | `12.061 s` | **12.4% faster (`1.14x`)** |
+| **Symbol Resolution Phase** | `3.133 s` | `1.297 s` | **58.6% faster (`2.42x`)** |
+| **AST Parsing Phase** | `3.410 s` | `3.230 s` | **5.3% faster (`1.06x`)** |
+| **Cold CLI Single-File Re-index** | `4.408 s` | `3.665 s` | **16.9% faster (`1.20x`)** |
+| **Live In-Memory Incremental (`watch`)** | Full scan required | `< 15ms` / file | **Event-driven cache patch** |
+| **Throughput (`files/sec`)** | `113.9 files/s` | `132.2 files/s` | **`+16.1%` throughput** |
 | **Peak SQLite WAL Size** | `46.980 MB` | `6.628 MB` | **85.9% reduction (`7.09x` smaller)** |
 | **Final SQLite WAL Size** | `0.000 MB` | `0.000 MB` | **100% reclaimed (`TRUNCATE`)** |
+
+> **Note on Incremental Reindexing**: The **3.665 s** incremental figure measures a cold CLI invocation (`codegraph index .`) on the full 2,504-file repository, traversing file mtimes and checking Git diff state. In contrast, the active background daemon (`codegraph watch`) receives OS kernel filesystem events directly, parsing only the modified file's AST and patching SQLite in **< 15ms**.
 
 ![CodeGraph MCP — Measured Large-Repository Scaling](docs/assets/large_repo_scaling.svg)
 
@@ -625,6 +637,8 @@ Evaluated across 50 production tasks and 10 categories via [`benchmarks/run_v21_
 | **Token Reduction vs Full-File Extraction** | **41.8%** | $\ge 35.0\%$ | **PASS** |
 
 ### 32-Task A/B Exploration Evaluation ([`src/codegraph/tool_selection_eval.py`](src/codegraph/tool_selection_eval.py))
+
+Evaluated across 32 agent navigation tasks comparing unassisted grep/file reading vs CodeGraph MCP tool calls:
 
 | Metric (32-Task Evaluation Suite) | Mode A (Unassisted Grep & File Reads) | Mode B (CodeGraph MCP) | Measured Improvement |
 | :--- | ---: | ---: | :--- |
@@ -649,7 +663,7 @@ Legend: `✓` supported • `◐` partial / workflow-dependent • `—` not sup
 | Capability | CodeGraph MCP (`v3.0.0`) | Editor LSP | Structural AST (`ast-grep`) | Lexical Search (`ripgrep`) | Remote Code Search (`Sourcegraph`) |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **100% Local-First & Offline Operation** | ✓ | ✓ | ✓ | ✓ | — |
-| **Native MCP Server for AI Agents** | ✓ (14 default / 62 full) | — | ◐ | — | ✓ |
+| **Native MCP Server for AI Agents** | ✓ (14 default / 70 full) | — | ◐ | — | ✓ |
 | **Multi-Transport Support (stdio + SSE HTTP)** | ✓ | — | — | — | ◐ |
 | **Git-Aware AST Diffs & Freshness** | ✓ (6 Git tools) | — | — | — | ◐ |
 | **Zero-Friction Runtime Interceptor (`codegraph run`)** | ✓ | — | — | — | — |
@@ -683,7 +697,7 @@ Run `codegraph privacy .` at any time to audit the local database and verify tha
 
 ---
 
-## 12. MCP Tooling & Profiles (14 Default / 62 Full)
+## 12. MCP Tooling & Profiles (14 Default / 70 Full)
 
 By default, `create_server()` exposes the **14-tool `agent` profile** so AI coding agents receive a focused, non-overlapping tool surface. All 70 tools are available under `--profile full`.
 
@@ -715,7 +729,7 @@ By default, `create_server()` exposes the **14-tool `agent` profile** so AI codi
 | **`graph`** | **17** | Call-graph traversal, blast-radius impact (`analyze_impact`), and test discovery. |
 | **`minimal`** | **21** | Core interrogation plus `get_context`, `search_code`, `read_file`, and `verify_evidence`. |
 | **`developer`** | **34** | Interactive development with Git history (`get_file_history`, `get_recent_changes`) and retrieval planning. |
-| **`full`** | **62** | Complete capability surface including **11 Database tools**, **3 Runtime tools**, and **6 Git Intelligence tools** (`get_git_state`, `compare_git`, `get_change_impact`, `check_context_freshness`, `trace_symbol_history`, `detect_semantic_conflicts`). |
+| **`full`** | **70** | Complete capability surface including **11 Database tools**, **3 Runtime tools**, and **6 Git Intelligence tools** (`get_git_state`, `compare_git`, `get_change_impact`, `check_context_freshness`, `trace_symbol_history`, `detect_semantic_conflicts`). |
 
 ---
 

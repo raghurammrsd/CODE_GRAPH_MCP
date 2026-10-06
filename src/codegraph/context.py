@@ -217,6 +217,46 @@ class ContextPacket(BaseModel):
     def to_dict(self) -> dict[str, object]:
         return self.model_dump()
 
+    def format_human(self) -> str:
+        """Format a clean, concise, token-efficient human/agent context summary."""
+        lines = [
+            f"# Context for Task: {self.task}",
+            f"**Intent**: {self.intent or 'UNDERSTAND'} | **Freshness**: {self.freshness} | **Selected Tokens**: ~{self.selected_tokens}",
+            "",
+        ]
+        if self.symbols:
+            lines.append("## Key Symbols")
+            for s in self.symbols[:8]:
+                loc = f"{s.file}:{s.start_line}-{s.end_line}" if s.start_line else s.file
+                lines.append(f"- **{s.symbol}** (`{s.kind}`) at `{loc}`")
+            lines.append("")
+
+        if self.evidence:
+            lines.append("## Targeted Code Evidence")
+            for ev in self.evidence[:5]:
+                lines.append(f"### {ev.file}:{ev.start_line}-{ev.end_line} ({ev.symbol or 'code'})")
+                lines.append("```")
+                lines.append(ev.snippet.strip())
+                lines.append("```")
+                lines.append("")
+
+        if self.relationships:
+            lines.append("## Verified Relationships")
+            for r in self.relationships[:8]:
+                lines.append(f"- `{r.source}` **{r.relationship}** `{r.target}` [{r.confidence}]")
+            lines.append("")
+
+        if self.routes:
+            lines.append("## Relevant Routes")
+            for rt in self.routes[:5]:
+                method = rt.get("method") or rt.get("http_method") or "ROUTE"
+                path = rt.get("path") or rt.get("route_path") or ""
+                handler = rt.get("handler") or rt.get("handler_name") or ""
+                lines.append(f"- `{method} {path}` -> `{handler}`")
+            lines.append("")
+
+        return "\n".join(lines).strip()
+
 
 # ---------------------------------------------------------------------------
 # Token estimation helper
@@ -2067,22 +2107,34 @@ def _get_context_impl(
             budget=budget.as_dict(),
             execution=exec_dict,
             mode=mode_upper,
-            entry_points=entry_points_out,
-            framework_facts=framework_facts_out,
-            architecture=architecture_out,
-            git_changes=git_changes_out,
-            git_facts=git_changes_out,
+            entry_points=[
+                r for r in entry_points_out
+                if any(sp in str(r.get("file", "")) for sp in selected_paths)
+            ][:5] if (max_tokens <= 4000 and entry_points_out) else entry_points_out[:10],
+            framework_facts=[
+                f for f in framework_facts_out
+                if any(sp in str(f.get("file", "")) for sp in selected_paths)
+            ][:10] if (max_tokens <= 4000 and framework_facts_out) else framework_facts_out[:20],
+            architecture=architecture_out[:5] if max_tokens <= 4000 else architecture_out,
+            git_changes=git_changes_out[:5] if max_tokens <= 4000 else git_changes_out,
+            git_facts=git_changes_out[:5] if max_tokens <= 4000 else git_changes_out,
             assumptions=assumptions_out,
             unknowns=unknowns_out,
             conflicts=conflicts_out,
             metadata=metadata_dict,
             target=target_dict,
-            routes=entry_points_out,
-            packages=packages_out,
+            routes=[
+                r for r in entry_points_out
+                if any(sp in str(r.get("file", "")) for sp in selected_paths)
+            ][:5] if (max_tokens <= 4000 and entry_points_out) else entry_points_out[:10],
+            packages=packages_out[:5] if max_tokens <= 4000 else packages_out,
             git_impact=git_impact_dict,
-            findings=findings_out,
+            findings=findings_out[:10] if max_tokens <= 4000 else findings_out,
             coverage=coverage_dict,
-            database=database_out,
+            database=[
+                d for d in database_out
+                if any(sp in str(d.get("file", "")) for sp in selected_paths)
+            ][:5] if (max_tokens <= 4000 and database_out) else database_out[:15],
             runtime=runtime_out,
             reconciliation=reconciliation_out,
             symbols=symbols_out,

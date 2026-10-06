@@ -440,6 +440,7 @@ class _PythonScopeVisitor(ast.NodeVisitor):
         self.bindings: list[BindingRef] = []
         self.exports: list[str] = []
         self.conditional_depth: int = 0
+        self.di_type_aliases: dict[str, str] = {}
 
         # Scope stack: (name, kind, qualified_name, canonical_id)
         self.scope_stack: list[tuple[str, str, str, str]] = []
@@ -830,6 +831,36 @@ class _PythonScopeVisitor(ast.NodeVisitor):
                                 elif hasattr(ast, "unparse"):
                                     dep_expr = ast.unparse(elts[0]).split("[")[0].strip()
                                 break
+
+            # Check if annotation refers to an Annotated type alias: e.g. session: SessionDep, current_user: CurrentUser
+            if not dep_expr and arg.annotation and hasattr(ast, "unparse"):
+                ann_text = ast.unparse(arg.annotation).strip()
+                ann_short = ann_text.split("[")[0].strip().split(".")[-1]
+                if ann_short in self.di_type_aliases:
+                    dep_expr = self.di_type_aliases[ann_short]
+                elif (
+                    ann_short not in _PYTHON_BUILTINS
+                    and not ann_short.startswith("_")
+                    and ann_short not in (
+                        "Any", "Optional", "Union", "List", "Dict", "Set", "Tuple",
+                        "int", "str", "float", "bool", "bytes", "dict", "list", "set", "tuple",
+                    )
+                ):
+                    self.bindings.append(
+                        BindingRef(
+                            target_name=canon_id,
+                            file_path=self.file_path,
+                            line=node.lineno,
+                            column=getattr(node, "col_offset", None),
+                            scope=self.current_scope_qname,
+                            expr_kind="PARAM_TYPE_DI",
+                            source_expr=ann_text,
+                            is_conditional=is_cond,
+                            base_expr="fastapi",
+                            attr_name="Depends",
+                            subscript_key=json.dumps({"param": arg.arg, "alias": ann_short, "framework": "fastapi"}),
+                        )
+                    )
 
             if dep_expr:
                 self.bindings.append(
@@ -1359,6 +1390,56 @@ class _PythonScopeVisitor(ast.NodeVisitor):
                         is_conditional=is_cond,
                     )
                 )
+
+        # 10. Modern FastAPI / typing Annotated DI alias
+        # e.g., SessionDep = Annotated[Session, Depends(get_db)]
+        #       CurrentUser = Annotated[User, Depends(get_current_user)]
+        #       TokenDep = Annotated[str, Depends(reusable_oauth2)]
+        if isinstance(value_node, ast.Subscript) and hasattr(ast, "unparse"):
+            val_id = getattr(value_node.value, "id", None) or (
+                getattr(value_node.value, "attr", None) if isinstance(value_node.value, ast.Attribute) else ""
+            )
+            val_unparse = ast.unparse(value_node.value) if hasattr(ast, "unparse") else ""
+            if val_id in ("Annotated", "typing.Annotated", "typing_extensions.Annotated") or "Annotated" in val_unparse:
+                slice_node = value_node.slice
+                elts = slice_node.elts if isinstance(slice_node, (ast.Tuple, ast.List)) else [slice_node]
+                for elt in elts[1:]:
+                    if isinstance(elt, ast.Call):
+                        f_nm = getattr(elt.func, "id", None) or (
+                            getattr(elt.func, "attr", None) if isinstance(elt.func, ast.Attribute) else ""
+                        )
+                        if f_nm == "Depends":
+                            elt_arg: ast.expr | None = elt.args[0] if elt.args else None
+                            if elt_arg is None:
+                                elt_kw = next((kw for kw in elt.keywords if kw.arg == "dependency"), None)
+                                if elt_kw is not None:
+                                    elt_arg = elt_kw.value
+                            dep_alias_str: str | None = None
+                            if elt_arg is not None:
+                                if isinstance(elt_arg, (ast.Name, ast.Attribute)):
+                                    dep_alias_str = ast.unparse(elt_arg)
+                                else:
+                                    dep_alias_str = "<DYNAMIC>"
+                            elif hasattr(ast, "unparse"):
+                                dep_alias_str = ast.unparse(elts[0]).split("[")[0].strip()
+                            if dep_alias_str:
+                                self.di_type_aliases[target_name] = dep_alias_str
+                                self.bindings.append(
+                                    BindingRef(
+                                        target_name=target_name,
+                                        file_path=self.file_path,
+                                        line=line,
+                                        column=col,
+                                        scope=scope,
+                                        expr_kind="DI_ALIAS_INJECTS",
+                                        source_expr=dep_alias_str,
+                                        is_conditional=is_cond,
+                                        base_expr="fastapi",
+                                        attr_name="Depends",
+                                        subscript_key=json.dumps({"alias": target_name, "framework": "fastapi"}),
+                                    )
+                                )
+                            break
 
     def visit_Assign(self, node: ast.Assign) -> None:
         for target in node.targets:
@@ -2297,19 +2378,47 @@ def _extract_all_python_imports(
     return imports
 
 
+def _repair_python_syntax(content: str) -> str:
+    """Repair common syntax patterns from newer or experimental Python versions (e.g. unparenthesized multiple except)."""
+    lines = content.splitlines()
+    repaired = False
+    new_lines = []
+    for line in lines:
+        # Match 'except A, B:' or 'except A, B as e:' or 'except* A, B:' without enclosing parentheses
+        m = re.match(
+            r'^(\s*except\*?\s+)([A-Za-z0-9_.\s]+,\s*[A-Za-z0-9_.,\s]+?)(\s+as\s+[A-Za-z0-9_]+)?(\s*:.*)$',
+            line,
+        )
+        if m:
+            prefix, types, as_part, suffix = m.group(1), m.group(2).strip(), m.group(3) or "", m.group(4)
+            if not types.startswith("("):
+                line = f"{prefix}({types}){as_part}{suffix}"
+                repaired = True
+        new_lines.append(line)
+    return "\n".join(new_lines) if repaired else content
+
+
 def _parse_python(content: str, file_path: str) -> ParseResult:
     source_hash = hashlib.sha256(content.encode("utf-8", errors="replace")).hexdigest()
+    tree: ast.Module | None = None
     try:
         tree = ast.parse(content)
     except SyntaxError as exc:
-        return ParseResult(
-            path=file_path,
-            language="python",
-            source_hash=source_hash,
-            imports=tuple(_py_imports_fallback(content, file_path)),
-            parse_failed=True,
-            parse_error=f"SyntaxError at line {exc.lineno}: {exc.msg}",
-        )
+        repaired = _repair_python_syntax(content)
+        if repaired != content:
+            try:
+                tree = ast.parse(repaired)
+            except SyntaxError:
+                tree = None
+        if tree is None:
+            return ParseResult(
+                path=file_path,
+                language="python",
+                source_hash=source_hash,
+                imports=tuple(_py_imports_fallback(content, file_path)),
+                parse_failed=True,
+                parse_error=f"SyntaxError at line {exc.lineno}: {exc.msg}",
+            )
 
     # First collect import module names cheaply from top-level imports to configure analyzers
     import_mods: set[str] = set()

@@ -304,6 +304,10 @@ def test_scenario_a_and_c_mcp_serve_exits_cleanly_on_stdin_eof_and_cleans_pid_fi
             proc.wait(timeout=2.0)
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Grandchild pipe inheritance test requires POSIX pass_fds and file descriptor inheritance",
+)
 def test_scenario_b_parent_process_killed_abruptly_mcp_child_terminates_automatically(
     tmp_path: Path,
 ) -> None:

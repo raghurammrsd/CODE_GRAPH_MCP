@@ -43,6 +43,19 @@ class AttrDict(dict[str, Any]):
         self[name] = value
 
 
+_NOISY_UNRESOLVED_NAMES = frozenset({
+    "size", "shape", "view", "transpose", "squeeze", "unsqueeze", "reshape", "item", "dim",
+    "get", "keys", "values", "items", "append", "extend", "pop", "insert", "clear", "copy",
+    "format", "split", "strip", "lstrip", "rstrip", "join", "replace", "startswith", "endswith",
+    "lower", "upper", "count", "index", "find", "update", "add", "remove", "discard",
+    "encode", "decode", "read", "write", "close", "flush", "seek", "tell",
+    "print", "len", "range", "str", "int", "float", "bool", "dict", "list", "set", "tuple",
+    "isinstance", "issubclass", "hasattr", "getattr", "setattr", "delattr", "type", "id",
+    "min", "max", "sum", "all", "any", "zip", "enumerate", "map", "filter", "sorted", "reversed",
+    "cat", "stack", "zeros", "ones", "empty", "tensor", "from_numpy", "device", "to", "backward",
+})
+
+
 # ---------------------------------------------------------------------------
 # Symbol Query API
 # ---------------------------------------------------------------------------
@@ -442,8 +455,13 @@ def find_callees(
         key = (r["path"], r["target_symbol_id"], r["start_line"])
         if key in seen:
             continue
-        seen.add(key)
         callee_nm = r["target_symbol_id"].split(".")[-1] if r["target_symbol_id"] else "unresolved"
+        # Prune noisy standard primitive / builtin / tensor method calls that clutter the graph with UNKNOWN noise
+        if r["relationship"] == "UNRESOLVED_REFERENCE" and (
+            callee_nm in _NOISY_UNRESOLVED_NAMES or callee_nm.startswith("_")
+        ):
+            continue
+        seen.add(key)
         st = verify_source_hash(repo, r["path"], r["source_hash"])
         ev_text = str(r["evidence"] or "")
         ev_cls = (

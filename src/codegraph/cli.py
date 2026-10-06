@@ -422,6 +422,7 @@ def trace(
     callees: Annotated[bool, typer.Option("--callees", help="Trace direct callees")] = False,
     both: Annotated[bool, typer.Option("--both", help="Trace both callers and callees")] = False,
     depth: Annotated[int, typer.Option("--depth", "-d", help="Max trace depth (clamped to max 5)")] = 2,
+    compact: Annotated[bool, typer.Option("--compact", help="Emit compact human-readable summary")] = False,
 ) -> None:
     """Trace a symbol definition, callers, and callees with explicit confidence labels."""
     repo = _resolve_repo(repository=repository)
@@ -477,6 +478,33 @@ def trace(
                     )
                 )
                 return
+        if compact:
+            cli_echo(f"Trace for: {symbol}")
+            definitions = [x for x in res if x.get("relationship") == "DEFINES"]
+            handlers = [x for x in res if x.get("relationship") == "HANDLED_BY"]
+            caller_list = [x for x in res if x.get("relationship") == "CALLER"]
+            callee_list = [x for x in res if x.get("relationship") == "CALLEE"]
+            if definitions:
+                cli_echo("  Definitions:")
+                for d in definitions[:5]:
+                    cli_echo(f"    - {d.get('symbol')} ({d.get('file')}:{d.get('start_line')})")
+            if handlers:
+                cli_echo("  Handled by Routes:")
+                for h in handlers[:5]:
+                    cli_echo(f"    - {h.get('symbol')} ({h.get('file')}:{h.get('start_line')})")
+            if caller_list:
+                cli_echo(f"  Callers ({len(caller_list)} total):")
+                for c in caller_list[:15]:
+                    cli_echo(f"    - {c.get('symbol')} at {c.get('file')}:{c.get('start_line')} [{c.get('confidence')}]")
+                if len(caller_list) > 15:
+                    cli_echo(f"    ... and {len(caller_list) - 15} more")
+            if callee_list:
+                cli_echo(f"  Callees ({len(callee_list)} total):")
+                for c in callee_list[:15]:
+                    cli_echo(f"    - {c.get('symbol')} at {c.get('file')}:{c.get('start_line')} [{c.get('confidence')}]")
+                if len(callee_list) > 15:
+                    cli_echo(f"    ... and {len(callee_list) - 15} more")
+            return
         typer.echo(json.dumps(res, indent=2))
 
 
@@ -1206,7 +1234,10 @@ def context(
             mode=mode,
             explain=explain,
         )
-    typer.echo(json.dumps(packet.as_dict(), indent=2))
+    if json_output:
+        typer.echo(json.dumps(packet.as_dict(), indent=2))
+    else:
+        typer.echo(packet.format_human())
 
 
 @app.command("explain-context")

@@ -316,6 +316,16 @@ def _win32_inspect_process(pid: int) -> LiveProcessInfo | None:
         access = 0x00100000 | 0x00001000
         handle = kernel32.OpenProcess(access, False, int(pid))
         if not handle:
+            err = kernel32.GetLastError()
+            if err == 5:  # ERROR_ACCESS_DENIED: process exists and is active
+                return LiveProcessInfo(
+                    pid=pid,
+                    ppid=0,
+                    create_token="access_denied",
+                    executable="python",
+                    command_summary="python",
+                    is_zombie=False,
+                )
             return None
         try:
             exit_code = ctypes.c_ulong(0)

@@ -2546,6 +2546,130 @@ class ReferenceResolver:
                 )
 
         # 9c. FastAPI Depends(...) Injection (INJECTS)
+        # 1. Collect modern FastAPI Annotated aliases (e.g. SessionDep = Annotated[Session, Depends(get_db)])
+        alias_to_dep: dict[str, str] = {}
+        alias_name_to_dep: dict[str, str] = {}
+        for b in bindings_by_kind.get("DI_ALIAS_INJECTS", []):
+            dep_sym, _, _ = self.resolve_identifier_in_file(b.source_expr, b.file_path, use_line=b.line)
+            if not dep_sym and len(self.short_to_symbols.get(b.source_expr, [])) == 1:
+                dep_sym = self.short_to_symbols[b.source_expr][0]
+            if dep_sym:
+                dep_canon = dep_sym.canonical_id
+                alias_sym, _, _ = self.resolve_identifier_in_file(b.target_name, b.file_path, use_line=b.line)
+                alias_canon = alias_sym.canonical_id if alias_sym else f"{b.file_path}:{b.target_name}"
+                alias_to_dep[alias_canon] = dep_canon
+                alias_name_to_dep[b.target_name] = dep_canon
+                ev_str = f"FastAPI Annotated Alias: '{alias_canon}' resolves to Depends({dep_canon}) at {b.file_path}:{b.line}"
+                f_hash = self.file_hashes.get(b.file_path, "")
+                add_ref(
+                    Reference(
+                        source_symbol_id=alias_canon,
+                        target_symbol_id=dep_canon,
+                        relationship="DEPENDS_ON",
+                        confidence="HIGH",
+                        path=b.file_path,
+                        start_line=b.line,
+                        end_line=b.line,
+                        evidence=ev_str,
+                        source_hash=f_hash,
+                        indexed_commit=self.indexed_commit,
+                    )
+                )
+                add_edge(
+                    GraphEdge(
+                        source=alias_canon,
+                        target=dep_canon,
+                        relationship="DEPENDS_ON",
+                        confidence="HIGH",
+                        file=b.file_path,
+                        start_line=b.line,
+                        end_line=b.line,
+                        evidence=ev_str,
+                        evidence_class=RelationshipEvidenceClass.FRAMEWORK_VERIFIED.value,
+                        reason="fastapi_annotated_alias",
+                    )
+                )
+
+        # 2. Resolve function parameters typed with Annotated aliases (e.g. session: SessionDep, current_user: CurrentUser)
+        for b in bindings_by_kind.get("PARAM_TYPE_DI", []):
+            param_type = b.source_expr.split("[")[0].strip().split(".")[-1]
+            dep_injected_canon: str | None = alias_name_to_dep.get(param_type)
+            if not dep_injected_canon:
+                type_sym, _, _ = self.resolve_identifier_in_file(b.source_expr, b.file_path, use_line=b.line)
+                if type_sym and type_sym.canonical_id in alias_to_dep:
+                    dep_injected_canon = alias_to_dep[type_sym.canonical_id]
+                elif type_sym and type_sym.name in alias_name_to_dep:
+                    dep_injected_canon = alias_name_to_dep[type_sym.name]
+            if dep_injected_canon:
+                handler_canon = b.target_name
+                f_hash = self.file_hashes.get(b.file_path, "")
+                ev_str = f"FastAPI Depends (via {param_type}): '{handler_canon}' INJECTS '{dep_injected_canon}' at {b.file_path}:{b.line}"
+                add_ref(
+                    Reference(
+                        source_symbol_id=handler_canon,
+                        target_symbol_id=dep_injected_canon,
+                        relationship="INJECTS",
+                        confidence="HIGH",
+                        path=b.file_path,
+                        start_line=b.line,
+                        end_line=b.line,
+                        evidence=ev_str,
+                        source_hash=f_hash,
+                        indexed_commit=self.indexed_commit,
+                    )
+                )
+                add_edge(
+                    GraphEdge(
+                        source=handler_canon,
+                        target=dep_injected_canon,
+                        relationship="INJECTS",
+                        confidence="HIGH",
+                        file=b.file_path,
+                        start_line=b.line,
+                        end_line=b.line,
+                        evidence=ev_str,
+                        evidence_class=RelationshipEvidenceClass.FRAMEWORK_VERIFIED.value,
+                        reason="fastapi_annotated_alias_injects",
+                    )
+                )
+                handler_short = handler_canon.split(".")[-1]
+                for rt in self.routes:
+                    matches_handler = (
+                        rt.handler_canonical_id == handler_canon
+                        or (rt.handler_name == handler_short and rt.file_path == b.file_path)
+                    )
+                    if matches_handler:
+                        rt_ev = f"Route endpoint '{rt.endpoint_id}' INJECTS '{dep_injected_canon}' (via {param_type}) at {rt.file_path}:{rt.line}"
+                        add_ref(
+                            Reference(
+                                source_symbol_id=rt.endpoint_id,
+                                target_symbol_id=dep_injected_canon,
+                                relationship="INJECTS",
+                                confidence="HIGH",
+                                path=rt.file_path,
+                                start_line=rt.line,
+                                end_line=rt.line,
+                                evidence=rt_ev,
+                                source_hash=f_hash,
+                                indexed_commit=self.indexed_commit,
+                            )
+                        )
+                        add_edge(
+                            GraphEdge(
+                                source=rt.endpoint_id,
+                                target=dep_injected_canon,
+                                relationship="INJECTS",
+                                confidence="HIGH",
+                                file=rt.file_path,
+                                start_line=rt.line,
+                                end_line=rt.line,
+                                evidence=rt_ev,
+                                evidence_class=RelationshipEvidenceClass.FRAMEWORK_VERIFIED.value,
+                                reason="fastapi_annotated_alias_injects",
+                            )
+                        )
+
+        # 3. Standard router and direct function Depends(...) bindings
         for b in (
             bindings_by_kind.get("ROUTER_DI_INJECTS", [])
             + bindings_by_kind.get("DI_INJECTS", [])
@@ -2717,10 +2841,14 @@ class ReferenceResolver:
                 )
             )
 
-            # Also link matching route endpoint_id -> dep_canon
+            # Also link matching route endpoint_id -> dep_canon (scoped to this file or exact canonical ID)
             handler_short = handler_canon.split(".")[-1]
             for rt in self.routes:
-                if rt.handler_canonical_id == handler_canon or rt.handler_name == handler_short:
+                matches_handler = (
+                    rt.handler_canonical_id == handler_canon
+                    or (rt.handler_name == handler_short and rt.file_path == b.file_path)
+                )
+                if matches_handler:
                     rt_ev = f"Route endpoint '{rt.endpoint_id}' INJECTS '{dep_canon}' at {rt.file_path}:{rt.line}"
                     add_ref(
                         Reference(
