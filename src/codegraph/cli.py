@@ -285,6 +285,21 @@ def watch(
 
 
 @app.command()
+def ui(
+    path: Annotated[Path | None, typer.Argument(help="Repository path (default: current directory)")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    port: Annotated[int, typer.Option("--port", "-p", help="Port for UI dashboard")] = 8765,
+    host: Annotated[str, typer.Option("--host", help="Host interface")] = "127.0.0.1",
+    no_browser: Annotated[bool, typer.Option("--no-browser", help="Do not automatically open browser")] = False,
+) -> None:
+    """Launch the interactive CodeGraph Knowledge Graph and UI Dashboard in your browser."""
+    target_repo = _resolve_repo(path, repository)
+    from codegraph.ui import start_ui_server
+
+    start_ui_server(target_repo, host=host, port=port, open_browser=not no_browser)
+
+
+@app.command()
 def search(
     query: str,
     repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,

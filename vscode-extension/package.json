@@ -1,0 +1,107 @@
+{
+  "name": "codegraph",
+  "displayName": "CodeGraph — Full-Stack Knowledge Graph & Intelligence",
+  "description": "Deterministic AST repository intelligence, sub-15ms live watcher, route explorer, and PR blast radius engine for VS Code.",
+  "version": "3.0.0",
+  "publisher": "codegraph",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Education",
+    "Other"
+  ],
+  "keywords": [
+    "mcp",
+    "codegraph",
+    "ast",
+    "fastapi",
+    "routes",
+    "blast-radius",
+    "pytorch"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codegraph-sidebar",
+          "title": "CodeGraph",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "codegraph-sidebar": [
+        {
+          "id": "codegraph.routeExplorer",
+          "name": "Full-Stack Routes"
+        },
+        {
+          "id": "codegraph.dbExplorer",
+          "name": "Database Lineage & Models"
+        },
+        {
+          "id": "codegraph.impactExplorer",
+          "name": "PR Blast Radius & Risk"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "codegraph.openUI",
+        "title": "CodeGraph: Open Visual Knowledge Graph Dashboard",
+        "category": "CodeGraph"
+      },
+      {
+        "command": "codegraph.showImpact",
+        "title": "CodeGraph: Calculate PR Blast Radius for Current File",
+        "category": "CodeGraph"
+      },
+      {
+        "command": "codegraph.checkApiDrift",
+        "title": "CodeGraph: Inspect Cross-Language API Drift",
+        "category": "CodeGraph"
+      },
+      {
+        "command": "codegraph.startWatcher",
+        "title": "CodeGraph: Start Sub-15ms Live Watcher Daemon",
+        "category": "CodeGraph"
+      },
+      {
+        "command": "codegraph.safeRename",
+        "title": "CodeGraph: Safe AST Rename Symbol",
+        "category": "CodeGraph"
+      }
+    ],
+    "configuration": {
+      "title": "CodeGraph",
+      "properties": {
+        "codegraph.serverPort": {
+          "type": "number",
+          "default": 8765,
+          "description": "Port for local CodeGraph Dashboard and SSE server."
+        },
+        "codegraph.autoStartWatcher": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically launch background live watcher on workspace open."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
+  }
+}

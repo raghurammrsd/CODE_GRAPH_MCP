@@ -2,7 +2,7 @@
   <img src="docs/assets/codegraph_logo.jpg" alt="CodeGraph MCP — Deep Deterministic Repository Intelligence for AI Coding Agents" width="500" />
 </p>
 
-<h1 align="center">🧠 CodeGraph MCP: Full-Stack Knowledge Graph & Semantic Intelligence for AI Coding Agents</h1>
+<h1 align="center">CodeGraph MCP: Full-Stack Knowledge Graph & Semantic Intelligence for AI Coding Agents</h1>
 
 <p align="center">
   <strong>Zero-Hallucination, AST-Verified Codebase Intelligence • Sub-15ms Live Watcher • 75% Context Token Reduction</strong><br>
@@ -16,22 +16,23 @@
   <a href="tests/"><img src="https://img.shields.io/badge/pytest-980%2B%20passed%20(100%25)-brightgreen.svg?style=for-the-badge&logo=pytest" alt="Tests: 980+ passed" /></a>
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/ruff-0%20errors-success.svg?style=for-the-badge" alt="Ruff: 0 errors" /></a>
   <a href="src/codegraph/"><img src="https://img.shields.io/badge/mypy-strict%20(120%20files)-blue.svg?style=for-the-badge" alt="Mypy: strict" /></a>
-  <a href="https://github.com/raghuram/CODE_GRAPH_MCP/stargazers"><img src="https://img.shields.io/badge/%E2%AD%90%20Star%20on%20GitHub-loved%20by%20agents-yellow?style=for-the-badge" alt="Star us on GitHub" /></a>
+  <a href="https://github.com/raghuram/CODE_GRAPH_MCP/stargazers"><img src="https://img.shields.io/badge/Star%20on%20GitHub-loved%20by%20agents-yellow?style=for-the-badge" alt="Star us on GitHub" /></a>
 </p>
 
-> ⭐ **Love CodeGraph MCP?** Please consider giving us a **Star on GitHub**! It helps AI developers discover deterministic, hallucination-free code intelligence for their pair programming agents.
+> **Love CodeGraph MCP?** Please consider giving us a **Star on GitHub**! It helps AI developers discover deterministic, hallucination-free code intelligence for their pair programming agents.
 
 <p align="center">
   <a href="https://raghurammrsd.github.io/CODE_GRAPH_MCP/"><strong>Documentation Site</strong></a> •
   <a href="https://pypi.org/project/codegraph-engine/3.0.0/"><strong>PyPI Package</strong></a> •
   <a href="#overview"><strong>Overview</strong></a> •
-  <a href="#1-whats-new-in-v230-git-aware-intelligence"><strong>What's New in v3.0.0</strong></a> •
+  <a href="#interactive-web-dashboard--vs-code-extension"><strong>Web Dashboard & VS Code</strong></a> •
+  <a href="#the-three-pillars-of-codegraph-mcp"><strong>The Three Pillars</strong></a> •
   <a href="#2-quickstart-30-second-setup"><strong>Quickstart</strong></a> •
   <a href="#4-real-world-cli-outputs"><strong>CLI Outputs</strong></a> •
   <a href="#6-database-intelligence"><strong>Database Intelligence</strong></a> •
   <a href="#7-zero-friction-runtime-intelligence--static-reconciliation"><strong>Runtime Evidence</strong></a> •
   <a href="#8-git-aware-repository-intelligence"><strong>Git Intelligence</strong></a> •
-  <a href="#10-measured-performance-and-scaling-benchmarks"><strong>Benchmarks</strong></a> •
+  <a href="#measured-performance--real-metrics-benchmark"><strong>Benchmarks</strong></a> •
   <a href="docs/agent-brain.md"><strong>70-Tool Reference</strong></a> •
   <a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP"><strong>GitHub</strong></a>
 </p>
@@ -87,7 +88,7 @@ When AI coding agents (such as Claude Code, Cursor, or Antigravity) explore comp
 
 ---
 
-## 📊 Measured Performance & Real Metrics Benchmark
+## Measured Performance & Real Metrics Benchmark
 
 CodeGraph MCP has been systematically benchmarked across 50 real-world engineering tasks and enterprise repositories to quantify token consumption, hallucination suppression, and investigation latency:
 
@@ -112,29 +113,72 @@ CodeGraph MCP has been systematically benchmarked across 50 real-world engineeri
 
 ---
 
-## 🚀 The Three Pillars of CodeGraph MCP
+## Interactive Web Dashboard & VS Code Extension
 
-### 🤖 AI / ML & PyTorch Stack Intelligence
+CodeGraph v3.0 introduces a zero-configuration local visual dashboard and official VS Code integration for real-time visual inspection of your repository's AST relationships, full-stack routes, and PR blast radius.
+
+### 1. Interactive Knowledge Graph Web Dashboard (`codegraph ui`)
+
+Launch the local visualizer with a single command:
+
+```bash
+# Launch interactive dashboard on http://127.0.0.1:8765
+codegraph ui
+
+# Custom port or headless server (no automatic browser launch)
+codegraph ui --port 9000 --no-browser
+```
+
+The Web Dashboard delivers:
+- **Interactive Knowledge Visualizer**: Search and inspect any symbol, route, or model across Python and TypeScript.
+- **Full-Stack Route Explorer**: Visualizes frontend fetchers (`fetch<T>()`, `axios`) matched to backend handlers (FastAPI, Flask, Django, Express, NestJS).
+- **Database Lineage Matrix**: Real-time table relationship map showing exact static writers and readers (PostgreSQL, SQLite, Prisma, Drizzle, SQLAlchemy, Mongoose).
+- **PR Blast Radius & Risk Tiering**: Live risk assessment, highlighting modified call chains and covering tests before submitting pull requests.
+- **REST & SSE Endpoints**: Integrated REST API (`/api/status`, `/api/routes`, `/api/drift`, `/api/impact`, `/api/graph`) enabling external tools to query graph state.
+
+### 2. Official VS Code Extension (`vscode-extension`)
+
+The CodeGraph VS Code extension brings deterministic repository intelligence directly into your editor:
+
+```bash
+# Package and install the extension
+cd vscode-extension
+code --install-extension codegraph-3.0.0.vsix
+```
+
+Features included in the VS Code sidebar:
+- **Full-Stack Routes View**: Tree view of all discovered endpoints, clicking any item navigates directly to the route handler definition.
+- **Database Lineage & Models View**: Inspect tables, fields, readers, and writers side-by-side with source code.
+- **PR Blast Radius Explorer**: Select any active file to view downstream callers, impacted routes, and tests to run.
+- **In-Editor Knowledge Graph Panel (`CodeGraph: Open Visual Knowledge Graph Dashboard`)**: Opens the visual web dashboard side-by-side in a VS Code Webview panel.
+- **Safe AST Rename (`CodeGraph: Safe AST Rename Symbol`)**: Deterministic symbol refactoring across all call sites and route handlers.
+- **Live Watcher Integration (`CodeGraph: Start Sub-15ms Live Watcher Daemon`)**: One-click background watcher launch.
+
+---
+
+## The Three Pillars of CodeGraph MCP
+
+### AI / ML & PyTorch Stack Intelligence
 CodeGraph MCP natively parses AI/ML architectures and agent pipelines into deterministic graph facts:
 - **PyTorch nn.Module Forward Resolution**: Submodule and model instance calls (`model(x)`, `self.encoder(x)`) automatically resolve to `Encoder.forward` emitting `DISPATCHES_FORWARD` (`AST_VERIFIED`).
 - **LangChain & LlamaIndex Agent Tools**: Statically detects `@tool`, `@function_tool`, and dynamic agent registries, connecting agent capabilities to handler implementations (`AGENT_TOOL`).
 - **LangChain LCEL Pipelines**: Tracks pipe syntax (`prompt | model | parser`) as executable pipeline dataflow (`CHAINS_TO`).
 - **Distributed Ray Tasks**: Detects `@ray.remote` actor decorators and `task.remote()` invocations (`DISPATCHES_RAY_TASK`).
 
-### 🌐 Pillar 1: The Unified Full-Stack Bridge (`codegraph api-drift`)
+### Pillar 1: The Unified Full-Stack Bridge (`codegraph api-drift`)
 Bridges frontend client fetchers and backend API handlers across languages without manual tracing:
 - **Client Route Extraction**: Statically parses React / Next.js / Vue / Nuxt `fetch<T>()`, `axios.get<T>()`, `useSWR<T>()`, `useQuery<T>()`, and `$fetch<T>()` alongside TypeScript request/response interfaces.
 - **Universal Route Normalization**: Matches parameterized paths (`/api/v1/orders/:id`, `/api/orders/${orderId}`, `/orders/{order_id}`) directly to backend routes in FastAPI, Flask, Django, Express, and NestJS.
 - **Cross-Language Drift Detection**: Flags field name mismatches, type incompatibilities, missing nullable fields, and orphaned client routes before deployment.
 
-### 💥 Pillar 2: Semantic Change Impact & PR Blast Radius Engine (`codegraph impact`)
+### Pillar 2: Semantic Change Impact & PR Blast Radius Engine (`codegraph impact`)
 Full-stack downstream impact analysis from code symbols to production infrastructure:
 - **Blast Radius Tracing**: Traces any symbol or git diff $\to$ direct/transitive callers $\to$ React UI components $\to$ HTTP routes $\to$ DB readers/writers $\to$ covering tests $\to$ monorepo packages.
 - **PR Risk Scoring (0–100)**: Quantitative risk evaluation categorized into `LOW`, `MEDIUM`, `HIGH`, and `CRITICAL`.
 - **Breaking Change Detection**: Identifies public API modifications, DB mutations, and untested code paths.
 - **Smart Test Execution**: Generates targeted test commands (e.g. `pytest tests/test_orders.py -k "test_a or test_b"`) running only the affected test suite.
 
-### ⚡ Pillar 3: Incremental Live Watcher & Instant Cache Invalidation (`codegraph watch`)
+### Pillar 3: Incremental Live Watcher & Instant Cache Invalidation (`codegraph watch`)
 Zero-heat, real-time file system monitoring with sub-15ms incremental reindexing:
 - **Kernel-Push Event Monitoring**: Uses OS-level kernel events (macOS FSEvents, Linux inotify, Windows ReadDirectoryChangesW) via `watchdog`.
 - **250ms Sliding Debounce**: Coalesces rapid multi-file edit bursts from formatters, linters, or git operations into single atomic passes.
