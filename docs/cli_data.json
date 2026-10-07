@@ -236,5 +236,38 @@
     ],
     "example": "codegraph symbol-history resolve_target",
     "output": "Symbol History: resolve_target\n  - [INTRODUCED] 3d71eca (feat: add TargetResolver for v2.1)\n  - [MODIFIED]   9da7eec (refactor: support Class.method resolution)\n  Confidence: AST_VERIFIED"
+  },
+  {
+    "command": "codegraph roblox remotes [PATH]",
+    "category": "Roblox & Luau",
+    "summary": "Inspect Roblox Client <-> Server RemoteEvent and RemoteFunction boundaries.",
+    "problem_solved": "Maps FireServer, InvokeServer, OnServerEvent:Connect, and OnServerInvoke across CLIENT_DISPATCHES_REMOTE and SERVER_HANDLES_REMOTE edges without conflating network boundaries with normal function calls.",
+    "flags": [
+      "--json: Output RemoteEvent / RemoteFunction boundaries as JSON"
+    ],
+    "example": "codegraph roblox remotes .",
+    "output": "Roblox Remotes (2):\n  [RemoteEvent] ReplicatedStorage.Remotes.Inventory\n    \u25b2 Client Dispatchers: ClientController:EquipItem (src/client/controller.luau:14) [ROJO_VERIFIED]\n    \u25bc Server Handlers:    InventoryService:Init (src/server/services/InventoryService.luau:23) [ROJO_VERIFIED]"
+  },
+  {
+    "command": "codegraph roblox modules [PATH]",
+    "category": "Roblox & Luau",
+    "summary": "List Rojo DataModel virtual paths mapped to physical Luau files and inspect REQUIRES_MODULE edges.",
+    "problem_solved": "Resolves default.project.json DataModel trees (ReplicatedStorage, ServerScriptService, StarterPlayerScripts), game:GetService(...) aliases, and bounded script.Parent chains with symlink & path-traversal protection.",
+    "flags": [
+      "--json: Output Rojo virtual-to-physical module mappings and requires as JSON"
+    ],
+    "example": "codegraph roblox modules .",
+    "output": "Rojo Virtual Modules:\n  ReplicatedStorage.Shared.Types -> src/shared/Types.luau [ROJO_VERIFIED]\n  ServerScriptService.Server.Services.InventoryService -> src/server/services/InventoryService.luau [ROJO_VERIFIED]"
+  },
+  {
+    "command": "codegraph roblox routes [PATH]",
+    "category": "Roblox & Luau",
+    "summary": "Trace end-to-end Roblox Client -> Remote -> Server -> Knit/Flamework -> DataStore execution routes.",
+    "problem_solved": "Connects client UI controllers across RemoteEvents/RemoteFunctions into server handlers, Knit/Flamework services, and DataStore/ProfileService persistence entities.",
+    "flags": [
+      "--json: Output end-to-end Roblox client-to-server routes as JSON"
+    ],
+    "example": "codegraph roblox routes .",
+    "output": "Roblox Client \u2194 Server Routes:\n  ClientController:EquipItem\n    --[CLIENT_DISPATCHES_REMOTE]--> ReplicatedStorage.Remotes.Inventory\n    --[SERVER_HANDLES_REMOTE]-----> InventoryService:Init\n    --[WRITES_PERSISTENCE]--------> persistence.roblox.datastore.PlayerInventory_v1"
   }
 ]

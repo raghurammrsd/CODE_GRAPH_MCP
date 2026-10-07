@@ -13,9 +13,9 @@
   <a href="https://github.com/raghurammrsd/CODE_GRAPH_MCP"><img src="https://img.shields.io/github/stars/raghurammrsd/CODE_GRAPH_MCP?style=for-the-badge&logo=github&color=gold" alt="GitHub Stars" /></a>
   <a href="https://pypi.org/project/codegraph-engine/"><img src="https://img.shields.io/badge/pypi-codegraph--engine-3776AB.svg?style=for-the-badge&logo=pypi" alt="PyPI: codegraph-engine" /></a>
   <a href="src/codegraph/mcp/server.py"><img src="https://img.shields.io/badge/MCP-70%20Verified%20Tools-2ea043.svg?style=for-the-badge" alt="MCP Tools: 70 verified" /></a>
-  <a href="tests/"><img src="https://img.shields.io/badge/pytest-980%2B%20passed%20(100%25)-brightgreen.svg?style=for-the-badge&logo=pytest" alt="Tests: 980+ passed" /></a>
+  <a href="tests/"><img src="https://img.shields.io/badge/pytest-990%2B%20passed%20(100%25)-brightgreen.svg?style=for-the-badge&logo=pytest" alt="Tests: 990+ passed" /></a>
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/ruff-0%20errors-success.svg?style=for-the-badge" alt="Ruff: 0 errors" /></a>
-  <a href="src/codegraph/"><img src="https://img.shields.io/badge/mypy-strict%20(120%20files)-blue.svg?style=for-the-badge" alt="Mypy: strict" /></a>
+  <a href="src/codegraph/"><img src="https://img.shields.io/badge/mypy-strict%20(123%20files)-blue.svg?style=for-the-badge" alt="Mypy: strict" /></a>
 </p>
 
 > CodeGraph MCP provides deterministic, evidence-backed repository intelligence through Abstract Syntax Trees, framework router hierarchies, database lineage, and runtime observation.
@@ -26,6 +26,7 @@
   <a href="#overview"><strong>Overview</strong></a> •
   <a href="#interactive-web-dashboard--vs-code-extension"><strong>Web Dashboard & VS Code</strong></a> •
   <a href="#the-three-pillars-of-codegraph-mcp"><strong>The Three Pillars</strong></a> •
+  <a href="#roblox--luau-intelligence-codegraph-roblox"><strong>Roblox & Luau</strong></a> •
   <a href="#2-quickstart-30-second-setup"><strong>Quickstart</strong></a> •
   <a href="#4-real-world-cli-outputs"><strong>CLI Outputs</strong></a> •
   <a href="#6-database-intelligence"><strong>Database Intelligence</strong></a> •
@@ -58,10 +59,10 @@ When AI coding agents (such as Claude Code, Cursor, or Antigravity) explore comp
        ┌─────────────────────────────────────────────────────────────┐
        │                   CODEGRAPH MCP ENGINE                      │
        ├──────────────────────────────┬──────────────────────────────┤
-       │  AST Code Relationships      │  Framework Route Hierarchy   │
-       │  (Callers, Callees, DI)      │  (FastAPI, Django, Express)  │
+       │  AST Code Relationships      │  Framework & Network Graph   │
+       │  (Callers, Callees, DI)      │  (FastAPI, Django, Roblox)   │
        ├──────────────────────────────┼──────────────────────────────┤
-       │  Database Lineage & Schemas  │  Non-Invasive Dev Tracing    │
+       │  Database & DataStore Graph  │  Non-Invasive Dev Tracing    │
        │  (SQLAlchemy, Prisma, ORM)   │  (HTTP metrics, exceptions)  │
        └──────────────────────────────┴──────────────────────────────┘
                                       │
@@ -71,13 +72,13 @@ When AI coding agents (such as Claude Code, Cursor, or Antigravity) explore comp
 
 ### Core Architecture Capabilities
 
-- **Deterministic Evidence Guarantee**: Every returned entity and relationship is statically verified via Abstract Syntax Trees or explicitly flagged as `UNKNOWN` / `POSSIBLE`. CodeGraph MCP provides deterministic, evidence-backed repository intelligence across application code, databases, runtime behavior, and Git history.
+- **Deterministic Evidence Guarantee**: Every returned entity and relationship is statically verified via Abstract Syntax Trees (`AST_VERIFIED`, `FRAMEWORK_VERIFIED`, `ROJO_VERIFIED`) or explicitly flagged as `UNKNOWN` / `POSSIBLE`. CodeGraph MCP provides deterministic, evidence-backed repository intelligence across application code, databases, runtime behavior, and Git history.
 - **Sub-5ms Freshness Verification**: Monotonic commit tracking validates `git rev-parse HEAD` and porcelain status instantly, avoiding full-tree re-indexing on unchanged codebases.
 - **Context Window Optimization**: Yields 65% to 85% token reduction by returning structured, bounded source slices rather than entire file dumps.
 - **Zero-Friction Dev Interception (`codegraph run`)**: Wraps local development servers (e.g., `codegraph run npm run dev`, `codegraph run uvicorn main:app`) to capture real HTTP routes, latencies, and stack traces without application code changes.
 - **Multi-Agent Setup (`codegraph install`)**: Automatically detects, configures, and verifies integrations for Claude Code, Cursor, Antigravity, and Cline.
 
-> **Supported Languages & Frameworks:** Python (`FastAPI`, `Flask`, `Django`, `SQLAlchemy`, `PyTorch`, `Celery`, `LangChain`, `LlamaIndex`, `Ray`, `pytest`) and TypeScript / JavaScript (`.ts`, `.tsx`, `.js`, `.jsx`, `React`, `Next.js`, `NestJS`, `Express.js`, `Prisma`, `Drizzle`, `Mongoose`).
+> **Supported Languages & Frameworks:** Python (`FastAPI`, `Flask`, `Django`, `SQLAlchemy`, `PyTorch`, `Celery`, `LangChain`, `LlamaIndex`, `Ray`, `pytest`), TypeScript / JavaScript (`.ts`, `.tsx`, `.js`, `.jsx`, `React`, `Next.js`, `NestJS`, `Express.js`, `Prisma`, `Drizzle`, `Mongoose`), and Roblox / Luau (`.lua`, `.luau`, `Rojo`, `Knit`, `Flamework / roblox-ts`, `DataStoreService`, `ProfileService`).
 
 <p align="center">
   <img src="docs/assets/codegraph_full_architecture.svg" alt="CodeGraph MCP Comprehensive Full-Stack Architecture Pipeline" width="950" />
@@ -165,6 +166,14 @@ CodeGraph MCP natively parses AI/ML architectures and agent pipelines into deter
 - **LangChain & LlamaIndex Agent Tools**: Statically detects `@tool`, `@function_tool`, and dynamic agent registries, connecting agent capabilities to handler implementations (`AGENT_TOOL`).
 - **LangChain LCEL Pipelines**: Tracks pipe syntax (`prompt | model | parser`) as executable pipeline dataflow (`CHAINS_TO`).
 - **Distributed Ray Tasks**: Detects `@ray.remote` actor decorators and `task.remote()` invocations (`DISPATCHES_RAY_TASK`).
+
+### Roblox & Luau Intelligence (`codegraph roblox`)
+First-class repository intelligence for Roblox game architectures (`.lua`, `.luau`, and `roblox-ts`):
+- **Native Luau Parser**: Extracts local/global functions, colon methods (`function Service:Init()`), dot methods (`function Module.Func()`), table-assigned methods (`Service.Method = function(...)`), module table returns, `return table.freeze(Module)`, and Luau `type` / `export type` declarations.
+- **Rojo DataModel Mapping (`default.project.json`)**: Maps virtual Roblox paths (`ReplicatedStorage`, `ServerScriptService`, `StarterPlayerScripts`, `Packages`, `script.Parent`) to physical files on disk with `ROJO_VERIFIED` provenance (`REQUIRES_MODULE`).
+- **Client $\leftrightarrow$ Server Network Graph**: Traces `RemoteEvent:FireServer(...)` $\to$ `OnServerEvent:Connect(handler)` and `RemoteFunction:InvokeServer(...)` $\to$ `OnServerInvoke = handler` through canonical Remote nodes via `CLIENT_DISPATCHES_REMOTE` and `SERVER_HANDLES_REMOTE`.
+- **Knit, Flamework & Persistence**: Tracks `Knit.CreateService` / `Knit.GetService`, Flamework `@Service` / `@Controller` / `Dependency<T>`, and `DataStoreService:GetDataStore` (`GetAsync`, `SetAsync`, `UpdateAsync`) + `ProfileService` (`CONFIGURES_PERSISTENCE`, `READS_PERSISTENCE`, `WRITES_PERSISTENCE`).
+- **Dedicated CLI Inspection**: `codegraph roblox remotes`, `codegraph roblox modules`, and `codegraph roblox routes`.
 
 ### Pillar 1: The Unified Full-Stack Bridge (`codegraph api-drift`)
 Bridges frontend client fetchers and backend API handlers across languages without manual tracing:

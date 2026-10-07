@@ -732,7 +732,7 @@
     <div>
       <div class="hero-badge-tag">
         <span class="dot-online"></span>
-        <span>v3.0.0 Production · Web UI, VS Code, AI/ML &amp; Three Pillars</span>
+        <span>v3.0.0 Production · Web UI, VS Code, AI/ML, Roblox/Luau &amp; Three Pillars</span>
       </div>
 
       <h1 class="hero-headline-h1">
@@ -741,7 +741,7 @@
       </h1>
 
       <p class="hero-summary-p">
-        CodeGraph MCP maps repository relationships with <strong>interactive Web visualizer</strong>, <strong>VS Code extension</strong>, <strong>Three Pillars</strong>, <strong>AI/ML PyTorch stack</strong>, and <strong>database lineage</strong>. AI coding agents resolve call hierarchies, mutating SQL queries, and pre-merge contract conflicts in <strong>&lt; 50ms</strong> without token waste.
+        CodeGraph MCP maps repository relationships with <strong>interactive Web visualizer</strong>, <strong>VS Code extension</strong>, <strong>Three Pillars</strong>, <strong>AI/ML PyTorch stack</strong>, <strong>Roblox/Luau intelligence</strong>, and <strong>database lineage</strong>. AI coding agents resolve call hierarchies, mutating SQL queries, and pre-merge contract conflicts in <strong>&lt; 50ms</strong> without token waste.
       </p>
 
       <!-- Tabbed Terminal Box (Elevated above fold for immediate visibility) -->
@@ -750,8 +750,8 @@
           <button class="term-tab-item active" onclick="setHeroTermCmd('pip install codegraph-engine[mcp]', this)">Install</button>
           <button class="term-tab-item" onclick="setHeroTermCmd('codegraph ui', this)">Web Dashboard</button>
           <button class="term-tab-item" onclick="setHeroTermCmd('codegraph watch .', this)">Live Watcher</button>
+          <button class="term-tab-item" onclick="setHeroTermCmd('codegraph roblox routes', this)">Roblox Routes</button>
           <button class="term-tab-item" onclick="setHeroTermCmd('codegraph impact --symbol main', this)">PR Blast Radius</button>
-          <button class="term-tab-item" onclick="setHeroTermCmd('from codegraph import get_context', this)">Python API</button>
         </div>
         <div class="term-code-line">
           <span id="heroTermCmdText">$ pip install codegraph-engine[mcp]</span>
@@ -772,6 +772,7 @@
       <div class="cap-pills-row">
         <a href="#reading-graph-browser" class="cap-pill-btn" style="background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe;">&#10003; Web Dashboard (UI)</a>
         <a href="#vscode-extension-guide" class="cap-pill-btn" style="background:#fdf4ff;color:#a21caf;border-color:#f5d0fe;">&#10003; VS Code Extension</a>
+        <a href="#roblox-luau-guide" class="cap-pill-btn" style="background:#fff7ed;color:#c2410c;border-color:#fed7aa;">&#10003; Roblox &amp; Luau</a>
         <a href="#git-intelligence-guide" class="cap-pill-btn" style="background:#ecfdf5;color:#059669;border-color:#a7f3d0;">&#10003; Git Intelligence</a>
         <a href="#runtime-telemetry-concept" class="cap-pill-btn rt">&#10003; Runtime Telemetry</a>
         <a href="#database-lineage-concept" class="cap-pill-btn db">&#9670; Database Lineage</a>
@@ -904,8 +905,8 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
         </div>
         <div class="feat-card-texts">
-          <h3>Tree-sitter &amp; AST parsing</h3>
-          <p>Deterministic parsing across Python, JavaScript, and TypeScript.</p>
+          <h3>Multi-Language AST &amp; Luau</h3>
+          <p>Deterministic parsing across Python, TypeScript, JavaScript, and Roblox Luau (<code>.lua</code> / <code>.luau</code>).</p>
         </div>
       </div>
       <div class="feat-arrow-circle">&rarr;</div>
@@ -925,15 +926,15 @@
       <div class="feat-arrow-circle">&rarr;</div>
     </a>
 
-    <!-- Card 5: Framework-aware routes -->
-    <a href="#framework-routes-guide" class="landing-feature-card">
+    <!-- Card 5: Framework-aware routes & Roblox Remotes -->
+    <a href="#roblox-luau-guide" class="landing-feature-card">
       <div class="feat-card-left">
         <div class="feat-icon-box rose">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
         </div>
         <div class="feat-card-texts">
-          <h3>Framework-aware routes</h3>
-          <p>FastAPI, Flask, Django, and Express.js route discovery.</p>
+          <h3>Routes &amp; Roblox Network Graph</h3>
+          <p>FastAPI, Flask, Django, Express, plus Rojo, RemoteEvents, Knit &amp; Flamework.</p>
         </div>
       </div>
       <div class="feat-arrow-circle">&rarr;</div>
@@ -996,6 +997,7 @@
       <ul class="nav-items-block">
         <li><a href="#indexing-a-project" class="nav-link-entry">Indexing a Project</a></li>
         <li><a href="#reading-graph-browser" class="nav-link-entry">Reading Your Graph in the Browser</a></li>
+        <li><a href="#roblox-luau-guide" class="nav-link-entry">Roblox &amp; Luau Intelligence</a></li>
         <li><a href="#framework-routes-guide" class="nav-link-entry">Framework Routes</a></li>
         <li><a href="#affected-tests-ci" class="nav-link-entry">Affected Tests in CI</a></li>
         <li><a href="#database-schema-guide" class="nav-link-entry">Database Schema &amp; Writers</a></li>
@@ -1014,7 +1016,7 @@
         <li><a href="#tools-routes" class="nav-link-entry"><span>Route Tools</span> <span class="count-badge-mini">2</span></a></li>
         <li><a href="#tools-git" class="nav-link-entry"><span>Git Tools</span> <span class="count-badge-mini">4</span></a></li>
         <li><a href="#tools-tests" class="nav-link-entry"><span>Test Tools</span> <span class="count-badge-mini">2</span></a></li>
-        <li><a href="#cli-reference" class="nav-link-entry"><span>CLI Commands</span> <span class="count-badge-mini">13</span></a></li>
+        <li><a href="#cli-reference" class="nav-link-entry"><span>CLI Commands</span> <span class="count-badge-mini">16</span></a></li>
         <li><a href="#benchmarks" class="nav-link-entry"><span>Benchmarks</span></a></li>
       </ul>
 
@@ -1063,6 +1065,9 @@
             <a href="#reading-graph-browser">Reading Your Graph in the Browser</a> &mdash; <code>codegraph ui</code>: callers, source and callees on one screen.
           </li>
           <li>
+            <a href="#roblox-luau-guide">Roblox &amp; Luau Intelligence</a> &mdash; Rojo DataModel mapping, RemoteEvent/RemoteFunction client-server graphs, Knit, Flamework, and DataStores.
+          </li>
+          <li>
             <a href="#git-intelligence-guide">Git-Aware Intelligence &amp; Merge Conflicts</a> &mdash; AST diffs, impact trees, and pre-merge contract conflicts.
           </li>
           <li>
@@ -1085,7 +1090,7 @@
           <strong>CodeGraph MCP</strong> is a deterministic, local-first code-intelligence engine for AI coding agents. Instead of letting agents waste context tokens repeatedly running <code>grep</code>, <code>find</code>, and reading hundreds of random files, CodeGraph MCP pre-indexes the structural relationships of a repository.
         </p>
         <p class="editorial-p">
-          It parses code locally using Tree-sitter to deterministically extract symbols, definitions, class hierarchies, import chains, and function call relationships. The extracted graph is stored local-first inside a project-level SQLite database with WAL mode and FTS5 full-text search.
+          It parses code locally across Python, TypeScript/JavaScript, and Roblox Luau to deterministically extract symbols, definitions, class/table hierarchies, import/require chains, and function call relationships. The extracted graph is stored local-first inside a project-level SQLite database with WAL mode and FTS5 full-text search.
         </p>
 
         <!-- Section: Quickstart & Installation -->
@@ -1137,10 +1142,25 @@ codegraph status .</pre>
           CodeGraph MCP operates through a deterministic four-phase pipeline:
         </p>
         <ul class="book-bullet-list">
-          <li><strong>Tree-sitter Parsing:</strong> Source files are parsed incrementally into concrete ASTs. Zero LLM hallucinations.</li>
-          <li><strong>Relational Graph Storage:</strong> Symbols, calls, imports, and routes are stored in SQLite with foreign-key constraints.</li>
+          <li><strong>Tree-sitter &amp; Luau AST Parsing:</strong> Source files are parsed incrementally into concrete ASTs. Zero LLM hallucinations.</li>
+          <li><strong>Relational Graph Storage:</strong> Symbols, calls, imports, Rojo modules, and routes are stored in SQLite with foreign-key constraints.</li>
           <li><strong>Deterministic Resolution:</strong> Canonical IDs, qualified names, and route endpoints are resolved with explicit ambiguity states.</li>
           <li><strong>MCP Tool Serving:</strong> FastMCP stdio/SSE server serves 70 verified tools with token-bounded context packets.</li>
+        </ul>
+
+        <!-- Section: Roblox & Luau Intelligence (v3.0.0) -->
+        <h2 class="editorial-h2" id="roblox-luau-guide">Roblox &amp; Luau Intelligence (v3.0.0)</h2>
+        <p class="editorial-p">
+          CodeGraph MCP v3.0.0 includes production-grade repository intelligence for Roblox game architectures (<code>.lua</code>, <code>.luau</code>, and <code>roblox-ts</code>).
+        </p>
+        <div class="callout-box" style="background:#fff7ed; border-left: 3px solid #ea580c; padding: 0.75rem 1rem; border-radius: 6px; margin: 1rem 0;">
+          <strong style="color:#c2410c;">End-to-End Client &harr; Server Tracing:</strong> Traces client scripts firing <code>RemoteEvent:FireServer</code> or <code>RemoteFunction:InvokeServer</code> directly across canonical Remote nodes to server handlers (<code>OnServerEvent:Connect</code> / <code>OnServerInvoke</code>) and downstream <code>DataStoreService</code> writes.
+        </div>
+        <ul class="book-bullet-list">
+          <li><strong>First-Class Luau Parser:</strong> Local/global functions, colon methods (<code>function Service:Init()</code>), dot methods, table-assigned methods, <code>return table.freeze(Module)</code>, and Luau <code>type</code> / <code>export type</code> declarations.</li>
+          <li><strong>Rojo Project Resolution (<code>default.project.json</code>):</strong> Maps virtual DataModel paths (<code>ReplicatedStorage</code>, <code>ServerScriptService</code>, <code>StarterPlayerScripts</code>, <code>Packages</code>, <code>script.Parent</code>) to physical files with <code>ROJO_VERIFIED</code> evidence (<code>codegraph roblox modules</code>).</li>
+          <li><strong>Client &harr; Server Network Graph:</strong> Connects client dispatchers and server handlers via <code>CLIENT_DISPATCHES_REMOTE</code> and <code>SERVER_HANDLES_REMOTE</code> (<code>codegraph roblox remotes</code>).</li>
+          <li><strong>Knit, Flamework &amp; Persistence:</strong> Tracks <code>Knit.CreateService</code> / <code>Knit.GetService</code>, Flamework <code>@Service</code> / <code>@Controller</code> / <code>Dependency&lt;T&gt;</code>, and <code>DataStoreService:GetDataStore</code> + <code>ProfileService</code> (<code>codegraph roblox routes</code>).</li>
         </ul>
 
         <!-- Section: Git-Aware Intelligence (v3.0.0) -->
@@ -1213,7 +1233,7 @@ codegraph status .</pre>
 
         <h2 class="editorial-h2" id="framework-routes-guide">Framework Routes</h2>
         <p class="editorial-p">
-          CodeGraph MCP automatically traces routes for FastAPI, Flask, Django, Express.js, and NestJS, connecting HTTP verbs and path templates directly to their handler symbols.
+          CodeGraph MCP automatically traces routes for FastAPI, Flask, Django, Express.js, NestJS, and Roblox RemoteEvents/RemoteFunctions, connecting HTTP verbs, path templates, and Remote nodes directly to their handler symbols.
         </p>
 
         <h2 class="editorial-h2" id="affected-tests-ci">Affected Tests in CI</h2>
@@ -7465,29 +7485,159 @@ Working Tree:   0 modified, 0 untracked</pre>
           </div>
         </section>
 
+        <!-- CLI Entry: codegraph roblox remotes [PATH] -->
+        <section class="cli-doc-card" id="cli-codegraph-roblox-remotes">
+          <div class="tool-doc-head-row">
+            <span class="cli-cmd-heading">codegraph roblox remotes [PATH]</span>
+            <span class="cat-tag-pill framework">ROBLOX &amp; LUAU</span>
+          </div>
+          <p class="editorial-p">Inspect Roblox Client &harr; Server RemoteEvent and RemoteFunction boundaries with explicit client dispatchers and server handlers.</p>
+          <div class="editorial-note-box">
+            <strong>Resolves:</strong> Maps <code>FireServer</code>, <code>InvokeServer</code>, <code>OnServerEvent:Connect</code>, and <code>OnServerInvoke</code> across <code>CLIENT_DISPATCHES_REMOTE</code> and <code>SERVER_HANDLES_REMOTE</code> edges without conflating network boundaries with local function calls.
+          </div>
+
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Terminal Command</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy</button>
+            </div>
+            <pre class="code-text-pre">codegraph roblox remotes .</pre>
+          </div>
+
+          <div class="tool-mini-title">Flags &amp; Options</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Flag</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">--json</td><td>Output RemoteEvent / RemoteFunction boundaries as JSON</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Terminal Output</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Deterministic Output</span>
+            </div>
+            <pre class="code-text-pre">Roblox Remotes (2):
+  [RemoteEvent] ReplicatedStorage.Remotes.Inventory
+    ▲ Client Dispatchers: ClientController:EquipItem (src/client/controller.luau:14) [ROJO_VERIFIED]
+    ▼ Server Handlers:    InventoryService:Init (src/server/services/InventoryService.luau:23) [ROJO_VERIFIED]</pre>
+          </div>
+        </section>
+
+        <!-- CLI Entry: codegraph roblox modules [PATH] -->
+        <section class="cli-doc-card" id="cli-codegraph-roblox-modules">
+          <div class="tool-doc-head-row">
+            <span class="cli-cmd-heading">codegraph roblox modules [PATH]</span>
+            <span class="cat-tag-pill framework">ROBLOX &amp; LUAU</span>
+          </div>
+          <p class="editorial-p">List Rojo DataModel virtual paths mapped to physical Luau files and inspect <code>REQUIRES_MODULE</code> edges.</p>
+          <div class="editorial-note-box">
+            <strong>Resolves:</strong> Resolves <code>default.project.json</code> DataModel trees (<code>ReplicatedStorage</code>, <code>ServerScriptService</code>, <code>StarterPlayerScripts</code>), <code>game:GetService(...)</code> aliases, and bounded <code>script.Parent</code> chains with symlink &amp; path-traversal protection.
+          </div>
+
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Terminal Command</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy</button>
+            </div>
+            <pre class="code-text-pre">codegraph roblox modules .</pre>
+          </div>
+
+          <div class="tool-mini-title">Flags &amp; Options</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Flag</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">--json</td><td>Output Rojo virtual-to-physical module mappings and requires as JSON</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Terminal Output</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Deterministic Output</span>
+            </div>
+            <pre class="code-text-pre">Rojo Virtual Modules:
+  ReplicatedStorage.Shared.Types -> src/shared/Types.luau [ROJO_VERIFIED]
+  ServerScriptService.Server.Services.InventoryService -> src/server/services/InventoryService.luau [ROJO_VERIFIED]</pre>
+          </div>
+        </section>
+
+        <!-- CLI Entry: codegraph roblox routes [PATH] -->
+        <section class="cli-doc-card" id="cli-codegraph-roblox-routes">
+          <div class="tool-doc-head-row">
+            <span class="cli-cmd-heading">codegraph roblox routes [PATH]</span>
+            <span class="cat-tag-pill framework">ROBLOX &amp; LUAU</span>
+          </div>
+          <p class="editorial-p">Trace end-to-end Roblox Client &rarr; Remote &rarr; Server &rarr; Knit/Flamework &rarr; DataStore execution routes.</p>
+          <div class="editorial-note-box">
+            <strong>Resolves:</strong> Connects client UI controllers across RemoteEvents/RemoteFunctions into server handlers, Knit/Flamework services, and DataStore/ProfileService persistence entities (<code>persistence.roblox.datastore.&lt;name&gt;</code>).
+          </div>
+
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Terminal Command</span>
+              <button class="btn-copy-code" onclick="copySnippetText(this)">Copy</button>
+            </div>
+            <pre class="code-text-pre">codegraph roblox routes .</pre>
+          </div>
+
+          <div class="tool-mini-title">Flags &amp; Options</div>
+          <div class="table-container">
+            <table class="data-table-clean">
+              <thead>
+                <tr><th>Flag</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code-font">--json</td><td>Output end-to-end Roblox client-to-server routes as JSON</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tool-mini-title">Terminal Output</div>
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Deterministic Output</span>
+            </div>
+            <pre class="code-text-pre">Roblox Client ↔ Server Routes:
+  ClientController:EquipItem
+    --[CLIENT_DISPATCHES_REMOTE]--> ReplicatedStorage.Remotes.Inventory
+    --[SERVER_HANDLES_REMOTE]-----> InventoryService:Init
+    --[WRITES_PERSISTENCE]--------> persistence.roblox.datastore.PlayerInventory_v1</pre>
+          </div>
+        </section>
+
         <!-- Chapter: Benchmarks -->
         <h2 class="editorial-h2" id="benchmarks">Scaling Benchmarks</h2>
         <p class="editorial-p">
-          Empirically measured scaling metrics across codebases from 10,000 to over 1,000,000 lines of code.
+          Empirically measured scaling metrics across realistic multi-language polyglot and Rojo/Luau repositories (Apple Silicon M-Series, Python 3.12, SQLite WAL + FTS5).
         </p>
 
         <div class="table-container">
           <table class="data-table-clean">
             <thead>
               <tr>
-                <th>Scale</th>
+                <th>Scale Tier</th>
                 <th>Cold Index Time</th>
-                <th>Warm Re-index</th>
-                <th>Query Latency</th>
+                <th>Incremental (1 File)</th>
+                <th>Query Latency (p50)</th>
                 <th>Database Size</th>
-                <th>Memory Footprint</th>
+                <th>Peak Memory</th>
               </tr>
             </thead>
             <tbody>
-              <tr><td class="code-font">Small (10k LOC)</td><td>0.42 s</td><td>0.08 s</td><td>12 ms</td><td>2.4 MB</td><td>&lt; 35 MB</td></tr>
-              <tr><td class="code-font">Medium (100k LOC)</td><td>2.85 s</td><td>0.31 s</td><td>24 ms</td><td>18.2 MB</td><td>&lt; 85 MB</td></tr>
-              <tr><td class="code-font">Large (500k LOC)</td><td>11.40 s</td><td>1.15 s</td><td>42 ms</td><td>76.5 MB</td><td>&lt; 180 MB</td></tr>
-              <tr><td class="code-font">Monorepo (1M+ LOC)</td><td>23.10 s</td><td>2.40 s</td><td>58 ms</td><td>152.0 MB</td><td>&lt; 320 MB</td></tr>
+              <tr><td class="code-font">Small (101 files / ~5k LOC)</td><td>0.45 s</td><td>0.036 s (36 ms)</td><td>1.6 ms</td><td>1.46 MB</td><td>0.85 MB</td></tr>
+              <tr><td class="code-font">Medium (504 files / ~25k LOC)</td><td>2.69 s</td><td>0.044 s (44 ms)</td><td>2.1 ms</td><td>7.36 MB</td><td>3.23 MB</td></tr>
+              <tr><td class="code-font">Roblox Rojo (1,000 Luau files)</td><td>1.37 s</td><td>0.031 s (31 ms)</td><td>1.9 ms</td><td>8.90 MB</td><td>4.10 MB</td></tr>
+              <tr><td class="code-font">Large (1,504 files / ~75k LOC)</td><td>9.96 s</td><td>0.056 s (56 ms)</td><td>2.7 ms</td><td>22.34 MB</td><td>9.15 MB</td></tr>
+              <tr><td class="code-font">Extra-Large (2,504 files / ~120k LOC)</td><td>22.26 s</td><td>0.070 s (70 ms)</td><td>3.1 ms</td><td>37.39 MB</td><td>15.10 MB</td></tr>
             </tbody>
           </table>
         </div>
@@ -7530,8 +7680,9 @@ Working Tree:   0 modified, 0 untracked</pre>
         <li><a href="#vscode-extension-guide">VS Code Extension</a></li>
         <li><a href="#runtime-telemetry-concept">Runtime Telemetry</a></li>
         <li><a href="#database-lineage-concept">Database Lineage</a></li>
+        <li><a href="#roblox-luau-guide">Roblox &amp; Luau</a></li>
         <li><a href="#tools-database">MCP Tools (70)</a></li>
-        <li><a href="#cli-reference">CLI Reference (42)</a></li>
+        <li><a href="#cli-reference">CLI Reference (45)</a></li>
         <li><a href="#benchmarks">Scaling Benchmarks</a></li>
       </ul>
     </aside>
