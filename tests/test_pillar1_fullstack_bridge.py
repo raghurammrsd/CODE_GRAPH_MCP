@@ -85,7 +85,7 @@ export function OrderList({ userId }: { userId: number }) {
         indexer = Indexer(repo)
         indexer.index()
 
-        with indexer.connect() as con:
+        with indexer.session() as con:
             # 1. Verify FETCHES_ROUTE reference
             fetches_refs = con.execute(
                 "SELECT source_symbol_id, target_symbol_id, relationship, confidence FROM 'references' WHERE relationship = 'FETCHES_ROUTE'"
@@ -178,7 +178,7 @@ export function ProfileCard() {
         indexer = Indexer(repo)
         indexer.index()
 
-        with indexer.connect() as con:
+        with indexer.session() as con:
             report = detect_api_contract_drift(con, repo)
 
             assert report.has_drift is True
@@ -241,7 +241,7 @@ export function App() {
         assert drift_res["total_client_calls"] >= 1
 
         # Verify client routes are indexed in local_bindings table
-        with indexer.connect() as con:
+        with indexer.session() as con:
             bindings = con.execute(
                 "SELECT target_name, expr_kind FROM local_bindings WHERE expr_kind = 'REACT_FETCH_ROUTE'"
             ).fetchall()

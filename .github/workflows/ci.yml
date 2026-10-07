@@ -73,6 +73,8 @@ jobs:
         run: python -m pytest tests/test_determinism_and_soak.py -v
       - name: Run Three Pillars & Full-Stack Tests
         run: python -m pytest tests/test_pillar1_fullstack_bridge.py tests/test_pillar2_change_impact.py tests/test_pillar3_incremental_watcher.py tests/test_safe_rename.py -v
+      - name: Run Roblox & Luau Intelligence Tests
+        run: python -m pytest tests/test_roblox_luau_intelligence.py -v
 
   production-benchmark-regression:
     name: 50-Task Production Benchmark & Baseline Regression Gate

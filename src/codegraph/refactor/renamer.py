@@ -493,7 +493,7 @@ def plan_safe_rename(
     # A. Definition file spans
     def_abs_path = safe_path(repo_root, target_path)
     if def_abs_path.exists():
-        def_content = def_abs_path.read_text(encoding="utf-8", errors="replace")
+        def_content = def_abs_path.read_bytes().decode("utf-8", errors="replace")
         collector = PythonSpanCollector(
             content=def_content,
             path=target_path,
@@ -570,7 +570,7 @@ def plan_safe_rename(
         if not abs_p.exists():
             continue
         affected_files.add(file_path)
-        content = abs_p.read_text(encoding="utf-8", errors="replace")
+        content = abs_p.read_bytes().decode("utf-8", errors="replace")
         collector = PythonSpanCollector(
             content=content,
             path=file_path,
@@ -695,7 +695,7 @@ def preview_safe_rename(
             errors.append(f"FILE_NOT_FOUND: '{rel_path}' does not exist on disk.")
             continue
 
-        orig_text = abs_p.read_text(encoding="utf-8", errors="replace")
+        orig_text = abs_p.read_bytes().decode("utf-8", errors="replace")
         file_spans = spans_by_file.get(rel_path, [])
 
         if not file_spans:

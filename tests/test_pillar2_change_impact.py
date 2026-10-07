@@ -75,7 +75,7 @@ def test_calculate_discount_vip():
         indexer = Indexer(repo)
         indexer.index()
 
-        with indexer.connect() as con:
+        with indexer.session() as con:
             report = get_deep_change_impact(repo, con, symbol="calculate_discount")
 
             assert report.target_symbol == "calculate_discount"
@@ -123,7 +123,7 @@ def delete_user_account(user_id: int):
         indexer = Indexer(repo)
         indexer.index()
 
-        with indexer.connect() as con:
+        with indexer.session() as con:
             report = get_deep_change_impact(repo, con, symbol="delete_user_account")
 
             assert report.target_symbol == "delete_user_account"
@@ -153,7 +153,7 @@ def pure_math_helper(x: int) -> int:
         indexer = Indexer(repo)
         indexer.index()
 
-        with indexer.connect() as con:
+        with indexer.session() as con:
             report = get_deep_change_impact(repo, con, symbol="pure_math_helper")
             assert report.blast_radius_score < 25.0
             assert report.risk_level == "LOW"

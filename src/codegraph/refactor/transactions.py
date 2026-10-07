@@ -1,7 +1,6 @@
 """Repository-scoped refactor transaction manager and atomic rollback engine."""
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
 import os
@@ -10,6 +9,11 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - Windows
+    fcntl = None  # type: ignore[assignment]
 
 from codegraph.errors import SecurityError
 from codegraph.refactor.models import (
@@ -47,13 +51,19 @@ class RefactorLock:
         start = time.time()
         while True:
             try:
-                # Open or create lockfile
-                self._fd = os.open(
-                    str(self.lock_file),
-                    os.O_RDWR | os.O_CREAT | os.O_TRUNC,
-                    0o644,
-                )
-                fcntl.flock(self._fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                if fcntl is not None:
+                    self._fd = os.open(
+                        str(self.lock_file),
+                        os.O_RDWR | os.O_CREAT | os.O_TRUNC,
+                        0o644,
+                    )
+                    fcntl.flock(self._fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                else:
+                    self._fd = os.open(
+                        str(self.lock_file),
+                        os.O_RDWR | os.O_CREAT | os.O_EXCL,
+                        0o644,
+                    )
                 # Write current PID into lock file
                 os.write(self._fd, f"{os.getpid()}:{datetime.now(UTC).isoformat()}".encode())
                 return
@@ -74,7 +84,8 @@ class RefactorLock:
     def release(self) -> None:
         if self._fd is not None:
             try:
-                fcntl.flock(self._fd, fcntl.LOCK_UN)
+                if fcntl is not None:
+                    fcntl.flock(self._fd, fcntl.LOCK_UN)
                 os.close(self._fd)
             except OSError:
                 pass
@@ -208,8 +219,8 @@ def commit_refactor_transaction(
                 new_text = modified_buffers[rel_path]
                 replacement_hashes[rel_path] = compute_sha256(new_text)
 
-                # Write content to sibling temp file
-                temp_file.write_text(new_text, encoding="utf-8")
+                # Write content to sibling temp file preserving exact line endings
+                temp_file.write_bytes(new_text.encode("utf-8"))
 
                 # Preserve original permissions
                 try:
@@ -351,7 +362,7 @@ def rollback_refactor(repository: Path, transaction_id: str) -> RefactorResult:
                 temp_files_created.append(temp_file)
 
                 orig_text = original_contents.get(rel_path, "")
-                temp_file.write_text(orig_text, encoding="utf-8")
+                temp_file.write_bytes(orig_text.encode("utf-8"))
                 try:
                     shutil.copymode(abs_path, temp_file)
                 except OSError:
