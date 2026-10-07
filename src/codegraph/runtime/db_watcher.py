@@ -89,7 +89,7 @@ def check_sqlite_schema_version(db_path: Path) -> int:
     if not db_path.exists():
         return 0
     try:
-        con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        con = sqlite3.connect(str(db_path), timeout=5.0)
         cur = con.execute("PRAGMA schema_version")
         val = cur.fetchone()
         con.close()
@@ -142,7 +142,7 @@ def detect_schema_drift(
         target_db = local_dbs[0]
         schema_version_str = str(check_sqlite_schema_version(target_db))
         try:
-            live_con = sqlite3.connect(f"file:{target_db}?mode=ro", uri=True)
+            live_con = sqlite3.connect(str(target_db), timeout=5.0)
             live_tables = [
                 row[0].lower()
                 for row in live_con.execute(

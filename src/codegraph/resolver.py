@@ -20,6 +20,7 @@ import posixpath
 import re
 import sqlite3
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from codegraph.binding_resolver import LocalBindingResolver
 from codegraph.epistemic import RelationshipEvidenceClass
@@ -160,6 +161,7 @@ class ReferenceResolver:
         bindings: list[BindingRef] | None = None,
         workspace: WorkspaceInfo | None = None,
         tsconfig_resolver: TsConfigResolver | None = None,
+        repository: Path | None = None,
         max_reexport_depth: int = 16,
         max_wildcard_expansions: int = 64,
     ) -> None:
@@ -175,6 +177,7 @@ class ReferenceResolver:
         self.indexed_commit = indexed_commit
         self.workspace = workspace
         self.tsconfig_resolver = tsconfig_resolver
+        self.repository = repository
         self.max_reexport_depth = max_reexport_depth
         self.max_wildcard_expansions = max_wildcard_expansions
 
@@ -3834,6 +3837,28 @@ class ReferenceResolver:
                     evidence_class=RelationshipEvidenceClass.STATIC_VERIFIED.value,
                     reason=f"html_stylesheet:{href_val}",
                 )
+            )
+
+        # Roblox & Luau Intelligence (Phases R2-R8)
+        has_luau_or_roblox = any(
+            f.endswith((".lua", ".luau")) for f in self.known_files
+        ) or any(
+            b.expr_kind.startswith("ROBLOX_") for b in self.bindings
+        )
+        if has_luau_or_roblox:
+            from codegraph.roblox import resolve_roblox_intelligence
+
+            repo_path = Path(self.repository) if self.repository is not None else None
+            resolve_roblox_intelligence(
+                repository=repo_path,
+                symbols=self.symbols,
+                bindings=self.bindings,
+                known_files=self.known_files,
+                file_hashes=self.file_hashes,
+                indexed_commit=self.indexed_commit,
+                add_ref=add_ref,
+                add_edge=add_edge,
+                resolved_imports=resolved_imports,
             )
 
         return ResolutionOutput(

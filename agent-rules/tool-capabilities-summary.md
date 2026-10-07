@@ -33,6 +33,7 @@
 | **`STATIC_VERIFIED`** | Proven by static SQL DDL/DML or migration parsing | Rely on table/column/query/migration relationship as verified static fact. |
 | **`FRAMEWORK_VERIFIED`** | Proven by deterministic framework rules | Rely on route/ORM/DI/task/event relationship as verified framework fact. |
 | **`DATAFLOW_VERIFIED`** | Proven by conservative local/container binding | Rely on resolved target as verified dataflow fact. |
+| **`ROJO_VERIFIED`** | Proven by deterministic Rojo `default.project.json` DataModel mapping | Rely on virtual-to-physical Luau module resolution as verified fact. |
 | **`RUNTIME_OBSERVED`** | Observed in an ingested runtime trace (`observation_count >= 1`) | Treat as verified runtime execution fact; never promote to static `AST_VERIFIED` proof. |
 | **`RUNTIME_UNOBSERVED`** | Not observed in the ingested runtime trace sample | Never claim the static path is dead code or impossible at runtime. |
 | **`POSSIBLE`** | Plausible candidate, not statically guaranteed | Treat as lead; verify with targeted `get_file` / `read_file` before claiming as fact. |

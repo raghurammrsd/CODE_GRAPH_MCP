@@ -25,7 +25,7 @@ def test_fullstack_blast_radius_and_frontend_ui_impact():
     - Affected frontend React component fetching the route
     - Breaking change flags
     """
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdir:
         repo = Path(tmpdir)
         src = repo / "src"
         src.mkdir(parents=True, exist_ok=True)
@@ -107,7 +107,7 @@ def test_calculate_discount_vip():
 
 def test_database_mutation_blast_radius_and_uncovered_flag():
     """Verify that mutating database queries are captured in db_writers and risk flags."""
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdir:
         repo = Path(tmpdir)
         src = repo / "src"
         src.mkdir(parents=True, exist_ok=True)
@@ -139,7 +139,7 @@ def delete_user_account(user_id: int):
 
 def test_pr_risk_scoring_scale_and_levels():
     """Verify risk levels: LOW, MEDIUM, HIGH, CRITICAL based on blast radius score."""
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdir:
         repo = Path(tmpdir)
         src = repo / "src"
         src.mkdir(parents=True, exist_ok=True)
@@ -161,7 +161,7 @@ def pure_math_helper(x: int) -> int:
 
 def test_mcp_get_change_impact_with_symbol_param():
     """Verify that MCP tool get_change_impact accepts symbol parameter and runs asynchronously."""
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdir:
         repo = Path(tmpdir)
         src = repo / "src"
         src.mkdir(parents=True, exist_ok=True)

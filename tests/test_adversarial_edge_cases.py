@@ -26,8 +26,8 @@ def test_adversarial_path_traversal() -> None:
 
     from codegraph.errors import SecurityError
 
-    with tempfile.TemporaryDirectory() as td:
-        root = Path(td)
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
+        root = Path(td).resolve()
         # Verify safe_path rejects directory escapes by raising SecurityError
         with pytest.raises(SecurityError):
             safe_path(root, "../outside.py")
@@ -39,7 +39,7 @@ def test_adversarial_path_traversal() -> None:
 
 
 def test_adversarial_duplicate_symbols_and_homonyms() -> None:
-    with tempfile.TemporaryDirectory() as td:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
         root = Path(td)
         (root / "pkg_a").mkdir()
         (root / "pkg_b").mkdir()
@@ -61,7 +61,7 @@ def test_adversarial_duplicate_symbols_and_homonyms() -> None:
 
 
 def test_adversarial_parse_failure_keeps_last_known_good() -> None:
-    with tempfile.TemporaryDirectory() as td:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
         root = Path(td)
         target = root / "module.py"
         target.write_text("class ResilientWorker:\n    def work(self):\n        return True\n")
@@ -89,7 +89,7 @@ def test_adversarial_parse_failure_keeps_last_known_good() -> None:
 
 
 def test_adversarial_circular_imports() -> None:
-    with tempfile.TemporaryDirectory() as td:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
         root = Path(td)
         (root / "mod_a.py").write_text("import mod_b\ndef func_a():\n    return mod_b.func_b()\n")
         (root / "mod_b.py").write_text("import mod_a\ndef func_b():\n    return mod_a.func_a()\n")
@@ -106,7 +106,7 @@ def test_adversarial_circular_imports() -> None:
 
 
 def test_adversarial_exclusions_strictly_enforced() -> None:
-    with tempfile.TemporaryDirectory() as td:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
         root = Path(td)
         (root / "sensitive.py").write_text("class SecretVault:\n    def get_token(self):\n        return 'secret'\n")
         (root / "public.py").write_text("from sensitive import SecretVault\ndef public_action():\n    pass\n")

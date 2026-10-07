@@ -53,7 +53,7 @@ def test_route_topology_normalization_and_matching():
 
 def test_fullstack_graph_resolution_and_caller_discovery():
     """Verify that a React component fetching a backend endpoint creates a direct CALLS edge to the backend handler."""
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdir:
         repo = Path(tmpdir)
         src = repo / "src"
         src.mkdir(parents=True, exist_ok=True)
@@ -121,7 +121,7 @@ def test_cross_language_contract_drift_detection():
     - HTTP_METHOD_MISMATCH
     - ORPHANED_CLIENT_ROUTE
     """
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdir:
         repo = Path(tmpdir)
         src = repo / "src"
         src.mkdir(parents=True, exist_ok=True)
@@ -215,7 +215,7 @@ export function ProfileCard() {
 
 def test_mcp_tools_and_client_routes():
     """Verify that check_api_drift is exposed and executable via FastMCP, discovering client routes and drift."""
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdir:
         repo = Path(tmpdir)
         src = repo / "src"
         src.mkdir(parents=True, exist_ok=True)

@@ -21,12 +21,18 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 
 _SOURCE_EXTENSIONS = (
+    ".server.luau",
+    ".client.luau",
+    ".server.lua",
+    ".client.lua",
     ".d.ts",
     ".pyi",
     ".tsx",
     ".jsx",
     ".mjs",
     ".cjs",
+    ".luau",
+    ".lua",
     ".py",
     ".ts",
     ".js",
@@ -42,7 +48,7 @@ _SOURCE_EXTENSIONS = (
 @lru_cache(maxsize=65536)
 def normalize_module(file_path: str, language: str = "") -> str:
     """Deterministically normalize a repository-relative file path into a dotted module ID."""
-    del language  # normalization is uniform across Python/JS/TS after extension/index rules
+    del language  # normalization is uniform across Python/JS/TS/Luau after extension/index rules
     cleaned = file_path.replace("\\", "/").strip()
     while cleaned.startswith("./"):
         cleaned = cleaned[2:]
@@ -64,6 +70,8 @@ def normalize_module(file_path: str, language: str = "") -> str:
         cleaned = cleaned[: -len("/__init__")]
     elif cleaned.endswith("/index"):
         cleaned = cleaned[: -len("/index")]
+    elif cleaned.endswith("/init"):
+        cleaned = cleaned[: -len("/init")]
 
     parts = [p for p in cleaned.split("/") if p and p != "."]
     return ".".join(parts) if parts else "root"

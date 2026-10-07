@@ -1336,32 +1336,80 @@ def analyze_impact(
             rank=5,
         )
 
-    # 6. Dependency Injection & Providers (DI)
+    # 6. Dependency Injection & Providers (DI) + Roblox Knit/Flamework Services & Remotes
     di_rows = con.execute(
         "SELECT source, target, relationship, confidence, file, start_line, evidence, evidence_class, reason "
         "FROM graph_edges WHERE (source = ? OR target = ? OR source LIKE ? OR target LIKE ?) "
-        "AND relationship IN ('INJECTS', 'PROVIDES', 'RESOLVES_DEPENDENCY')",
+        "AND relationship IN ('INJECTS', 'PROVIDES', 'RESOLVES_DEPENDENCY', 'PROVIDES_SERVICE', 'GETS_SERVICE', "
+        "'CLIENT_DISPATCHES_REMOTE', 'SERVER_HANDLES_REMOTE', 'REQUIRES_MODULE', "
+        "'CONFIGURES_PERSISTENCE', 'READS_PERSISTENCE', 'WRITES_PERSISTENCE')",
         (target_canon, target_canon, f"%{short_name}", f"%{short_name}"),
     ).fetchall()
     for dr in di_rows:
         rel = dr["relationship"]
+        cat_bucket = (
+            "FRAMEWORK"
+            if rel in ("CLIENT_DISPATCHES_REMOTE", "SERVER_HANDLES_REMOTE", "CONFIGURES_PERSISTENCE", "READS_PERSISTENCE", "WRITES_PERSISTENCE")
+            else ("DIRECT" if rel == "REQUIRES_MODULE" else "DI")
+        )
         imp_reason = (
             "dependency_injected"
             if rel == "INJECTS"
-            else ("dependency_provider" if rel == "PROVIDES" else "resolves_dependency")
+            else ("dependency_provider" if rel in ("PROVIDES", "PROVIDES_SERVICE") else rel.lower())
         )
         add_impact_item(
             source=dr["source"],
             target=dr["target"],
             relationship=rel,
-            category="DI",
+            category=cat_bucket,
             evidence_class=dr["evidence_class"] or "DATAFLOW_VERIFIED",
-            reason=dr["reason"] or f"Dependency relationship: {dr['source']} {rel} {dr['target']}",
+            reason=dr["reason"] or f"Relationship: {dr['source']} {rel} {dr['target']}",
             impact_reason=imp_reason,
             file_path=dr["file"],
             start_line=dr["start_line"],
             rank=4,
         )
+        # If target_canon is a Remote or connected to a Remote, also traverse the other side of the Remote
+        if rel == "SERVER_HANDLES_REMOTE" and (dr["target"] == target_canon or dr["target"].endswith(f".{short_name}")):
+            remote_id = dr["source"]
+            client_senders = con.execute(
+                "SELECT source, target, relationship, confidence, file, start_line, evidence, evidence_class, reason "
+                "FROM graph_edges WHERE target = ? AND relationship = 'CLIENT_DISPATCHES_REMOTE'",
+                (remote_id,),
+            ).fetchall()
+            for cs in client_senders:
+                add_impact_item(
+                    source=cs["source"],
+                    target=remote_id,
+                    relationship="CLIENT_DISPATCHES_REMOTE",
+                    category="FRAMEWORK",
+                    evidence_class=cs["evidence_class"] or "ROJO_VERIFIED",
+                    reason=cs["reason"] or f"Client dispatches remote {remote_id} handled by {target_canon}",
+                    impact_reason="remote_client_sender",
+                    file_path=cs["file"],
+                    start_line=cs["start_line"],
+                    rank=3,
+                )
+        elif rel == "CLIENT_DISPATCHES_REMOTE" and (dr["source"] == target_canon or dr["source"].endswith(f".{short_name}")):
+            remote_id = dr["target"]
+            server_handlers = con.execute(
+                "SELECT source, target, relationship, confidence, file, start_line, evidence, evidence_class, reason "
+                "FROM graph_edges WHERE source = ? AND relationship = 'SERVER_HANDLES_REMOTE'",
+                (remote_id,),
+            ).fetchall()
+            for sh in server_handlers:
+                add_impact_item(
+                    source=remote_id,
+                    target=sh["target"],
+                    relationship="SERVER_HANDLES_REMOTE",
+                    category="FRAMEWORK",
+                    evidence_class=sh["evidence_class"] or "ROJO_VERIFIED",
+                    reason=sh["reason"] or f"Server handles remote {remote_id} dispatched by {target_canon}",
+                    impact_reason="remote_server_handler",
+                    file_path=sh["file"],
+                    start_line=sh["start_line"],
+                    rank=3,
+                )
 
     # 7. Related Tests (TEST)
     for t in related_tests:
@@ -1440,7 +1488,7 @@ def trace_call(
     """Return definition, callers, and/or callees with explicit confidence and relationship labels.
 
     Hard bound: max_depth is clamped to max 5.
-    Explicit labels: CALLER, CALLEE, DEFINES, IMPORTS, HANDLED_BY.
+    Explicit labels: CALLER, CALLEE, DEFINES, IMPORTS, HANDLED_BY, plus Roblox network/service/persistence edges.
     """
     effective_depth = max(1, min(max_depth, 5))
     if both:
@@ -1543,6 +1591,39 @@ def trace_call(
                         )
                         if c_sym:
                             next_symbols.append(c_sym)
+
+                # Also traverse incoming Roblox edges (CLIENT_DISPATCHES_REMOTE, SERVER_HANDLES_REMOTE, GETS_SERVICE, REQUIRES_MODULE)
+                r_in_rows = con.execute(
+                    "SELECT source, target, relationship, confidence, file, start_line, end_line, evidence, evidence_class "
+                    "FROM graph_edges WHERE (target=? OR target LIKE ?) AND relationship IN ("
+                    "'CLIENT_DISPATCHES_REMOTE', 'SERVER_HANDLES_REMOTE', 'GETS_SERVICE', 'PROVIDES_SERVICE', 'REQUIRES_MODULE'"
+                    ")",
+                    (sym, f"%.{sym.split('.')[-1]}"),
+                ).fetchall()
+                for r_in in r_in_rows:
+                    src_s = str(r_in["source"])
+                    rel_s = str(r_in["relationship"])
+                    r_file = str(r_in["file"] or "")
+                    r_line = int(r_in["start_line"] or 1)
+                    key = (src_s, r_file, r_line, rel_s)
+                    if key not in seen:
+                        seen.add(key)
+                        output.append(
+                            {
+                                "symbol": src_s,
+                                "target": str(r_in["target"]),
+                                "file": r_file,
+                                "start_line": r_line,
+                                "end_line": int(r_in["end_line"] or r_line),
+                                "relationship": rel_s,
+                                "evidence_class": str(r_in["evidence_class"] or "ROJO_VERIFIED"),
+                                "confidence": str(r_in["confidence"] or "HIGH"),
+                                "evidence": str(r_in["evidence"] or ""),
+                                "depth": depth_step + 1,
+                            }
+                        )
+                        if src_s:
+                            next_symbols.append(src_s)
             current_symbols = next_symbols
             if not current_symbols:
                 break
@@ -1550,6 +1631,16 @@ def trace_call(
     # 4. Callees traversal
     if do_callees:
         current_symbols = [symbol]
+        for d in definitions:
+            if d["canonical_id"] not in current_symbols:
+                current_symbols.append(str(d["canonical_id"]))
+            child_methods = con.execute(
+                "SELECT canonical_id FROM symbols WHERE parent_symbol_id=?",
+                (d["canonical_id"],),
+            ).fetchall()
+            for cm in child_methods:
+                if str(cm["canonical_id"]) not in current_symbols:
+                    current_symbols.append(str(cm["canonical_id"]))
         visited_callees: set[str] = set()
         for depth_step in range(effective_depth):
             next_symbols = []
@@ -1579,6 +1670,40 @@ def trace_call(
                         )
                         if c_sym:
                             next_symbols.append(c_sym)
+
+                # Also traverse outgoing Roblox edges (CLIENT_DISPATCHES_REMOTE, SERVER_HANDLES_REMOTE, GETS_SERVICE, REQUIRES_MODULE, PERSISTENCE)
+                r_out_rows = con.execute(
+                    "SELECT source, target, relationship, confidence, file, start_line, end_line, evidence, evidence_class "
+                    "FROM graph_edges WHERE (source=? OR source LIKE ?) AND relationship IN ("
+                    "'CLIENT_DISPATCHES_REMOTE', 'SERVER_HANDLES_REMOTE', 'GETS_SERVICE', 'PROVIDES_SERVICE', "
+                    "'REQUIRES_MODULE', 'CONFIGURES_PERSISTENCE', 'READS_PERSISTENCE', 'WRITES_PERSISTENCE'"
+                    ")",
+                    (sym, f"%.{sym.split('.')[-1]}"),
+                ).fetchall()
+                for r_out in r_out_rows:
+                    tgt_s = str(r_out["target"])
+                    rel_s = str(r_out["relationship"])
+                    r_file = str(r_out["file"] or "")
+                    r_line = int(r_out["start_line"] or 1)
+                    key = (tgt_s, r_file, r_line, rel_s)
+                    if key not in seen:
+                        seen.add(key)
+                        output.append(
+                            {
+                                "symbol": tgt_s,
+                                "source": str(r_out["source"]),
+                                "file": r_file,
+                                "start_line": r_line,
+                                "end_line": int(r_out["end_line"] or r_line),
+                                "relationship": rel_s,
+                                "evidence_class": str(r_out["evidence_class"] or "ROJO_VERIFIED"),
+                                "confidence": str(r_out["confidence"] or "HIGH"),
+                                "evidence": str(r_out["evidence"] or ""),
+                                "depth": depth_step + 1,
+                            }
+                        )
+                        if tgt_s:
+                            next_symbols.append(tgt_s)
             current_symbols = next_symbols
             if not current_symbols:
                 break

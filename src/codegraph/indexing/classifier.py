@@ -182,6 +182,7 @@ _SOURCE_EXTENSIONS = {
     ".kt",
     ".scala",
     ".lua",
+    ".luau",
     ".sh",
     ".bash",
     ".sql",
@@ -420,6 +421,10 @@ def classify_file_detailed(
         or name.endswith(".spec.ts")
         or name.endswith(".spec.jsx")
         or name.endswith(".spec.tsx")
+        or name.endswith(".spec.lua")
+        or name.endswith(".spec.luau")
+        or name.endswith(".test.lua")
+        or name.endswith(".test.luau")
     ):
         return ArtifactClassification(
             category=FileCategory.TEST,

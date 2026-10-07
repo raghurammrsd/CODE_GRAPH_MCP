@@ -2331,7 +2331,106 @@ def db_ingest_cli_cmd(
     ingest_cli_cmd(source=source, repository=repository, format=format, json_output=json_output)
 
 
+roblox_app = typer.Typer(no_args_is_help=True, help="Roblox & Luau DataModel, Remote, Module, and Service intelligence.")
+app.add_typer(roblox_app, name="roblox")
+
+
+@roblox_app.command("remotes")
+def roblox_remotes_cli_cmd(
+    path: Annotated[Path | None, typer.Option("--path", "-p", help="Repository path")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON result")] = False,
+) -> None:
+    """List Roblox RemoteEvents and RemoteFunctions with client dispatchers and server handlers."""
+    from codegraph.roblox import list_roblox_remotes
+
+    repo = _resolve_repo(path, repository)
+    if not _ensure_indexed(repo):
+        raise typer.Exit(code=1)
+
+    indexer = _indexer(repo)
+    with indexer.session() as con:
+        res = list_roblox_remotes(con, repo)
+
+    if json_output:
+        cli_echo(json.dumps(res, indent=2), json_mode=True)
+    else:
+        remotes = res.get("remotes", [])
+        cli_echo(f"Roblox Remotes ({len(remotes)}):")
+        for r in remotes:
+            cli_echo(f"  • {r.get('remote')} [{r.get('evidence_class')}]")
+            for c in r.get("client_dispatchers", []):
+                cli_echo(f"      Client -> {c.get('symbol')} ({c.get('file')}:{c.get('line')})")
+            for s in r.get("server_handlers", []):
+                cli_echo(f"      Server <- {s.get('symbol')} ({s.get('file')}:{s.get('line')})")
+
+
+@roblox_app.command("modules")
+def roblox_modules_cli_cmd(
+    path: Annotated[Path | None, typer.Option("--path", "-p", help="Repository path")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON result")] = False,
+) -> None:
+    """List Luau / Roblox modules, Rojo DataModel paths, and require edges."""
+    from codegraph.roblox import list_roblox_modules
+
+    repo = _resolve_repo(path, repository)
+    if not _ensure_indexed(repo):
+        raise typer.Exit(code=1)
+
+    indexer = _indexer(repo)
+    with indexer.session() as con:
+        res = list_roblox_modules(con, repo)
+
+    if json_output:
+        cli_echo(json.dumps(res, indent=2), json_mode=True)
+    else:
+        modules = res.get("modules", [])
+        cli_echo(f"Roblox / Luau Modules ({len(modules)}):")
+        for m in modules:
+            vpath = m.get("virtual_path") or "unmapped"
+            cli_echo(f"  • {m.get('file')} ({vpath}) [{m.get('evidence_class')}]")
+            for req in m.get("requires", []):
+                cli_echo(f"      REQUIRES_MODULE -> {req.get('target')} [{req.get('evidence_class')}]")
+
+
+@roblox_app.command("routes")
+def roblox_routes_cli_cmd(
+    path: Annotated[Path | None, typer.Option("--path", "-p", help="Repository path")] = None,
+    repository: Annotated[Path | None, typer.Option("--repository", "-r", "--repo", help="Repository path")] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output JSON result")] = False,
+) -> None:
+    """List Roblox Client -> Remote -> Server routes, Knit services, and DataStore persistence bindings."""
+    from codegraph.roblox import list_roblox_routes
+
+    repo = _resolve_repo(path, repository)
+    if not _ensure_indexed(repo):
+        raise typer.Exit(code=1)
+
+    indexer = _indexer(repo)
+    with indexer.session() as con:
+        res = list_roblox_routes(con, repo)
+
+    if json_output:
+        cli_echo(json.dumps(res, indent=2), json_mode=True)
+    else:
+        routes = res.get("routes", [])
+        services = res.get("services", [])
+        persistence = res.get("persistence", [])
+        cli_echo(f"Roblox Network Routes ({len(routes)}):")
+        for rt in routes:
+            cli_echo(f"  • {rt.get('client')} -> {rt.get('remote')} -> {rt.get('server')} [{rt.get('evidence_class')}]")
+        if services:
+            cli_echo(f"\nKnit / Flamework Services ({len(services)}):")
+            for sv in services:
+                cli_echo(f"  • {sv.get('provider')} ({sv.get('relationship')}) -> {sv.get('service')} [{sv.get('evidence_class')}]")
+        if persistence:
+            cli_echo(f"\nRoblox Persistence ({len(persistence)}):")
+            for p in persistence:
+                cli_echo(f"  • {p.get('symbol')} ({p.get('relationship')}) -> {p.get('store')} [{p.get('evidence_class')}]")
+
 
 if __name__ == "__main__":
     app()
+
 

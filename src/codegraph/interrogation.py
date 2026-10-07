@@ -548,6 +548,8 @@ _TEXT_LANGUAGE_MAP: dict[str, str] = {
     ".sql": "sql",
     ".prisma": "prisma",
     ".sh": "shell",
+    ".lua": "luau",
+    ".luau": "luau",
 }
 
 
@@ -1500,7 +1502,7 @@ def trace_path(
             "path": [],
         }
 
-    # Resolve from and to targets (prefer exact canonical_id or qualified_name)
+    # Resolve from and to targets (prefer exact canonical_id or qualified_name, or virtual graph_edges nodes like Remotes)
     from_row = con.execute(
         "SELECT canonical_id, qualified_name, name FROM symbols "
         "WHERE canonical_id=? OR qualified_name=? OR name=? "
@@ -1515,8 +1517,27 @@ def trace_path(
         (clean_to, clean_to, clean_to, clean_to, clean_to),
     ).fetchone()
 
-    if not from_row or not to_row:
-        missing = clean_from if not from_row else clean_to
+    # Fallback: check if clean_from or clean_to is a virtual node in graph_edges (e.g. ReplicatedStorage.Remotes.Inventory or persistence.roblox.datastore.PlayerData)
+    from_virtual: str | None = None
+    if not from_row:
+        ge_from = con.execute(
+            "SELECT source, target FROM graph_edges WHERE source=? OR target=? LIMIT 1",
+            (clean_from, clean_from),
+        ).fetchone()
+        if ge_from:
+            from_virtual = clean_from
+
+    to_virtual: str | None = None
+    if not to_row:
+        ge_to = con.execute(
+            "SELECT source, target FROM graph_edges WHERE source=? OR target=? LIMIT 1",
+            (clean_to, clean_to),
+        ).fetchone()
+        if ge_to:
+            to_virtual = clean_to
+
+    if (not from_row and not from_virtual) or (not to_row and not to_virtual):
+        missing = clean_from if (not from_row and not from_virtual) else clean_to
         return {
             "status": "not_found",
             "error": {
@@ -1533,11 +1554,24 @@ def trace_path(
             "path": [],
         }
 
-    start_canon = from_row["canonical_id"]
-    target_canon = to_row["canonical_id"]
-    target_names = {to_row["canonical_id"], to_row["qualified_name"]}
-    if "." not in clean_to:
+    start_canon = from_row["canonical_id"] if from_row else str(from_virtual)
+    target_canon = to_row["canonical_id"] if to_row else str(to_virtual)
+    target_names = (
+        {to_row["canonical_id"], to_row["qualified_name"]}
+        if to_row
+        else {target_canon}
+    )
+    if to_row and "." not in clean_to:
         target_names.add(to_row["name"])
+    # Also include child methods of target_canon if target_canon is a class/service table
+    if to_row:
+        child_rows = con.execute(
+            "SELECT canonical_id, qualified_name FROM symbols WHERE parent_symbol_id=?",
+            (target_canon,),
+        ).fetchall()
+        for cr in child_rows:
+            target_names.add(str(cr["canonical_id"]))
+            target_names.add(str(cr["qualified_name"]))
 
     if start_canon == target_canon:
         return {
@@ -1558,43 +1592,57 @@ def trace_path(
         if len(path) >= bounded_depth:
             continue
 
+        # Expand curr_sym to include its direct child methods when curr_sym is a class/table
+        curr_candidates = [curr_sym]
+        child_syms = con.execute(
+            "SELECT canonical_id FROM symbols WHERE parent_symbol_id=?",
+            (curr_sym,),
+        ).fetchall()
+        for cs in child_syms:
+            curr_candidates.append(str(cs["canonical_id"]))
+        ph_curr = ",".join("?" for _ in curr_candidates)
+
         # 1. Query outgoing edges from graph_edges
         graph_rows = con.execute(
-            "SELECT target, relationship, confidence, evidence_class, file, start_line, end_line "
+            "SELECT source, target, relationship, confidence, evidence_class, file, start_line, end_line "
             "FROM graph_edges "
-            "WHERE source=? AND relationship IN ("
+            f"WHERE source IN ({ph_curr}) AND relationship IN ("
             "'CALLS', 'DEFINES', 'CONTAINS', 'IMPORTS', 'HANDLED_BY', 'ROUTES_TO', "
             "'PROVIDES', 'INJECTS', 'RESOLVES_DEPENDENCY', 'DISPATCHES_TO', 'REGISTERS', "
             "'PRODUCES_TO_QUEUE', 'CONSUMES_FROM_QUEUE', 'STATIC_QUEUE_LINKED', 'OTEL_DISTRIBUTED_VERIFIED', "
             "'DISPATCHES_TASK', 'TRIGGERS_SIGNAL', 'HANDLES_SIGNAL', 'RENDERS_TEMPLATE', "
-            "'DISPATCHES_FORWARD', 'TOOL_HANDLER', 'PIPELINE_STEP'"
+            "'DISPATCHES_FORWARD', 'TOOL_HANDLER', 'PIPELINE_STEP', "
+            "'REQUIRES_MODULE', 'CLIENT_DISPATCHES_REMOTE', 'SERVER_HANDLES_REMOTE', "
+            "'GETS_SERVICE', 'PROVIDES_SERVICE', 'READS_PERSISTENCE', 'WRITES_PERSISTENCE', 'CONFIGURES_PERSISTENCE'"
             ") AND confidence IN ('HIGH', 'MEDIUM') "
             "ORDER BY relationship ASC, target ASC",
-            (curr_sym,),
+            curr_candidates,
         ).fetchall()
 
         # 2. Query outgoing verified CALLS from references
         ref_rows = con.execute(
-            "SELECT target_symbol_id, relationship, confidence, path, start_line, end_line, evidence "
+            "SELECT source_symbol_id, target_symbol_id, relationship, confidence, path, start_line, end_line, evidence "
             "FROM 'references' "
-            "WHERE source_symbol_id=? AND relationship='CALLS' AND confidence IN ('HIGH', 'MEDIUM') AND target_symbol_id IS NOT NULL "
+            f"WHERE source_symbol_id IN ({ph_curr}) AND relationship='CALLS' AND confidence IN ('HIGH', 'MEDIUM') AND target_symbol_id IS NOT NULL "
             "ORDER BY path ASC, start_line ASC",
-            (curr_sym,),
+            curr_candidates,
         ).fetchall()
 
         # 3. Query outgoing resolved calls from calls table
         edges = con.execute(
             "SELECT c.callee, c.qualified_callee, c.resolved_symbol_id, c.confidence, c.source_path, c.line "
             "FROM calls c "
-            "WHERE c.source_symbol_id=? AND (c.resolved_symbol_id IS NOT NULL OR c.confidence IN ('HIGH', 'MEDIUM')) "
+            f"WHERE c.source_symbol_id IN ({ph_curr}) AND (c.resolved_symbol_id IS NOT NULL OR c.confidence IN ('HIGH', 'MEDIUM')) "
             "ORDER BY c.source_path ASC, c.line ASC",
-            (curr_sym,),
+            curr_candidates,
         ).fetchall()
 
         step_map: dict[tuple[str, str], tuple[str, str, str, str, str, int, int]] = {}
         for g in graph_rows:
             dest = str(g["target"])
             rel = str(g["relationship"])
+            if rel == "CONTAINS" and dest in curr_candidates:
+                continue
             conf = str(g["confidence"] or "HIGH").upper()
             ev_cls = str(g["evidence_class"] or "AST_VERIFIED").upper()
             step_map[(dest, rel)] = (dest, rel, conf, ev_cls, str(g["file"] or ""), int(g["start_line"] or 1), int(g["end_line"] or g["start_line"] or 1))
@@ -1618,17 +1666,26 @@ def trace_path(
 
         for dest_sym, rel, conf, ev_cls, s_file, s_line, e_line in all_steps:
             dest_row = con.execute(
-                "SELECT canonical_id FROM symbols "
+                "SELECT canonical_id, parent_symbol_id FROM symbols "
                 "WHERE canonical_id=? OR qualified_name=? OR name=? "
                 "ORDER BY (canonical_id=?) DESC, (qualified_name=?) DESC LIMIT 1",
                 (dest_sym, dest_sym, dest_sym, dest_sym, dest_sym),
             ).fetchone()
             dest_canon = dest_row["canonical_id"] if dest_row else dest_sym
+            dest_parent = dest_row["parent_symbol_id"] if dest_row else None
+
+            matched_target = (
+                dest_canon == target_canon
+                or dest_sym in target_names
+                or dest_canon in target_names
+                or (dest_parent is not None and dest_parent == target_canon)
+            )
+            effective_target = target_canon if matched_target else dest_canon
 
             new_path = list(path) + [
                 {
                     "source": curr_sym,
-                    "target": dest_canon,
+                    "target": effective_target,
                     "relationship": rel,
                     "confidence": conf,
                     "evidence_class": ev_cls,
@@ -1639,12 +1696,12 @@ def trace_path(
                         start_line=s_line,
                         end_line=e_line,
                         evidence_type="path_edge",
-                        canonical_id=dest_canon,
+                        canonical_id=effective_target,
                     ),
                 }
             ]
 
-            if dest_canon == target_canon or dest_sym in target_names:
+            if matched_target:
                 return {
                     "status": "ok",
                     "from": clean_from,
@@ -1659,6 +1716,9 @@ def trace_path(
             if dest_canon and dest_canon not in visited:
                 visited.add(dest_canon)
                 queue.append((dest_canon, new_path))
+            if dest_parent and dest_parent not in visited:
+                visited.add(dest_parent)
+                queue.append((dest_parent, new_path))
 
     return {
         "status": "not_found",

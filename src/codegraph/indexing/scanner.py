@@ -49,6 +49,8 @@ LANGUAGES = {
     ".jinja2": "html",
     ".njk": "html",
     ".ejs": "html",
+    ".lua": "luau",
+    ".luau": "luau",
 }
 
 

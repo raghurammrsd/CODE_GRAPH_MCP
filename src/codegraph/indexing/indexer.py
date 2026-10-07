@@ -1928,6 +1928,7 @@ class Indexer:
             bindings=bindings,
             workspace=workspace,
             tsconfig_resolver=tsconfig_resolver,
+            repository=self.repository,
             max_reexport_depth=self.max_reexport_depth,
             max_wildcard_expansions=self.max_wildcard_expansions,
         )

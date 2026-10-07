@@ -609,7 +609,11 @@ def _get_context_impl(
                     break
         except Exception:
             pass
-        is_disk_db = db_file_path is not None and Path(db_file_path).is_file()
+        is_disk_db = (
+            db_file_path is not None
+            and Path(db_file_path).is_file()
+            and os.name != "nt"
+        )
 
         queries_to_run: list[str] = _merged_queries if _merged_queries else [
             q for group in retrieval_plan.query_groups for q in group.queries
@@ -632,9 +636,10 @@ def _get_context_impl(
         def _exec_search(path: str | None, queries: list[str]) -> list[dict[str, object]]:
             items: list[dict[str, object]] = []
             if path:
-                c = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+                c = sqlite3.connect(str(path), timeout=15.0)
                 c.row_factory = sqlite3.Row
                 c.execute("PRAGMA busy_timeout = 15000")
+                c.execute("PRAGMA query_only = ON")
                 try:
                     for query in queries:
                         for item in search(
@@ -668,9 +673,10 @@ def _get_context_impl(
         def _exec_routes(path: str | None) -> list[Any]:
             try:
                 if path:
-                    c = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+                    c = sqlite3.connect(str(path), timeout=15.0)
                     c.row_factory = sqlite3.Row
                     c.execute("PRAGMA busy_timeout = 15000")
+                    c.execute("PRAGMA query_only = ON")
                     try:
                         return c.execute(
                             "SELECT route_path, http_method, handler_name, file_path, line, endpoint_id FROM framework_routes"
@@ -705,9 +711,10 @@ def _get_context_impl(
             archs: list[dict[str, object]] = []
             try:
                 if path:
-                    c = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+                    c = sqlite3.connect(str(path), timeout=15.0)
                     c.row_factory = sqlite3.Row
                     c.execute("PRAGMA busy_timeout = 15000")
+                    c.execute("PRAGMA query_only = ON")
                     try:
                         archs.append(get_architecture(c, repo))
                     finally:

@@ -79,7 +79,7 @@ CodeGraph enforces nine canonical `evidence_class` values defined in `ALLOWED_EV
 
 ## 5. Relationship Model
 
-CodeGraph enforces the 77 canonical relationship types in `ALLOWED_RELATIONSHIP_EVIDENCE_MATRIX`. It **never** collapses framework routing, database operations, registry registration, or dependency injection into generic `CALLS` or `DEPENDS_ON`.
+CodeGraph enforces the 85 canonical relationship types in `ALLOWED_RELATIONSHIP_EVIDENCE_MATRIX`. It **never** collapses framework routing, database operations, registry registration, or dependency injection into generic `CALLS` or `DEPENDS_ON`.
 
 #### `ALIASED_TO`
 - **Meaning**: Symbol or import is assigned an explicit alias (`import X as Y`, `HandlerAlias = RealHandler`).
@@ -121,6 +121,16 @@ CodeGraph enforces the 77 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **Common Tool**: `get_callers / get_callees / trace_path`
 - **Example**: `AuthService.authenticate` -> `CALLS` (`AST_VERIFIED`) -> `verify_password`
 
+#### `CLIENT_DISPATCHES_REMOTE`
+- **Meaning**: Roblox client script or controller dispatches a `RemoteEvent:FireServer(...)` or `RemoteFunction:InvokeServer(...)` call across the client-server boundary.
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `ROJO_VERIFIED`, `UNKNOWN`
+- **Typical Source**: Client controller or LocalScript (`ClientController.RequestInventoryUpdate`)
+- **Typical Target**: Canonical Roblox Remote node (`ReplicatedStorage.Remotes.Inventory`)
+- **What It Proves**: Client-to-server network dispatch targeting the resolved Remote instance (`ROJO_VERIFIED` or `FRAMEWORK_VERIFIED`).
+- **What It Does Not Prove**: Never collapsed into generic `CALLS`; does not prove server validation success at runtime.
+- **Common Tool**: `trace_path / find_callees / get_context`
+- **Example**: `ClientController` -> `CLIENT_DISPATCHES_REMOTE` (`ROJO_VERIFIED`) -> `ReplicatedStorage.Remotes.Inventory`
+
 #### `COMMAND_HANDLER`
 - **Meaning**: CLI or command-bus decorator (`@app.command`, `@click.command`) binds a CLI command to its handler.
 - **Allowed Evidence Classes**: `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `UNKNOWN`
@@ -140,6 +150,16 @@ CodeGraph enforces the 77 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **What It Does Not Prove**: Does not expose secret `.env` values (sensitive files are blocked).
 - **Common Tool**: `get_context / get_references`
 - **Example**: `DatabaseSettings` -> `CONFIGURES` (`DATAFLOW_VERIFIED`) -> `create_engine_pool`
+
+#### `CONFIGURES_PERSISTENCE`
+- **Meaning**: Roblox server service configures a `DataStoreService:GetDataStore(...)` or `ProfileService.GetProfileStore(...)` persistence store.
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `UNKNOWN`
+- **Typical Source**: Server service or module (`InventoryService`)
+- **Typical Target**: Canonical Roblox persistence entity (`persistence.roblox.datastore.<name>`)
+- **What It Proves**: Static persistence store binding (`FRAMEWORK_VERIFIED`), kept distinct from SQL tables.
+- **What It Does Not Prove**: Does not prove Roblox Studio API Services are enabled at runtime.
+- **Common Tool**: `trace_path / analyze_impact / get_context`
+- **Example**: `InventoryService` -> `CONFIGURES_PERSISTENCE` (`FRAMEWORK_VERIFIED`) -> `persistence.roblox.datastore.PlayerInventory_v1`
 
 #### `CONTAINS`
 - **Meaning**: Parent class or module scope lexically contains a child method or nested symbol.
@@ -183,7 +203,7 @@ CodeGraph enforces the 77 canonical relationship types in `ALLOWED_RELATIONSHIP_
 
 #### `DEPENDS_ON`
 - **Meaning**: General structural dependency edge between symbols or modules.
-- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `UNKNOWN`
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `ROJO_VERIFIED`, `UNKNOWN`
 - **Typical Source**: Dependent symbol or module
 - **Typical Target**: Dependency symbol or module
 - **What It Proves**: Static dependency backed by import, call, or DI evidence.
@@ -291,6 +311,16 @@ CodeGraph enforces the 77 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **Common Tool**: `find_db_relationships / get_db_table / get_db_schema`
 - **Example**: `db.UNKNOWN.UNKNOWN.orders.user_id` -> `FOREIGN_KEY_TO` (`FRAMEWORK_VERIFIED`) -> `db.UNKNOWN.UNKNOWN.users.id`
 
+#### `GETS_SERVICE`
+- **Meaning**: Knit (`Knit.GetService(...)`) or Flamework (`Dependency<T>()`) resolves a framework service or controller dependency.
+- **Allowed Evidence Classes**: `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `ROJO_VERIFIED`, `UNKNOWN`
+- **Typical Source**: Consumer controller or service method (`RewardService.GrantStarterPack`, `CombatController`)
+- **Typical Target**: Target service symbol (`src.server.Services.InventoryService.InventoryService`)
+- **What It Proves**: Framework dependency resolution linking consumer to service provider (`FRAMEWORK_VERIFIED`).
+- **What It Does Not Prove**: Does not prove runtime initialization order.
+- **Common Tool**: `trace_path / find_callees / analyze_impact`
+- **Example**: `RewardService.GrantStarterPack` -> `GETS_SERVICE` (`FRAMEWORK_VERIFIED`) -> `InventoryService`
+
 #### `HANDLED_BY`
 - **Meaning**: Canonical endpoint node is handled by the designated route handler symbol.
 - **Allowed Evidence Classes**: `FRAMEWORK_VERIFIED`, `POSSIBLE`, `RUNTIME_OBSERVED`, `UNKNOWN`
@@ -363,7 +393,7 @@ CodeGraph enforces the 77 canonical relationship types in `ALLOWED_RELATIONSHIP_
 
 #### `IMPORTS`
 - **Meaning**: Module or symbol import statement extracted from syntax tree.
-- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `POSSIBLE`, `UNKNOWN`
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `POSSIBLE`, `ROJO_VERIFIED`, `UNKNOWN`
 - **Typical Source**: Importing file or module
 - **Typical Target**: Imported module or symbol
 - **What It Proves**: The source module contains an explicit import statement for the target.
@@ -521,6 +551,16 @@ CodeGraph enforces the 77 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **Common Tool**: `get_context / get_references / trace_path`
 - **Example**: `get_auth_service` -> `PROVIDES` (`FRAMEWORK_VERIFIED`) -> `AuthService`
 
+#### `PROVIDES_SERVICE`
+- **Meaning**: Knit (`Knit.CreateService`) or Flamework (`@Service`, `@Controller`) declares a named singleton service or controller.
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `ROJO_VERIFIED`, `UNKNOWN`
+- **Typical Source**: Service class or table symbol (`src.server.Services.InventoryService.InventoryService`)
+- **Typical Target**: Registered service identifier (`InventoryService`, `CombatService`)
+- **What It Proves**: Framework service provider registration (`FRAMEWORK_VERIFIED`).
+- **What It Does Not Prove**: Does not prove `Knit.Start()` has completed at runtime.
+- **Common Tool**: `trace_path / find_references / get_context`
+- **Example**: `InventoryService` -> `PROVIDES_SERVICE` (`FRAMEWORK_VERIFIED`) -> `InventoryService`
+
 #### `QUERIES_DATABASE`
 - **Meaning**: Function or module executes a database query through a session, cursor, or engine.
 - **Allowed Evidence Classes**: `AMBIGUOUS`, `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `RUNTIME_OBSERVED`, `STATIC_VERIFIED`, `UNKNOWN`
@@ -560,6 +600,16 @@ CodeGraph enforces the 77 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **What It Does Not Prove**: Never exposes or stores the runtime environment variable's secret value.
 - **Common Tool**: `get_db_schema / get_context`
 - **Example**: `src/config.py` -> `READS_ENV` (`AST_VERIFIED`) -> `env:DATABASE_URL`
+
+#### `READS_PERSISTENCE`
+- **Meaning**: Function or method reads from a Roblox DataStore or ProfileStore (`GetAsync`, `LoadProfileAsync`).
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `UNKNOWN`
+- **Typical Source**: Service method (`InventoryService.HandleInventoryRequest`)
+- **Typical Target**: Canonical Roblox persistence entity (`persistence.roblox.datastore.<name>`)
+- **What It Proves**: Static persistence read operation targeting the store (`FRAMEWORK_VERIFIED`).
+- **What It Does Not Prove**: Does not prove key existence or throttling budget at runtime.
+- **Common Tool**: `trace_path / analyze_impact / get_context`
+- **Example**: `InventoryService.HandleInventoryRequest` -> `READS_PERSISTENCE` (`FRAMEWORK_VERIFIED`) -> `persistence.roblox.datastore.PlayerInventory_v1`
 
 #### `READS_TABLE`
 - **Meaning**: Function, method, or query reads rows from a database table (`SELECT`, `.query()`, `.objects.filter()`, `.findMany()`).
@@ -651,6 +701,16 @@ CodeGraph enforces the 77 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **Common Tool**: `list_routes / get_context / find_callees`
 - **Example**: `dashboard_view` -> `RENDERS_TEMPLATE` (`FRAMEWORK_VERIFIED`) -> `templates/dashboard.html`
 
+#### `REQUIRES_MODULE`
+- **Meaning**: Luau or Roblox module requires another ModuleScript via `require(...)` using Rojo DataModel paths or `script.Parent` traversal.
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `POSSIBLE`, `ROJO_VERIFIED`, `UNKNOWN`
+- **Typical Source**: Caller Luau module or function (`ClientController`, `InventoryService`)
+- **Typical Target**: Target ModuleScript (`Packages.Knit`, `src.shared.Types`)
+- **What It Proves**: Deterministic module dependency via Rojo project mapping (`ROJO_VERIFIED`) or bounded relative script path (`AST_VERIFIED`).
+- **What It Does Not Prove**: Does not prove runtime execution order when `require` is inside a conditional branch.
+- **Common Tool**: `get_imports / trace_path / get_context`
+- **Example**: `InventoryService` -> `REQUIRES_MODULE` (`ROJO_VERIFIED`) -> `Packages.Knit`
+
 #### `RESOLVES_DEPENDENCY`
 - **Meaning**: DI container or binding map resolves an abstract interface/token to a concrete implementation.
 - **Allowed Evidence Classes**: `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `UNKNOWN`
@@ -663,7 +723,7 @@ CodeGraph enforces the 77 canonical relationship types in `ALLOWED_RELATIONSHIP_
 
 #### `RESOLVES_TO`
 - **Meaning**: Alias, import binding, or target reference resolves to its canonical symbol definition.
-- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `POSSIBLE`, `UNKNOWN`
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `POSSIBLE`, `ROJO_VERIFIED`, `UNKNOWN`
 - **Typical Source**: Local alias or imported reference
 - **Typical Target**: Canonical symbol definition
 - **What It Proves**: Deterministic name/dataflow resolution to a canonical target.
@@ -690,6 +750,16 @@ CodeGraph enforces the 77 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **What It Does Not Prove**: Does not prove external reverse-proxy rewrites.
 - **Common Tool**: `list_routes / get_context`
 - **Example**: `POST /api/v1/auth/login` -> `ROUTE_HANDLER` (`FRAMEWORK_VERIFIED`) -> `login_endpoint`
+
+#### `SERVER_HANDLES_REMOTE`
+- **Meaning**: Roblox server script or service connects a handler to `RemoteEvent.OnServerEvent:Connect(...)` or assigns `RemoteFunction.OnServerInvoke`.
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `ROJO_VERIFIED`, `UNKNOWN`
+- **Typical Source**: Canonical Roblox Remote node (`ReplicatedStorage.Remotes.Inventory`)
+- **Typical Target**: Server service or handler method (`InventoryService.KnitInit`, `InventoryService`)
+- **What It Proves**: Server-side network handler registration for the canonical Remote channel (`ROJO_VERIFIED` or `FRAMEWORK_VERIFIED`).
+- **What It Does Not Prove**: Never collapsed into generic `CALLS`; does not prove payload schema validation.
+- **Common Tool**: `trace_path / find_callers / get_context`
+- **Example**: `ReplicatedStorage.Remotes.Inventory` -> `SERVER_HANDLES_REMOTE` (`ROJO_VERIFIED`) -> `InventoryService`
 
 #### `TASK_HANDLER`
 - **Meaning**: Background task decorator (`@app.task`, `@shared_task`, `@dramatiq.actor`) marks a task entrypoint.
@@ -840,6 +910,16 @@ CodeGraph enforces the 77 canonical relationship types in `ALLOWED_RELATIONSHIP_
 - **What It Does Not Prove**: Does not expose literal parameter values (redacted for security).
 - **Common Tool**: `find_db_writers / get_db_impact`
 - **Example**: `update_stock` -> `WRITES_COLUMN` (`STATIC_VERIFIED`) -> `db.UNKNOWN.UNKNOWN.inventory.quantity`
+
+#### `WRITES_PERSISTENCE`
+- **Meaning**: Function or method writes or mutates a Roblox DataStore or ProfileStore (`SetAsync`, `UpdateAsync`, `IncrementAsync`, `RemoveAsync`, `Save`).
+- **Allowed Evidence Classes**: `AST_VERIFIED`, `DATAFLOW_VERIFIED`, `FRAMEWORK_VERIFIED`, `POSSIBLE`, `UNKNOWN`
+- **Typical Source**: Service method (`InventoryService.HandleInventoryRequest`)
+- **Typical Target**: Canonical Roblox persistence entity (`persistence.roblox.datastore.<name>`)
+- **What It Proves**: Static persistence mutation targeting the store (`FRAMEWORK_VERIFIED`).
+- **What It Does Not Prove**: Does not prove runtime `pcall` success or DataStore queue limits.
+- **Common Tool**: `trace_path / analyze_impact / get_context`
+- **Example**: `InventoryService.HandleInventoryRequest` -> `WRITES_PERSISTENCE` (`FRAMEWORK_VERIFIED`) -> `persistence.roblox.datastore.PlayerInventory_v1`
 
 #### `WRITES_TABLE`
 - **Meaning**: Function, method, or query mutates rows in a database table (`INSERT`, `UPDATE`, `DELETE`, `.add()`, `.create()`, `.save()`).

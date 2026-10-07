@@ -814,6 +814,86 @@ RELATIONSHIP_SEMANTICS_REGISTRY: dict[str, RelationshipSemanticsSpec] = {
         common_tool="trace_path / find_callees / get_context",
         example="`prompt_template` -> `PIPELINE_STEP` (`DATAFLOW_VERIFIED`) -> `chat_model`",
     ),
+    "REQUIRES_MODULE": RelationshipSemanticsSpec(
+        relationship="REQUIRES_MODULE",
+        meaning="Luau or Roblox module requires another ModuleScript via `require(...)` using Rojo DataModel paths or `script.Parent` traversal.",
+        typical_source="Caller Luau module or function (`ClientController`, `InventoryService`)",
+        typical_target="Target ModuleScript (`Packages.Knit`, `src.shared.Types`)",
+        proves="Deterministic module dependency via Rojo project mapping (`ROJO_VERIFIED`) or bounded relative script path (`AST_VERIFIED`).",
+        does_not_prove="Does not prove runtime execution order when `require` is inside a conditional branch.",
+        common_tool="get_imports / trace_path / get_context",
+        example="`InventoryService` -> `REQUIRES_MODULE` (`ROJO_VERIFIED`) -> `Packages.Knit`",
+    ),
+    "CLIENT_DISPATCHES_REMOTE": RelationshipSemanticsSpec(
+        relationship="CLIENT_DISPATCHES_REMOTE",
+        meaning="Roblox client script or controller dispatches a `RemoteEvent:FireServer(...)` or `RemoteFunction:InvokeServer(...)` call across the client-server boundary.",
+        typical_source="Client controller or LocalScript (`ClientController.RequestInventoryUpdate`)",
+        typical_target="Canonical Roblox Remote node (`ReplicatedStorage.Remotes.Inventory`)",
+        proves="Client-to-server network dispatch targeting the resolved Remote instance (`ROJO_VERIFIED` or `FRAMEWORK_VERIFIED`).",
+        does_not_prove="Never collapsed into generic `CALLS`; does not prove server validation success at runtime.",
+        common_tool="trace_path / find_callees / get_context",
+        example="`ClientController` -> `CLIENT_DISPATCHES_REMOTE` (`ROJO_VERIFIED`) -> `ReplicatedStorage.Remotes.Inventory`",
+    ),
+    "SERVER_HANDLES_REMOTE": RelationshipSemanticsSpec(
+        relationship="SERVER_HANDLES_REMOTE",
+        meaning="Roblox server script or service connects a handler to `RemoteEvent.OnServerEvent:Connect(...)` or assigns `RemoteFunction.OnServerInvoke`.",
+        typical_source="Canonical Roblox Remote node (`ReplicatedStorage.Remotes.Inventory`)",
+        typical_target="Server service or handler method (`InventoryService.KnitInit`, `InventoryService`)",
+        proves="Server-side network handler registration for the canonical Remote channel (`ROJO_VERIFIED` or `FRAMEWORK_VERIFIED`).",
+        does_not_prove="Never collapsed into generic `CALLS`; does not prove payload schema validation.",
+        common_tool="trace_path / find_callers / get_context",
+        example="`ReplicatedStorage.Remotes.Inventory` -> `SERVER_HANDLES_REMOTE` (`ROJO_VERIFIED`) -> `InventoryService`",
+    ),
+    "PROVIDES_SERVICE": RelationshipSemanticsSpec(
+        relationship="PROVIDES_SERVICE",
+        meaning="Knit (`Knit.CreateService`) or Flamework (`@Service`, `@Controller`) declares a named singleton service or controller.",
+        typical_source="Service class or table symbol (`src.server.Services.InventoryService.InventoryService`)",
+        typical_target="Registered service identifier (`InventoryService`, `CombatService`)",
+        proves="Framework service provider registration (`FRAMEWORK_VERIFIED`).",
+        does_not_prove="Does not prove `Knit.Start()` has completed at runtime.",
+        common_tool="trace_path / find_references / get_context",
+        example="`InventoryService` -> `PROVIDES_SERVICE` (`FRAMEWORK_VERIFIED`) -> `InventoryService`",
+    ),
+    "GETS_SERVICE": RelationshipSemanticsSpec(
+        relationship="GETS_SERVICE",
+        meaning="Knit (`Knit.GetService(...)`) or Flamework (`Dependency<T>()`) resolves a framework service or controller dependency.",
+        typical_source="Consumer controller or service method (`RewardService.GrantStarterPack`, `CombatController`)",
+        typical_target="Target service symbol (`src.server.Services.InventoryService.InventoryService`)",
+        proves="Framework dependency resolution linking consumer to service provider (`FRAMEWORK_VERIFIED`).",
+        does_not_prove="Does not prove runtime initialization order.",
+        common_tool="trace_path / find_callees / analyze_impact",
+        example="`RewardService.GrantStarterPack` -> `GETS_SERVICE` (`FRAMEWORK_VERIFIED`) -> `InventoryService`",
+    ),
+    "CONFIGURES_PERSISTENCE": RelationshipSemanticsSpec(
+        relationship="CONFIGURES_PERSISTENCE",
+        meaning="Roblox server service configures a `DataStoreService:GetDataStore(...)` or `ProfileService.GetProfileStore(...)` persistence store.",
+        typical_source="Server service or module (`InventoryService`)",
+        typical_target="Canonical Roblox persistence entity (`persistence.roblox.datastore.<name>`)",
+        proves="Static persistence store binding (`FRAMEWORK_VERIFIED`), kept distinct from SQL tables.",
+        does_not_prove="Does not prove Roblox Studio API Services are enabled at runtime.",
+        common_tool="trace_path / analyze_impact / get_context",
+        example="`InventoryService` -> `CONFIGURES_PERSISTENCE` (`FRAMEWORK_VERIFIED`) -> `persistence.roblox.datastore.PlayerInventory_v1`",
+    ),
+    "READS_PERSISTENCE": RelationshipSemanticsSpec(
+        relationship="READS_PERSISTENCE",
+        meaning="Function or method reads from a Roblox DataStore or ProfileStore (`GetAsync`, `LoadProfileAsync`).",
+        typical_source="Service method (`InventoryService.HandleInventoryRequest`)",
+        typical_target="Canonical Roblox persistence entity (`persistence.roblox.datastore.<name>`)",
+        proves="Static persistence read operation targeting the store (`FRAMEWORK_VERIFIED`).",
+        does_not_prove="Does not prove key existence or throttling budget at runtime.",
+        common_tool="trace_path / analyze_impact / get_context",
+        example="`InventoryService.HandleInventoryRequest` -> `READS_PERSISTENCE` (`FRAMEWORK_VERIFIED`) -> `persistence.roblox.datastore.PlayerInventory_v1`",
+    ),
+    "WRITES_PERSISTENCE": RelationshipSemanticsSpec(
+        relationship="WRITES_PERSISTENCE",
+        meaning="Function or method writes or mutates a Roblox DataStore or ProfileStore (`SetAsync`, `UpdateAsync`, `IncrementAsync`, `RemoveAsync`, `Save`).",
+        typical_source="Service method (`InventoryService.HandleInventoryRequest`)",
+        typical_target="Canonical Roblox persistence entity (`persistence.roblox.datastore.<name>`)",
+        proves="Static persistence mutation targeting the store (`FRAMEWORK_VERIFIED`).",
+        does_not_prove="Does not prove runtime `pcall` success or DataStore queue limits.",
+        common_tool="trace_path / analyze_impact / get_context",
+        example="`InventoryService.HandleInventoryRequest` -> `WRITES_PERSISTENCE` (`FRAMEWORK_VERIFIED`) -> `persistence.roblox.datastore.PlayerInventory_v1`",
+    ),
 }
 
 
@@ -1938,6 +2018,7 @@ def render_tool_capabilities_summary() -> str:
 | **`STATIC_VERIFIED`** | Proven by static SQL DDL/DML or migration parsing | Rely on table/column/query/migration relationship as verified static fact. |
 | **`FRAMEWORK_VERIFIED`** | Proven by deterministic framework rules | Rely on route/ORM/DI/task/event relationship as verified framework fact. |
 | **`DATAFLOW_VERIFIED`** | Proven by conservative local/container binding | Rely on resolved target as verified dataflow fact. |
+| **`ROJO_VERIFIED`** | Proven by deterministic Rojo `default.project.json` DataModel mapping | Rely on virtual-to-physical Luau module resolution as verified fact. |
 | **`RUNTIME_OBSERVED`** | Observed in an ingested runtime trace (`observation_count >= 1`) | Treat as verified runtime execution fact; never promote to static `AST_VERIFIED` proof. |
 | **`RUNTIME_UNOBSERVED`** | Not observed in the ingested runtime trace sample | Never claim the static path is dead code or impossible at runtime. |
 | **`POSSIBLE`** | Plausible candidate, not statically guaranteed | Treat as lead; verify with targeted `get_file` / `read_file` before claiming as fact. |

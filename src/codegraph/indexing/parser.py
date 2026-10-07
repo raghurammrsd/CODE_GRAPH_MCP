@@ -218,6 +218,9 @@ def parse(content: str, language: str, file_path: str) -> ParseResult:
     """Parse a source file in a single scoped pass."""
     if language == "python":
         return _parse_python(content, file_path)
+    if language == "luau" or file_path.lower().endswith((".lua", ".luau")):
+        from codegraph.roblox import parse_luau
+        return parse_luau(content, file_path)
     if language == "html" or file_path.lower().endswith((".html", ".htm", ".jinja", ".jinja2", ".njk", ".ejs")):
         from codegraph.indexing.templates import parse_html_template
         return parse_html_template(content, file_path)
@@ -3360,6 +3363,12 @@ def _parse_js_ts(content: str, language: str, file_path: str) -> ParseResult:
             symbols.append(h_sym)
     if react_res.bindings:
         bindings.extend(react_res.bindings)
+
+    if language == "typescript" and ("@Service" in content or "@Controller" in content or "Dependency<" in content):
+        from codegraph.roblox import extract_flamework_bindings
+        fw_bindings = extract_flamework_bindings(content, file_path, module)
+        if fw_bindings:
+            bindings.extend(fw_bindings)
 
     symbols.sort(key=lambda s: (s.start_line, s.canonical_id))
     return ParseResult(

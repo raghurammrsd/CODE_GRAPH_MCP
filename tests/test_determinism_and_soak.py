@@ -16,7 +16,7 @@ from benchmarks.tasks import get_standard_benchmark_catalog
 
 def test_repeated_run_determinism() -> None:
     """Run benchmark tasks across multiple independent runs and assert identical output."""
-    with tempfile.TemporaryDirectory() as td:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
         repo_dir = Path(td)
         generate_full_corpus_repo(repo_dir, init_git=True)
 
@@ -38,7 +38,7 @@ def test_repeated_run_determinism() -> None:
 
 def test_soak_repeated_queries_and_edits() -> None:
     """Simulate a sustained workload of edits and repeated queries."""
-    with tempfile.TemporaryDirectory() as td:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
         repo_dir = Path(td)
         generate_full_corpus_repo(repo_dir, init_git=True)
 

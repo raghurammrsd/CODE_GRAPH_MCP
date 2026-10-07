@@ -36,6 +36,17 @@ _DB_RELATIONSHIP_TYPES: frozenset[str] = frozenset({
     "READS_ENV",
 })
 
+_ROBLOX_RELATIONSHIP_TYPES: frozenset[str] = frozenset({
+    "REQUIRES_MODULE",
+    "CLIENT_DISPATCHES_REMOTE",
+    "SERVER_HANDLES_REMOTE",
+    "GETS_SERVICE",
+    "PROVIDES_SERVICE",
+    "READS_PERSISTENCE",
+    "WRITES_PERSISTENCE",
+    "CONFIGURES_PERSISTENCE",
+})
+
 
 @dataclass(frozen=True)
 class RetrievalPolicy:
@@ -58,7 +69,11 @@ class RetrievalPolicy:
         if not self.allowed_relationship_types:
             return True
         rel = relationship.upper()
-        if rel in self.allowed_relationship_types or rel in _DB_RELATIONSHIP_TYPES:
+        if (
+            rel in self.allowed_relationship_types
+            or rel in _DB_RELATIONSHIP_TYPES
+            or rel in _ROBLOX_RELATIONSHIP_TYPES
+        ):
             return True
         if rel.startswith("TESTS") and "TESTS" in self.allowed_relationship_types:
             return True
